@@ -73,6 +73,7 @@ import type {
 // ADR-107: the Skill Tree's definitions are player-independent, so the TypeScript fixtures use
 // the Python golden's exactly — every word the tree prints is the production builder's.
 import { espnFixtureFiles, espnOwnershipMetadata, type EspnFixtureMode } from "./espn";
+import { insightRecordsFor, insightsMetadata, type InsightsFixtureMode } from "./insights";
 import { recentFormMetadata, recentFormRecords } from "./recent";
 import goldenSkillTreeDefinitions from "../../../tests/fixtures/artifacts/skill_tree_definitions.json";
 
@@ -2856,6 +2857,12 @@ export function inSeasonFixtureFiles(
      * build withheld it (season actuals incomplete) and says so in its metadata.
      */
     readonly recent?: "present" | "absent" | "withheld";
+    /**
+     * ADR-116. `absent`: an older deploy with no Insights at all; `withheld`: the build withheld
+     * them and says why; `empty`: published, no story qualified; `degraded`: the upside family
+     * could not be built (ESPN readings unavailable) and every other family published.
+     */
+    readonly insights?: InsightsFixtureMode;
   } = {},
 ): Record<string, unknown> {
   const espn = options.espn ?? "present";
@@ -2864,6 +2871,8 @@ export function inSeasonFixtureFiles(
   const signals = options.signals ?? "present";
   const skillTree = options.skillTree ?? "present";
   const recent = options.recent ?? "present";
+  const insights = options.insights ?? "present";
+  const insightRecords = insightRecordsFor(insights);
   return {
     // The draft build's own record of the season, replaced because in season it says
     // something different — and the page reads it whether or not a ROS bundle is beside it.
@@ -2895,9 +2904,14 @@ export function inSeasonFixtureFiles(
                 }),
               }
             : {}),
+        insights: insights === "absent" ? null : insightsMetadata(insights),
       },
       behaviorAvailable,
     ),
+    // ADR-116: the Insights stories, read by the Insights tab only.
+    ...(insightRecords === null
+      ? {}
+      : { "insights.json": envelope("insights", "insight_story", insightRecords) }),
     // ADR-112: ESPN's latest readings and the lazily fetched series.
     ...espnFixtureFiles(espn),
     "ros_tiers.json": rosTierEnvelope(),

@@ -4,6 +4,67 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
+**Insights: deterministic weekly stories, one shareable card per finding — 2026-10-28 (ADR-116,
+PRD CR-036).** On `claude/kind-pasteur-c8py15` from `main` at `6f7e617`. An in-season tab that
+answers "is my disappointing starter still getting the ball; who has a real route to a big week at
+low roster share; whose role just opened; is that streak backed by usage; what does the season look
+like per game?" — as stories built from published evidence, never a score.
+
+* **Rules.** `insights_v1`: fixed Last-3 window (recent form's calendar weeks W−2..W) against every
+  earlier week; six families — `volume_vs_results` (lagging, shrinking), `weekly_upside` (ceiling
+  under 50/25/10% ESPN rostered, ordered by P90 then P50), `opportunity_opening` (prospective,
+  observed; backfield, receiving and passing rooms — a QB change is the passing room),
+  `role_battle` (backfield, receiving; scoring-independent), `streak_watch` (breakout,
+  production_without_role, quiet_role_growth), `pace_perspective` (per_game_hidden, overlooked).
+  Thresholds reuse `breakout_v1` / `usage_signals_v1` / weekly-context constants (table in
+  ADR-116). `insights_select_v1`: one story per player per preset, family round-robin with caps
+  3/2/3/2/2/1, team cap 2, lead ≤ 12, variant cap 8.
+* **Artifact** `insights` (`insight_story` 1.0) built last in `run_ros_build`; downstream only
+  (boundary test, golden diff limited to the manifest, ROS metadata and the new files). Served as
+  `insights/<scoring>` (feed + full account as `meta`, every preset, empty when nothing qualified)
+  and lazy `insight_evidence/<scoring>`; the manifest keeps a six-field summary.
+* **Validator** `insight_checks.py` (independent of the builder): printed numbers ⊆ evidence,
+  forbidden-claim stems, per-predicate re-checks, selection caps, cross-checks against usage,
+  recent form, actuals, weekly projections (kickoff after the build) and ESPN.
+* **Time.** Build-time pre-screen (Out/Doubtful, reserve lists, unsigned) is a strict subset of
+  ADR-101; the page re-applies the full policy and kickoff at the reader's clock (30 s tick) and
+  withdraws a story in place, including on a page left open across kickoff.
+* **Degradation.** Actuals or usage missing → withheld; ESPN or projections missing →
+  `weekly_upside` unavailable; recent form missing → `streak_watch` unavailable; incomplete
+  play-by-play → red-zone counts withheld, never partial. Each family states its reason.
+* **Page.** Tab after My Leagues (`Opp`/`Leagues` short below 1024px); `ins`, `ceil`, `story`+`ed`,
+  `share` URL state; search; story → player card; share view at 1200×675 / 1080×1350 rendered
+  from the record with embedded self-hosted fonts; Download PNG, Copy link, Copy summary.
+* **Real data** (live week-7 slices + 2026 nflverse frames, outside the pipeline, not committed):
+  226 stories (PPR 72, HALF 75, STD 79), 12 lead each, every family published, all checks pass.
+* **Payload** (size model, base and branch on one machine, all budgets met, none raised): first
+  visit 346,628 → 347,634 B; WMM cold 443,390 → 444,404 of 450,000 (headroom 6,610 → 5,596);
+  Insights tab +45.3 kB (50), feed slice 21.1 kB (25), evidence 10.8 kB (15), share 6.0 kB (8).
+  The +1.0 kB shared cost is the manifest (+139 B) and the app shell (~870 B: tab, URL params,
+  loader) — cut from +1.5 kB; nothing else is left to move without touching other tabs.
+* **Facts for the next session.**
+  * Real-data replay: decode the deployed slices and load nflverse frames through the adapters,
+    then call `ffdraft.insights.build_insights(...)` directly (nothing in the repo automates it).
+  * The browser fixture (`web/tests/fixtures/insights.ts`) has modes `present`, `absent`,
+    `withheld`, `empty`, `degraded`; the in-season e2e build adds `in-season-insights-degraded`.
+  * Visual QA: `node docs/visual-qa/2026-10-27-insights/capture.mjs` after `npm run e2e:build`.
+* **Next gate:** owner review; after merge, the first in-season `daily-refresh` publishes the first
+  real Insights — check `ros_build_metadata.insights` (families, counts) and the served sizes.
+
+Validation of this pass (local, Chromium from `/opt/pw-browsers`):
+
+```
+uv run ruff check . ; ruff format --check . ; mypy   # clean; 367 files; 219 source files
+uv run pytest                                        # 2,284 passed, 4 deselected (live)
+build-fixture-artifacts + validate-artifacts         # pass; goldens regenerated (manifest only)
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 1,203 passed, 1 skipped
+playwright chromium + mobile + a11y + smoke-chromium # 378 passed
+npm run e2e:size-model && verify:budget              # all met (numbers above)
+VITE_BASE_PATH=/jeisey-tiers/ npm run build          # ok
+visual QA capture                                    # 0 overflow, 0 clipped, 20 exports exact size
+```
+
 **Fix: daily-refresh `verify:board` momentum span — 2026-10-22 (ADR-114 amendment).** Run
 39678490433 failed on 50 Opportunity rows: the page prints the add trend over `add_span_days`
 (series 2.0), the verifier expected `span_days`. Verifier, momentum sentence and the two CSV

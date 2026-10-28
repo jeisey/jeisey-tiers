@@ -26,6 +26,16 @@ interface Envelope {
   readonly [key: string]: unknown;
 }
 
+/** The fields of `ros_build_metadata.insights` the manifest keeps (`serving.py`). */
+const INSIGHTS_MANIFEST_SUMMARY: readonly string[] = [
+  "status",
+  "withheld_reason",
+  "edition",
+  "through_week",
+  "target_week",
+  "generated_at_utc",
+];
+
 /** Sentinel for "this build did not publish that artifact". */
 export const MISSING = Symbol("missing");
 
@@ -128,6 +138,54 @@ const FAMILIES: readonly {
       "windows",
     ],
   },
+  // ADR-116: the Insights feed, one slice per scoring preset — what a card prints, no evidence —
+  // and the evidence slice a card fetches when a reader expands it.
+  {
+    name: "insights",
+    artifact: "insights",
+    partition: "scoring",
+    only: [
+      "build_id",
+      "season",
+      "through_week",
+      "target_week",
+      "edition",
+      "scoring_preset",
+      "scoring_dependent",
+      "story_id",
+      "family",
+      "variant",
+      "horizon",
+      "nature",
+      "lead_rank",
+      "family_rank",
+      "player_id",
+      "display_name",
+      "position",
+      "team",
+      "headline",
+      "dek",
+      "facts",
+      "counterpoint",
+      "caveat",
+      "window",
+      "kickoff_utc",
+      "espn_rostered",
+      "ceiling_ranks",
+      "injury",
+      "opponent",
+      "home_away",
+      "chart",
+      "sources",
+      "source_times",
+    ],
+  },
+  {
+    name: "insight_evidence",
+    artifact: "insights",
+    partition: "scoring",
+    only: ["scoring_preset", "story_id", "player_id", "evidence", "qualification", "also_qualifies"],
+  },
 ];
 
 const CARD_SECTIONS: readonly (readonly [string, "block" | "scoring" | "all"])[] = [
@@ -164,6 +222,7 @@ const FILENAMES: Readonly<Record<string, string>> = {
   espn_ownership: "espn_ownership.json",
   espn_ownership_series: "espn_ownership_series.json",
   recent_form: "recent_form.json",
+  insights: "insights.json",
 };
 
 function partitionKey(
@@ -223,6 +282,11 @@ export function layoutOf(payloads: Readonly<Record<string, unknown>>): {
     entries[key] = digest;
   };
   add("players", { format: "serving_v1", names: {} });
+  const rosPayload = payloads["ros_build_metadata.json"];
+  const insightsMeta =
+    rosPayload !== undefined && rosPayload !== MISSING
+      ? ((rosPayload as { insights?: Record<string, unknown> | null }).insights ?? null)
+      : null;
 
   for (const family of FAMILIES) {
     const envelope = envelopes.get(family.artifact);
@@ -235,6 +299,12 @@ export function layoutOf(payloads: Readonly<Record<string, unknown>>): {
       group.push(record);
       groups.set(key, group);
     }
+    // ADR-116: a published build serves every preset's stories slice, an empty one too.
+    if (family.name === "insights" && insightsMeta?.status === "published") {
+      for (const key of Object.keys((insightsMeta.counts as Record<string, unknown> | undefined) ?? {})) {
+        if (!groups.has(key)) groups.set(key, []);
+      }
+    }
     for (const [key, rows] of groups) {
       add(`${family.name}/${key}`, {
         format: "serving_v1",
@@ -242,6 +312,8 @@ export function layoutOf(payloads: Readonly<Record<string, unknown>>): {
         artifact: family.artifact,
         partition: key,
         ...table(rows, family.only),
+        // ADR-116: the full Insights account rides in each stories slice, as `serving.py` puts it.
+        ...(family.name === "insights" && insightsMeta !== null ? { meta: insightsMeta } : {}),
       });
     }
   }
@@ -289,7 +361,16 @@ export function layoutOf(payloads: Readonly<Record<string, unknown>>): {
   const build = payloads["build_metadata.json"];
   if (build !== undefined && build !== MISSING) manifest.build_metadata = build;
   const ros = payloads["ros_build_metadata.json"];
-  if (ros !== undefined && ros !== MISSING) manifest.ros_build_metadata = ros;
+  if (ros !== undefined && ros !== MISSING) {
+    // The manifest keeps a summary of the Insights account (`INSIGHTS_MANIFEST_SUMMARY`).
+    manifest.ros_build_metadata =
+      insightsMeta === null
+        ? ros
+        : {
+            ...(ros as Record<string, unknown>),
+            insights: Object.fromEntries(Object.entries(insightsMeta).filter(([name]) => INSIGHTS_MANIFEST_SUMMARY.includes(name))),
+          };
+  }
   return { manifest, files };
 }
 

@@ -43,6 +43,8 @@ export const VIEWS = [
   "potw",
   "trade",
   "myleagues",
+  // ADR-116: the in-season Insights feed.
+  "insights",
   "data",
 ] as const;
 export type ViewId = (typeof VIEWS)[number];
@@ -90,6 +92,8 @@ export const IN_SEASON_VIEWS: readonly ResolvedViewId[] = [
   "ros",
   // ADR-106: the reader's own saved leagues, beside the weekly decision tools.
   "myleagues",
+  // ADR-116: the Insights feed. In-season only, so it applies the availability policy too.
+  "insights",
   "startsit",
   "trade",
   "opportunity",
@@ -159,6 +163,30 @@ export const MAX_DEALT = 999;
  */
 export const LEAGUE_PANELS = ["lineup", "wmm"] as const;
 export type LeaguePanel = (typeof LEAGUE_PANELS)[number];
+
+/**
+ * The Insights feed's filter (ADR-116), written `ins=…`. Each value names families, never a
+ * score: `week` is the upside family plus every story about the target week; `disappoint` is
+ * volume versus results; the rest are one family each. `all` (the default) is never written.
+ */
+export const INSIGHT_FILTERS = ["all", "week", "disappoint", "opening", "roles", "streaks", "pace"] as const;
+export type InsightFilter = (typeof INSIGHT_FILTERS)[number];
+
+/**
+ * The ESPN roster ceiling the upside family is read under (ADR-116), written `ceil=25`: rostered
+ * in fewer than this percentage of ESPN leagues. 50 (the default) is never written.
+ */
+export const INSIGHT_CEILINGS = [50, 25, 10] as const;
+export type InsightCeiling = (typeof INSIGHT_CEILINGS)[number];
+
+/** The share view's layout: landscape 1200×675 or portrait 1080×1350; absent means closed. */
+export const SHARE_LAYOUTS = ["land", "port"] as const;
+export type ShareLayout = (typeof SHARE_LAYOUTS)[number];
+
+/** A story id as the contract writes it (`insight_story.story_id`). */
+const STORY_ID = /^[a-z]+-[a-z0-9-]+$/;
+/** An edition, `{season}w{through_week:02d}`. */
+const EDITION = /^[0-9]{4}w[0-9]{2}$/;
 
 export const SCORING_VALUES = ["std", "half", "ppr"] as const;
 export type ScoringValue = (typeof SCORING_VALUES)[number];
@@ -289,6 +317,19 @@ export interface AppState {
    * week, by the build's schedule. `nobye=1`. Off by default; unknown schedules stay visible.
    */
   readonly hideBye: boolean;
+  /**
+   * Insights (ADR-116): a linked story, by its stable id, or empty. A link names the story and
+   * the edition it was shared from, never a league, a roster or a saved preference.
+   */
+  readonly story: string;
+  /** Insights: the edition a linked story was shared from (`2026w07`), or empty. */
+  readonly ed: string;
+  /** Insights: the family filter. */
+  readonly ins: InsightFilter;
+  /** Insights: the ESPN roster ceiling the upside family is read under. */
+  readonly ceil: InsightCeiling;
+  /** Insights: the open share view's layout, or empty when it is closed. Needs a `story`. */
+  readonly share: ShareLayout | "";
   /** My Leagues' sub-view (ADR-110): `panel=wmm` opens Win My Matchup. */
   readonly panel: LeaguePanel;
 }
@@ -340,6 +381,11 @@ export const DEFAULT_STATE: AppState = {
   returning: false,
   unavailable: false,
   hideBye: false,
+  story: "",
+  ed: "",
+  ins: "all",
+  ceil: 50,
+  share: "",
   panel: "lineup",
 };
 
@@ -375,6 +421,11 @@ const PARAM_ORDER = [
   "ret",
   "unavail",
   "nobye",
+  "story",
+  "ed",
+  "ins",
+  "ceil",
+  "share",
   "panel",
 ] as const;
 
@@ -663,6 +714,33 @@ export function parseState(search: string): ParsedState {
   const panel = oneOf(params.get("panel"), LEAGUE_PANELS, DEFAULT_STATE.panel);
   note(panel.valid);
 
+  // Insights (ADR-116). A story id and an edition are validated for shape only — whether the
+  // story exists in this build's edition is the feed's question, answered in words there. An
+  // edition or a share layout means nothing without a story, and is dropped without one.
+  const rawStory = params.get("story");
+  let story = DEFAULT_STATE.story;
+  if (rawStory !== null) {
+    if (rawStory.length <= 64 && STORY_ID.test(rawStory)) story = rawStory;
+    else normalized = false;
+  }
+  const rawEdition = params.get("ed");
+  let ed = DEFAULT_STATE.ed;
+  if (rawEdition !== null) {
+    if (EDITION.test(rawEdition) && story !== "") ed = rawEdition;
+    else normalized = false;
+  }
+  const ins = oneOf(params.get("ins"), INSIGHT_FILTERS, DEFAULT_STATE.ins);
+  note(ins.valid);
+  const ceil = oneOfNumber(params.get("ceil"), INSIGHT_CEILINGS, DEFAULT_STATE.ceil);
+  note(ceil.valid);
+  const rawShare = params.get("share");
+  let share: ShareLayout | "" = DEFAULT_STATE.share;
+  if (rawShare !== null) {
+    const layout = SHARE_LAYOUTS.find((candidate) => candidate === rawShare);
+    if (layout !== undefined && story !== "") share = layout;
+    else normalized = false;
+  }
+
   // A parameter the app does not know is dropped rather than preserved: keeping it would make
   // two URLs describing the same state compare unequal.
   for (const key of params.keys()) {
@@ -701,6 +779,11 @@ export function parseState(search: string): ParsedState {
       returning,
       unavailable,
       hideBye,
+      story,
+      ed,
+      ins: ins.value,
+      ceil: ceil.value,
+      share,
       panel: panel.value,
     },
     normalized,

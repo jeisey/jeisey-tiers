@@ -54,6 +54,8 @@ export const RECORD_SCHEMA_VERSIONS = {
   espn_ownership_series: "1.0",
   // ADR-113: recent calendar windows and descriptive breakout categories.
   recent_form: "1.0",
+  // ADR-116: the Insights stories (`insight_story`).
+  insights: "1.0",
 } as const;
 
 export type ScoringPreset = "STD" | "HALF" | "PPR";
@@ -81,7 +83,8 @@ export type ArtifactName =
   | "skill_tree_definitions"
   | "espn_ownership"
   | "espn_ownership_series"
-  | "recent_form";
+  | "recent_form"
+  | "insights";
 
 /** The four states `season_state_v1` derives from the NFL schedule and a timestamp. */
 export type SeasonState =
@@ -1974,6 +1977,343 @@ export interface RecentFormMetadata {
   >;
 }
 
+/** The six Insights families (ADR-116, `insights_v1`). */
+export type InsightFamily =
+  | "volume_vs_results"
+  | "weekly_upside"
+  | "opportunity_opening"
+  | "role_battle"
+  | "streak_watch"
+  | "pace_perspective";
+
+export type InsightVariant =
+  | "lagging"
+  | "shrinking"
+  | "ceiling"
+  | "observed"
+  | "prospective"
+  | "backfield"
+  | "receiving"
+  | "breakout"
+  | "production_without_role"
+  | "quiet_role_growth"
+  | "per_game_hidden"
+  | "overlooked";
+
+/** `this_week` is withdrawn at kickoff; `stash` is a bye-week hold; the other two describe. */
+export type InsightHorizon = "this_week" | "stash" | "role_watch" | "season_view";
+
+/** `observed`: an nflverse statistic. `model`: a published model output. `market`: ESPN. */
+export type InsightBasis = "observed" | "model" | "market";
+
+export interface InsightFact {
+  readonly label: string;
+  readonly value: string;
+  readonly basis: InsightBasis;
+}
+
+export interface InsightWindow {
+  readonly label: string;
+  readonly first_week: number;
+  readonly last_week: number;
+  readonly weeks: number;
+  readonly baseline_first_week: number | null;
+  readonly baseline_last_week: number | null;
+}
+
+export type InsightScalar = number | string | boolean | null;
+
+/** One predicate a story passed, with its value and threshold, in the rule's order. */
+export interface InsightPredicate {
+  readonly rule: string;
+  readonly label: string;
+  readonly value: InsightScalar;
+  readonly threshold: InsightScalar;
+  readonly passed: true;
+}
+
+/** One week of a strip: `P` played (only P carries numbers), `B` bye, `D` did not play. */
+export interface InsightStripWeek {
+  readonly week: number;
+  readonly status: "P" | "B" | "D";
+  readonly in_window: boolean;
+  readonly points: number | null;
+  readonly td_points: number | null;
+  readonly opportunity: number | null;
+  readonly share: number | null;
+  readonly rank: number | null;
+}
+
+export interface InsightWeekStrip {
+  readonly type: "week_strip";
+  readonly weeks: readonly InsightStripWeek[];
+  readonly opportunity_label: string;
+  readonly share_label: string | null;
+  /** The weekly positional rank at or inside which a week is a strong finish, or null. */
+  readonly band: number | null;
+}
+
+export interface InsightInterval {
+  readonly type: "interval";
+  readonly q10: number;
+  readonly q50: number;
+  readonly q90: number;
+  readonly typical_q10: number | null;
+  readonly typical_q50: number | null;
+  readonly typical_q90: number | null;
+}
+
+export interface InsightWithWithoutRow {
+  readonly player_id: string;
+  readonly name: string;
+  readonly position: "QB" | "RB" | "WR" | "TE";
+  readonly share_with: number | null;
+  readonly games_with: number;
+  readonly share_without: number | null;
+  readonly games_without: number;
+  readonly latest_share: number | null;
+}
+
+export interface InsightWithWithout {
+  readonly type: "with_without";
+  /** `pass_share`: a quarterback change — his share of the team's pass attempts. */
+  readonly metric: "target_share" | "carry_share" | "pass_share";
+  readonly absent: {
+    readonly player_id: string;
+    readonly name: string;
+    readonly position: "QB" | "RB" | "WR" | "TE";
+    readonly share: number;
+    readonly games: number;
+    readonly per_game: number;
+    readonly reason: string;
+  };
+  readonly rows: readonly InsightWithWithoutRow[];
+}
+
+export interface InsightRoomRow {
+  readonly player_id: string;
+  readonly name: string;
+  readonly position: "QB" | "RB" | "WR" | "TE";
+  readonly window_games: number;
+  readonly baseline_games: number;
+  readonly snap_share: number | null;
+  readonly snap_share_baseline: number | null;
+  readonly count: number;
+  readonly share: number | null;
+  readonly share_baseline: number | null;
+  readonly red_zone: number | null;
+  readonly inside_five: number | null;
+}
+
+export interface InsightRoom {
+  readonly type: "room";
+  readonly room: "backfield" | "receiving";
+  readonly metric: "carries" | "targets";
+  /** The team's carries or targets in the window's team games: every row's denominator. */
+  readonly team_count: number;
+  readonly team_games: number;
+  readonly team_red_zone: number | null;
+  readonly team_inside_five: number | null;
+  readonly rows: readonly InsightRoomRow[];
+}
+
+export interface InsightStatLine {
+  readonly type: "stat_line";
+  readonly games: number;
+  readonly team_games: number;
+  readonly points: number;
+  readonly points_per_game: number;
+  /** Points per game × 17: arithmetic extrapolation, not a projection. */
+  readonly pace_17: number;
+  readonly ppg_rank: number;
+  readonly total_rank: number | null;
+  readonly cohort_size: number;
+  readonly cohort_min_games: number;
+}
+
+export type InsightChart =
+  | InsightWeekStrip
+  | InsightInterval
+  | InsightWithWithout
+  | InsightRoom
+  | InsightStatLine;
+
+export type InsightSource =
+  | "nflverse_player_stats"
+  | "nflverse_snap_counts"
+  | "nflverse_pbp"
+  | "nflverse_schedule"
+  | "nflverse_injuries"
+  | "weekly_startsit_v1"
+  | "espn_fantasy_ownership";
+
+/**
+ * One Insights story in one scoring preset (`insight_story` 1.0, ADR-116): a deterministic
+ * finding with its qualification, its numbers, a chart payload, a counterpoint and its caveat.
+ * Downstream only — no model, value, rank, tier or decision tool reads it — and independent of
+ * league size. Every number its text prints is a value of `evidence` or `chart`.
+ */
+export interface InsightStoryRecord {
+  readonly schema_version: string;
+  readonly build_id: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly target_week: number | null;
+  readonly edition: string;
+  readonly scoring_preset: ScoringPreset;
+  readonly scoring_dependent: boolean;
+  readonly story_id: string;
+  readonly family: InsightFamily;
+  readonly variant: InsightVariant;
+  readonly horizon: InsightHorizon;
+  readonly nature: "fact" | "thesis";
+  readonly lead_rank: number | null;
+  readonly family_rank: number;
+  readonly player_id: string;
+  readonly display_name: string;
+  readonly position: "QB" | "RB" | "WR" | "TE";
+  readonly team: string | null;
+  readonly headline: string;
+  readonly dek: string;
+  readonly facts: readonly InsightFact[];
+  readonly counterpoint: string | null;
+  readonly caveat: string;
+  readonly window: InsightWindow | null;
+  readonly kickoff_utc: string | null;
+  /** ESPN's percent rostered when the story reads it; unknown is null, never 0. */
+  readonly espn_rostered: number | null;
+  /** weekly_upside only: his rank within position under each ESPN ceiling (top 3 only), else null. */
+  readonly ceiling_ranks: InsightCeilingRanks | null;
+  /** The official report for the target week, on `this_week` stories only. */
+  readonly injury: WeeklyProjectionRecord["injury"];
+  /** The target-week opponent of a `this_week` story; null otherwise. */
+  readonly opponent: string | null;
+  readonly home_away: "home" | "away" | null;
+  readonly chart: InsightChart;
+  readonly evidence: Readonly<Record<string, unknown>>;
+  readonly qualification: readonly InsightPredicate[];
+  readonly also_qualifies: readonly string[];
+  readonly sources: readonly InsightSource[];
+  readonly source_times: {
+    readonly espn_observed_at_utc?: string | null;
+    readonly lines_retrieved_at_utc?: string | null;
+    readonly injury_report_final?: boolean | null;
+  };
+}
+
+export interface InsightCeilingRanks {
+  readonly "50": number | null;
+  readonly "25": number | null;
+  readonly "10": number | null;
+}
+
+/**
+ * What the served feed slice (`insights/<scoring>`) carries: everything a story card and its
+ * share image print — no record version, no evidence, no qualification (`serving.py`).
+ */
+export type InsightStoryRow = Omit<InsightStoryRecord, "schema_version" | "evidence" | "qualification" | "also_qualifies">;
+
+/** What the served evidence slice (`insight_evidence/<scoring>`) carries, fetched on demand. */
+export type InsightEvidenceRow = Pick<
+  InsightStoryRecord,
+  "scoring_preset" | "story_id" | "player_id" | "evidence" | "qualification" | "also_qualifies"
+>;
+
+export const INSIGHT_STORY_FIELDS = [
+  "schema_version",
+  "build_id",
+  "season",
+  "through_week",
+  "target_week",
+  "edition",
+  "scoring_preset",
+  "scoring_dependent",
+  "story_id",
+  "family",
+  "variant",
+  "horizon",
+  "nature",
+  "lead_rank",
+  "family_rank",
+  "player_id",
+  "display_name",
+  "position",
+  "team",
+  "headline",
+  "dek",
+  "facts",
+  "counterpoint",
+  "caveat",
+  "window",
+  "kickoff_utc",
+  "espn_rostered",
+  "ceiling_ranks",
+  "injury",
+  "opponent",
+  "home_away",
+  "chart",
+  "evidence",
+  "qualification",
+  "also_qualifies",
+  "sources",
+  "source_times",
+] as const satisfies readonly (keyof InsightStoryRecord)[];
+
+/** One family's state in this build (`ros_build_metadata.insights.families`). */
+export interface InsightFamilyStatus {
+  readonly status: "published" | "empty" | "unavailable";
+  readonly reason: string | null;
+  readonly qualified: Readonly<Record<string, number>>;
+  readonly published: Readonly<Record<string, number>>;
+  readonly suppressed: Readonly<Record<string, number>>;
+}
+
+/**
+ * What the manifest keeps of `ros_build_metadata.insights` (`INSIGHTS_MANIFEST_SUMMARY`): enough
+ * to tell "not published", "withheld", "no story qualified" and a family not built apart before
+ * any slice loads. The rest rides in the stories slice as `meta`.
+ */
+export type InsightsSummary = Pick<
+  InsightsMetadata,
+  "status" | "withheld_reason" | "rule_version" | "edition" | "through_week" | "target_week" | "generated_at_utc" | "families" | "counts"
+>;
+
+/** The build's account of Insights (ADR-116), carried in `ros_build_metadata.insights`. */
+export interface InsightsMetadata {
+  readonly status: "published" | "withheld";
+  readonly withheld_reason: string | null;
+  readonly rule_version: string;
+  readonly selection_rule_version: string;
+  readonly edition: string;
+  readonly season: number;
+  readonly through_week: number;
+  readonly target_week: number | null;
+  readonly generated_at_utc: string;
+  readonly window: {
+    readonly first_week: number;
+    readonly last_week: number;
+    readonly weeks: number;
+    readonly baseline_first_week: number | null;
+    readonly baseline_last_week: number | null;
+  } | null;
+  readonly rule: Readonly<Record<string, unknown>>;
+  readonly selection: {
+    readonly lead_max: number;
+    readonly family_order: readonly string[];
+    readonly family_caps: Readonly<Record<string, number>>;
+    readonly team_cap: number;
+    readonly one_story_per_player: true;
+  };
+  readonly families: Readonly<Record<string, InsightFamilyStatus>>;
+  readonly sources: Readonly<
+    Record<string, { readonly state: "available" | "partial" | "unavailable"; readonly detail: string | null }>
+  >;
+  readonly counts: Readonly<Record<string, { readonly stories: number; readonly lead: number }>>;
+  readonly definitions: Readonly<Record<string, string>>;
+  readonly limitations: readonly string[];
+  readonly unsupported: readonly { readonly claim: string; readonly reason: string }[];
+}
+
 /** ADR-107's seven reading states. A missing value is never 0 and a 0 is never missing. */
 export type SkillState =
   | "ranked"
@@ -2169,6 +2509,12 @@ export interface RosBuildMetadata {
   readonly season_actuals?: SeasonActualsMetadata | null;
   /** Recent form (ADR-113). Absent, null or withheld: season columns only on Opportunity. */
   readonly recent_form?: RecentFormMetadata | null;
+  /**
+   * Insights (ADR-116), as the manifest carries it: a summary (`InsightsSummary`). The full
+   * account rides in each `insights/<scoring>` slice as `meta`. Absent, null or withheld: the
+   * Insights tab says why it has no stories.
+   */
+  readonly insights?: InsightsSummary | null;
   /** The Skill Tree (ADR-107). Absent or null: the card has no Skill Tree section. */
   readonly skill_tree?: SkillTreeMetadata | null;
   /** ESPN roster/start percentages (ADR-112). Absent or null: no ESPN reading anywhere. */
@@ -2352,6 +2698,11 @@ export const RECENT_FORM_FIELDS_COMPLETE: NoMissingKeys<
   typeof RECENT_FORM_FIELDS
 > = true;
 
+export const INSIGHT_STORY_FIELDS_COMPLETE: NoMissingKeys<
+  InsightStoryRecord,
+  typeof INSIGHT_STORY_FIELDS
+> = true;
+
 export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> = {
   tiers: TIER_FIELDS,
   arbitrage: ARBITRAGE_FIELDS,
@@ -2373,6 +2724,7 @@ export const ARTIFACT_FIELDS: Readonly<Record<ArtifactName, readonly string[]>> 
   espn_ownership: ESPN_OWNERSHIP_FIELDS,
   espn_ownership_series: ESPN_OWNERSHIP_SERIES_FIELDS,
   recent_form: RECENT_FORM_FIELDS,
+  insights: INSIGHT_STORY_FIELDS,
 };
 
 export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
@@ -2396,6 +2748,7 @@ export const ARTIFACT_FILENAMES: Readonly<Record<ArtifactName, string>> = {
   espn_ownership: "espn_ownership.json",
   espn_ownership_series: "espn_ownership_series.json",
   recent_form: "recent_form.json",
+  insights: "insights.json",
 };
 
 export const BUILD_METADATA_FILENAME = "build_metadata.json";

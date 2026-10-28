@@ -31,9 +31,9 @@ test.describe("the tab", () => {
     const requests: string[] = [];
     page.on("request", (request) => requests.push(new URL(request.url()).pathname));
     const tabs = page.getByRole("tablist", { name: "Board" }).getByRole("tab");
-    // Fourth since ADR-106 put My Leagues second.
-    await expect(tabs.nth(3)).toHaveText("Trade");
-    await tabs.nth(3).click();
+    // Fifth since ADR-106 put My Leagues second and ADR-116 Insights third.
+    await expect(tabs.nth(4)).toHaveText("Trade");
+    await tabs.nth(4).click();
     await expect(page).toHaveURL(/view=trade/);
     await expect(page.getByRole("heading", { name: "Trade targets" })).toBeVisible();
     await page.waitForLoadState("networkidle");

@@ -8337,3 +8337,184 @@ the boards* (lazy, like *How it works*). Boards keep a short semantic caption (t
 name), units, time horizons, attribution, glyph keys and state-specific lines (a stale feed, a
 bound, a disabled filter, a bye). The audit list is in the PR and `docs/UX_SPEC.md` §6A.22.
 Copy-placement tests now assert the meaning in its new home.
+
+## ADR-116 — Insights: deterministic weekly stories over published evidence, one validated contract for the feed and the shared image
+
+**Status:** accepted, 2026-10-27. **Relies on:** ADR-091 (`usage_signals_v1`: pooled shares,
+appearances), ADR-099 (the weekly model's typical-week explanation), ADR-101 (the availability
+policy), ADR-105 (`season_actuals_v1`), ADR-112 (ESPN rostered %), ADR-113 (`recent_form_v1`,
+`breakout_v1`), ADR-098 (served slices and budgets). **Amends:** PRD A2 invariant 4 (a story is a
+categorical, published reading like ADR-113's badges, never a score).
+
+### Context
+
+Managers ask questions between the boards: *is my disappointing starter still getting the ball;
+who has a real route to a big week at low roster share; whose role just opened; is that streak
+backed by usage; what does this season look like per game?* The Opportunity Board answers parts of
+these as columns; it does not combine independent observations into a reading, say what could
+undermine it, or produce something a manager can screenshot and share.
+
+**Capability matrix** (verified in code and on the live week-7 build of 2026-10-27,
+`2026w07-intrinsic-ros-v1-20261027T164851Z`):
+
+| Evidence | Source / field | Grain | Denominator | Status |
+|---|---|---|---|---|
+| Points per preset; played / bye / did not play | `player_usage.weeks[]`, `recent_form.span_*`; frames via `recent._season_games` | week | — | published |
+| Targets, carries, pass attempts; snap share | the same | week | team totals from the same player rows; snaps `offense_pct` | published |
+| Receptions, yards, touchdowns, touchdown points | nflverse weekly rows × the scoring engine | week | — | derivable (in memory, CC-BY 4.0) |
+| Red-zone (≤ 20) and inside-five (≤ 5) carries and targets | `drive_plays(pbp)` (drive breadth's reduction) | week | the team's from the same plays | derivable when play-by-play is complete |
+| Weekly P10/P50/P90 and the typical week | `weekly_projections.quantiles`, `.explanation` | target week | — | published |
+| Target-week absences | `weekly_context.lineup.listed` (Out/Doubtful), board `current_status` (reserve) | target week | — | published (reports appear midweek) |
+| ESPN rostered % | `espn_ownership` (`reading_state`) | daily | ESPN leagues | published, optional |
+| Season points, games, rank | `season_actuals` | season | appearances | published |
+| Breakout categories | `recent_form.windows["3"].breakout` | Last 3 | — | published |
+| Historical positional ranks | — | — | — | **unsupported**: the in-season build loads one season |
+| Routes, TPRR, first reads, situational snaps | participation feed refuses 2026 (ADR-107) | — | — | **unsupported** |
+| xFP, xFP share, points over expected | ffopportunity | — | — | **blocked** (ADR-086/091 undecided) |
+| Archived pregame projections | not retained per week | — | — | **unsupported** ("below projection" is never claimed) |
+
+### Decision — the artifact and the rules
+
+1. **`insights` (`insight_story` 1.0), built last in `run_ros_build`** (`ffdraft.insights`), from
+   the records every other in-season artifact published plus the frames the build already holds.
+   Nothing reads it back: `tests/contract/test_architecture_boundary.py` forbids every value
+   package from reaching `ffdraft.insights`, forbids `ffdraft.insights` from reaching market,
+   ownership or behaviour code, and forbids the validator from importing the builder. The golden
+   rebuild changes only `manifest.json`, `ros_build_metadata.json` and the new insights files.
+2. **Fixed windows, never a search.** The window is recent form's Last 3 (W−2..W, the same calendar
+   weeks for everyone); the baseline is every earlier week. Appearances, points and team totals are
+   season actuals' and usage's definitions, reused through their own functions.
+3. **Six families, explicit predicates** (`InsightRule`, published whole in
+   `ros_build_metadata.insights.rule`; every threshold is an existing rule's constant where one
+   exists — `breakout_v1`'s bands, *emerging* and *increase* levels):
+
+| Family / variant | Qualifies when (in order) | Effect threshold | Ordering |
+|---|---|---|---|
+| `volume_vs_results` / `lagging` (RB/WR/TE) | ≥ 2 window and ≥ 2 baseline games; workload rank (opportunities a game: targets, + carries for RB) ≤ the band among every position player with 2+ window games; window rate ≥ 90% of the earlier rate | points-a-game rank − workload rank ≥ 12 places (TE 6) | most ESPN-rostered first (unknown last), gap, id |
+| `volume_vs_results` / `shrinking` | same samples; earlier pooled share ≥ the *emerging* level; opportunities a game below 90% of the earlier rate (a falling share on more targets is a busier offence, not a smaller role) | share fell by ≥ *increase* (WR .06, TE .05, RB carry .15) | most rostered, drop, id |
+| `weekly_upside` / `ceiling` | upcoming target-week game after the build; observed ESPN reading < 50% (also ranked under 25% and 10%); `breakout_v1` role confirmed over his latest 2 appearances (latest inside the window, no missed game since); build-time pre-screen | top 3 in his position under some ceiling | P90, P50, id within position; positions interleave WR, RB, TE, QB |
+| `opportunity_opening` / `prospective` | a teammate with ≥ 2 games and a substantial share (targets .18, carries .45, QB pass attempts .80) is listed Out/Doubtful for the target week or on a reserve list, and any absence began inside the window; the next player is current and available | his share (without him, else the window) ≥ the weekly context's notable share (.10 / .20 / .50) | share left open, team, id |
+| `opportunity_opening` / `observed` | the same teammate missed his team's latest games, the absence beginning inside the window, and nothing documents the target week; the next player is current and available | share without him ≥ *emerging* and ≥ *increase* above his share with him | the same |
+| `role_battle` / `backfield`, `receiving` | ≥ 2 team games each side; the riser has ≥ 2 games each side and played the team's latest game | share of the **team's** carries/targets rose by ≥ *increase* to ≥ *emerging* | rise, team; identical in every preset |
+| `streak_watch` / `breakout` | `breakout_v1` Takeover or Sneaking over Last 3, as published | — | Takeover first, least rostered, window rank |
+| `streak_watch` / `production_without_role` | `breakout_v1` Eyebrow with `role_not_confirmed` (2+ strong weeks, role failed) | — | streak, least rostered |
+| `streak_watch` / `quiet_role_growth` (not QB) | 2 + 2 games, no missed game since, window points rank outside the band | a `breakout_v1` role measure rose by ≥ *increase* to ≥ *emerging* | least rostered, growth |
+| `pace_perspective` / `per_game_hidden` | ≥ 3 games; points-a-game rank ≤ the band among every position player with 3+ games; missed ≥ 1 team game | season-total rank − per-game rank ≥ 8 | per-game rank, id |
+| `pace_perspective` / `overlooked` | the same per-game rank; observed ESPN reading < 50% | — | per-game rank, id |
+
+   A subject — and an opening's next player — is always a player a card can open (a published
+   usage record), with current evidence (no missed team game since his latest appearance), and not
+   on a reserve list, released, retired or unsigned (`subject_unavailable`); cohorts are every
+   player who appeared. A **QB change** is the passing room of the opening family: the starter's share of
+   team pass attempts and the attempts that moved — never a claim about receivers' fit.
+4. **Selection (`insights_select_v1`), never a score.** Within a family, variant groups are
+   ordered, capped at 8 and interleaved. One story per player per preset: the first family in
+   editorial order (`weekly_upside`, `opportunity_opening`, `volume_vs_results`, `streak_watch`,
+   `role_battle`, `pace_perspective`) keeps him; the others are listed in `also_qualifies`. The
+   lead walks the families round-robin with caps (3, 2, 3, 2, 2, 1), at most 2 stories per team
+   and 12 in all — a ceiling, not a quota.
+5. **Words from numbers.** `ffdraft.insights.text` renders the headline, dek, two to four facts
+   (each tagged `observed`, `model` or `market`), a counterpoint only when a rule finds one, and the
+   caveat a reader needs — from the story's evidence alone. The validator checks that every number
+   in the text is an evidence, chart or window value in a published format and refuses forbidden
+   claims (due, regression, luck, xFP/expected points, points over expected, routes, first reads,
+   TPRR, coverage, confidence, guarantee, lock, boom score).
+6. **Time.** The edition is `{season}w{through_week}`; only completed weeks are read (rows after the
+   cutoff change nothing — tested). A `this_week` story carries the target week and its kickoff,
+   which the validator requires to be after the build; the **build-time pre-screen** removes Out,
+   Doubtful, reserve, released and unsigned players — a strict subset of ADR-101's exclusions — and
+   **the page re-applies the full availability policy and the kickoff at the reader's clock**,
+   withdrawing a story in place when a page is left open across kickoff. Game-day refreshes rebuild
+   the stories from the same completed weeks with fresh designations and game states; they never
+   pretend to have newer completed games.
+7. **Degradation.** Season actuals or usage missing withholds every story (`status: withheld`). ESPN
+   missing makes `weekly_upside` unavailable and drops ESPN facts elsewhere; weekly projections
+   missing makes `weekly_upside` unavailable; recent form missing makes `streak_watch` unavailable;
+   no official report leaves openings observed-only; incomplete play-by-play withholds red-zone
+   counts (never partial). Each family states `published`, `empty` or `unavailable` with its reason
+   and suppression counts; a family failure costs that family only.
+8. **Serving.** Two slices per scoring preset (no story depends on league size): the feed
+   (`insights/<scoring>`: everything a card and its image print, plus top-level copies of the ESPN
+   share, the ceiling ranks and the official designation) and the evidence
+   (`insight_evidence/<scoring>`: evidence, qualification, `also_qualifies`), fetched only when a
+   reader expands a story. No other view and no card shard fetches either. The manifest — which
+   every visit fetches — keeps only the status, withheld reason, edition, cutoff, target week and
+   build time of `ros_build_metadata.insights`; the whole block (family states, counts, rule,
+   definitions, limitations, unsupported claims, sources) rides in each feed slice as `meta`, and
+   a published edition serves that slice for every preset — with zero rows when no story
+   qualified — so the tab always has it. A withheld edition serves no slice.
+
+### Decision — the page and the shared image
+
+An in-season **Insights** tab (after My Leagues), lazy, with `ins` (family filter), `ceil` (ESPN
+ceiling for upside stories), `story` + `ed` (deep link to a story of an edition) and `share`
+(`land`/`port`) in the URL. Each story card is self-contained for a screenshot: kicker, headline,
+player and team, window and scoring (or "same in every scoring"), the visual its family needs
+(aligned workload and points strips with TD/non-TD split, a P10–P90 interval against the typical
+week, with/without bars, a room's aligned rows, a stat line), the counterpoint, the caveat,
+attribution and branding. The share view renders the same validated record into an SVG laid out
+for 1200×675 or 1080×1350 and rasterises it with the self-hosted fonts embedded; *Download PNG*,
+*Copy link* and *Copy summary* never read evidence. A link from an older edition says so and shows
+the current version of the same story id, or that it is no longer published; old editions are not
+retained. Details: `docs/UX_SPEC.md` §6A.23.
+
+### Evidence
+
+* **Real data** (the live week-7 records, decoded from the deployed slices, with 2026 nflverse
+  weekly rows, snap counts, schedule and play-by-play loaded through the project's adapters; run
+  outside the pipeline, nothing committed): 72 / 75 / 79 stories (PPR / HALF / STD), 12 in each
+  lead, every family published, every source available; 226 records pass the JSON Schema, the
+  record checks, the cross-checks against usage, actuals, recent form, projections and ESPN, and
+  the metadata checks. Representative PPR lead: an upside receiver at 40% rostered with a 19.9-point
+  P90; a documented backfield opening (a 45%-carry back on a reserve list); a WR5-in-targets,
+  WR22-in-points lag (with the counterpoint that his yards per target trail the WR median, so the
+  gap is not only touchdowns); three top-24 RB weeks on a 36% snap share; a backfield whose new
+  lead went from 19% to 53% of carries; a QB4-per-game, QB21-in-total pace. Reviewing that run
+  changed rules before they were frozen — observed openings must begin inside the window (a
+  four-week absence is a role, not an opening), every watch story needs current evidence and an
+  available subject, streak and quiet-growth stories order the least-rostered first, ESPN shares
+  under 10% print one decimal, a documented QB change became the passing room, and a shrinking
+  role needs fewer opportunities a game, not only a smaller share (a falling share on more targets
+  was a busier offence) — and caught two
+  defects the validator then refused (an unprinted derived number; a forbidden-phrase list that
+  flagged its own negation). It is not evidence of predictive value: no story is a forecast and
+  none was backtested.
+* **Fixtures.** The golden build publishes 8 stories per preset (upside, a shrinking role,
+  overlooked pace) and red-zone counts from the synthetic plays; 54 unit tests build hand-checkable
+  leagues for every family and guard (`tests/unit/test_insights.py`); the ESPN and recent-form
+  invariance tests now also assert the families that read them say why they are unavailable.
+* **Adversarial review** (a read-only reviewer with repro scripts, before the PR): nine confirmed
+  defects, all fixed with regression tests — a QB opening counted carries as pass attempts; an
+  opening's next player was not checked for currency or availability; opening text confused the
+  club's games without the absentee with the player's and said "rose" without a prior share; a
+  long reserve stint resurfaced as a new opening every week; the shrinking text always said
+  "down"; the validator trusted `passed: true` instead of re-checking each predicate; the
+  forbidden-claim check missed word variants and would have refused a player named Lock; the
+  number check accepted chart series; a story listed itself in `also_qualifies`. Plausible ones
+  fixed too: a family failing in one preset now publishes in none, touchdown share is bounded,
+  pace text no longer names a traded player's current club for his old games.
+* **Payload** (size model, `verify:budget`, both builds measured on the same machine: `main` at
+  `6f7e617` → this change; all budgets met, none raised). Shared paths — the cost every visit pays
+  for the tab existing: first visit 346,628 → 347,634 B (+1,006); cold Win My Matchup 443,390 →
+  444,404 B of 450,000 (+1,014; headroom 6,610 → 5,596 B); cold My Leagues +1,011. Of that,
+  +139 B is the manifest (six hashed slice names, the envelope header and a six-field summary)
+  and ~870 B the app shell (the tab, its URL parameters, the store's loader and the lazy
+  import); no Insights constant, parser or chart code is in the shell. Opening a tab other than
+  Insights adds 0–5 B. A first cut measured +1,505 B on the WMM path; two changes took it to
+  +1,014: the manifest keeps six fields instead of nine (family states and counts moved into the
+  slice, which is now served for every preset, empty when no story qualified), and Insights keeps
+  its own copy of the 12-line clock hook, because sharing My Leagues' split it into a third chunk
+  that My Leagues and WMM fetched too. New, Insights only: opening the tab adds 45.3 kB (budget
+  50), the feed slice 21.1 kB (25; the live week-7 feed is ~17 kB with its `meta`), expanding
+  evidence 10.8 kB (15), the share view's code 6.0 kB (8).
+
+### Consequences
+
+* Stories are descriptive readings with caveats. Thresholds are editable heuristics, versioned
+  (`insights_v1`), and changed only with a stated reason and a version bump.
+* The pre-screen is deliberately weaker than the policy; the policy at the reader's clock decides.
+* ESPN shares appear in exported images under ADR-112's owner decision and obligations
+  (attribution, "ESPN leagues, not yours"); this is recorded in the source registry, not a new
+  clearance.
+* Deferred: historical comparisons (needs a comparable published cohort), expected-points
+  readings (ADR-086), any route-based or QB–receiver-fit claim, threshold-exceedance probabilities.

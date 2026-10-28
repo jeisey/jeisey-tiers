@@ -879,6 +879,301 @@
       }
     }
   },
+  "insights": {
+    "status": "published",
+    "withheld_reason": null,
+    "rule_version": "insights_v1",
+    "selection_rule_version": "insights_select_v1",
+    "edition": "2026w08",
+    "season": 2026,
+    "through_week": 8,
+    "target_week": 9,
+    "generated_at_utc": "2026-08-18T12:00:00Z",
+    "window": {
+      "first_week": 6,
+      "last_week": 8,
+      "weeks": 3,
+      "baseline_first_week": 1,
+      "baseline_last_week": 5
+    },
+    "rule": {
+      "version": "insights_v1",
+      "window_weeks": 3,
+      "min_window_games": 2,
+      "min_baseline_games": 2,
+      "bands": {
+        "QB": 12,
+        "RB": 24,
+        "WR": 24,
+        "TE": 12
+      },
+      "volume_positions": [
+        "RB",
+        "WR",
+        "TE"
+      ],
+      "volume_gap_places": {
+        "RB": 12,
+        "WR": 12,
+        "TE": 6
+      },
+      "volume_hold_percent": 90,
+      "share_metric": {
+        "RB": "carry_share",
+        "WR": "target_share",
+        "TE": "target_share"
+      },
+      "role_floor": {
+        "QB": 0.5,
+        "RB": 0.3,
+        "WR": 0.16,
+        "TE": 0.13
+      },
+      "role_step": {
+        "QB": 0.4,
+        "RB": 0.15,
+        "WR": 0.06,
+        "TE": 0.05
+      },
+      "upside_ceilings": [
+        50,
+        25,
+        10
+      ],
+      "upside_default_ceiling": 50,
+      "upside_per_position": 3,
+      "upside_role_games": 2,
+      "upside_role_rule": "breakout_v1",
+      "absent_floor": {
+        "carry_share": 0.45,
+        "target_share": 0.18,
+        "pass_share": 0.8
+      },
+      "absent_min_games": 2,
+      "opening_rows": 3,
+      "td_led_percent": 50,
+      "pace_min_games": 3,
+      "pace_hidden_gap_places": 8,
+      "pace_games": 17,
+      "room_rows": 4,
+      "red_zone_yardline": 20,
+      "inside_five_yardline": 5,
+      "variant_cap": 8,
+      "prescreen": {
+        "designations": [
+          "Doubtful",
+          "Out"
+        ],
+        "roster_codes": [
+          "CUT",
+          "EXE",
+          "NFI",
+          "PUP",
+          "RES",
+          "RET",
+          "SUS"
+        ],
+        "employment": [
+          "retired",
+          "unsigned"
+        ]
+      }
+    },
+    "selection": {
+      "lead_max": 12,
+      "family_order": [
+        "weekly_upside",
+        "opportunity_opening",
+        "volume_vs_results",
+        "streak_watch",
+        "role_battle",
+        "pace_perspective"
+      ],
+      "family_caps": {
+        "weekly_upside": 3,
+        "opportunity_opening": 2,
+        "volume_vs_results": 3,
+        "streak_watch": 2,
+        "role_battle": 2,
+        "pace_perspective": 1
+      },
+      "team_cap": 2,
+      "one_story_per_player": true
+    },
+    "families": {
+      "weekly_upside": {
+        "status": "published",
+        "reason": null,
+        "qualified": {
+          "HALF": 4,
+          "PPR": 4,
+          "STD": 4
+        },
+        "published": {
+          "HALF": 4,
+          "PPR": 4,
+          "STD": 4
+        },
+        "suppressed": {}
+      },
+      "opportunity_opening": {
+        "status": "empty",
+        "reason": "no player met this family's rule in this build",
+        "qualified": {
+          "HALF": 0,
+          "PPR": 0,
+          "STD": 0
+        },
+        "published": {},
+        "suppressed": {}
+      },
+      "volume_vs_results": {
+        "status": "published",
+        "reason": null,
+        "qualified": {
+          "HALF": 1,
+          "PPR": 1,
+          "STD": 1
+        },
+        "published": {
+          "HALF": 1,
+          "PPR": 1,
+          "STD": 1
+        },
+        "suppressed": {}
+      },
+      "streak_watch": {
+        "status": "empty",
+        "reason": "no player met this family's rule in this build",
+        "qualified": {
+          "HALF": 0,
+          "PPR": 0,
+          "STD": 0
+        },
+        "published": {},
+        "suppressed": {}
+      },
+      "role_battle": {
+        "status": "empty",
+        "reason": "every qualifying player already leads a story in a higher-priority family",
+        "qualified": {
+          "HALF": 1,
+          "PPR": 1,
+          "STD": 1
+        },
+        "published": {},
+        "suppressed": {
+          "duplicate_player": 3
+        }
+      },
+      "pace_perspective": {
+        "status": "published",
+        "reason": null,
+        "qualified": {
+          "HALF": 10,
+          "PPR": 10,
+          "STD": 10
+        },
+        "published": {
+          "HALF": 3,
+          "PPR": 3,
+          "STD": 3
+        },
+        "suppressed": {
+          "duplicate_player": 15,
+          "variant_cap": 6
+        }
+      }
+    },
+    "sources": {
+      "nflverse_player_stats": {
+        "state": "available",
+        "detail": null
+      },
+      "nflverse_pbp": {
+        "state": "available",
+        "detail": null
+      },
+      "season_actuals": {
+        "state": "available",
+        "detail": null
+      },
+      "recent_form": {
+        "state": "available",
+        "detail": null
+      },
+      "weekly_projections": {
+        "state": "available",
+        "detail": null
+      },
+      "official_injury_report": {
+        "state": "available",
+        "detail": "14 of 14 teams' reports available"
+      },
+      "espn_fantasy_ownership": {
+        "state": "available",
+        "detail": "15 of 19 published players observed"
+      }
+    },
+    "counts": {
+      "HALF": {
+        "stories": 8,
+        "lead": 5
+      },
+      "PPR": {
+        "stories": 8,
+        "lead": 5
+      },
+      "STD": {
+        "stories": 8,
+        "lead": 5
+      }
+    },
+    "definitions": {
+      "window": "The last three completed regular-season weeks ending at the cutoff, the same calendar weeks for every player (recent form's Last 3). The baseline is every earlier week.",
+      "appearance": "A week with a stats row or an offensive snap. A bye (B) and a game his team played without him (D) are not games and are never zeros.",
+      "opportunity": "Targets for a receiver or tight end; carries plus targets for a running back. A team share pools his total over his team's total in the games he played.",
+      "ceiling": "P90 of the weekly start/sit model's distribution of his points given that he plays: one week in ten at or above it. Not a 90% chance of a big game, and not a ranking of boom probabilities.",
+      "typical_week": "The weekly model's own account of the same player in a typical week (his team's average lines, half at home, equal rest, a league-average defense). The difference is the matchup's modelled effect, counted once.",
+      "espn_rostered": "ESPN's public share of ESPN leagues rostering him. It describes ESPN leagues, not yours; an unknown reading is not 0%.",
+      "pace": "Points per game × 17: arithmetic extrapolation, not a projection.",
+      "snap_share": "His share of his team's offensive snaps. Teammates share the field, so snap shares overlap and never add to 100%.",
+      "red_zone": "Carries and targets on plays snapped at the opponent's 20 or closer (inside the five: the 5 or closer), counted from nflverse play-by-play."
+    },
+    "limitations": [
+      "Stories describe completed weeks and the published weekly distribution; none is a forecast of a result, and none says a player is due.",
+      "No expected-points estimate is published (ADR-086), so a gap between workload and scoring is described, never quantified as luck.",
+      "Snaps are not routes and a target is not a first read: no route, route-tree or coverage claim is made.",
+      "ESPN roster share describes ESPN leagues; a low share does not mean a player is available in your league.",
+      "League size changes nothing here: no story reads a replacement level or a VORP."
+    ],
+    "unsupported": [
+      {
+        "claim": "Route participation, targets per route run, first-read share, route-tree fit",
+        "reason": "No current-season route or participation source is available (the participation feed refuses 2026; ADR-107)."
+      },
+      {
+        "claim": "Expected fantasy points, xFP share, points over expected",
+        "reason": "ffopportunity is a model input whose per-player publication is undecided (ADR-086, ADR-091)."
+      },
+      {
+        "claim": "Situational snaps (third down, two-minute, short yardage)",
+        "reason": "Snap counts are per game; no participation data places a player on a given play."
+      },
+      {
+        "claim": "Quarterback–receiver compatibility",
+        "reason": "Not measurable from the available data; average depth of target is not a route tree."
+      },
+      {
+        "claim": "Historical positional comparisons",
+        "reason": "The in-season build loads the current season only; no comparable historical cohort is published."
+      },
+      {
+        "claim": "Below-projection claims",
+        "reason": "Archived pregame projections are not retained per week, so a current number is never presented as a past expectation."
+      }
+    ]
+  },
   "season_actuals": {
     "rule": {
       "version": "season_actuals_v1",

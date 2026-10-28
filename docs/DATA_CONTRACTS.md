@@ -1858,3 +1858,108 @@ The filtered Opportunity export keeps every earlier column in place — `add_cou
 and `net_add_count` are now blank, never 0, for an unobserved side or an inexact net — and
 appends `add_state`, `drop_state`, `add_count_at_most`, `drop_count_at_most`,
 `net_add_at_least`, `net_add_at_most`.
+
+## 30. Insights — 2026-10-27 (ADR-116)
+
+### 30.1 `insight_story` 1.0 — `insights.json`
+
+One record per story per scoring preset, `insights_v1` + `insights_select_v1`. Sorted by
+`scoring_preset`, `family`, `variant`, `family_rank`, `story_id`. Downstream only: read by no
+model, value, rank, tier or decision tool. No CSV (a story is prose, a chart and its evidence;
+every number it prints is already in its own artifact). Independent of league size.
+
+| field | meaning |
+|---|---|
+| `season`, `through_week` | the completed-week cutoff every observed number covers; no partial current-week result is read |
+| `target_week` | the upcoming week a `this_week` or `stash` story is about (the weekly projections' target week); null otherwise |
+| `edition` | `{season}w{through_week:02d}`; shared links carry it |
+| `scoring_preset`, `scoring_dependent` | false when nothing in the story depends on scoring (role battles): the story is then identical in every preset (validated) |
+| `story_id` | `{family short}-{subject}`: `upside-`, `opening-`, `volume-`, `streak-`, `role-`, `pace-`; the subject is the player's GSIS digits, the absent teammate's for an opening, or `{team}-{room}` for a role battle. Unique per preset |
+| `family`, `variant` | ADR-116's rule table: `volume_vs_results` (`lagging`, `shrinking`), `weekly_upside` (`ceiling`), `opportunity_opening` (`prospective`, `observed`), `role_battle` (`backfield`, `receiving`), `streak_watch` (`breakout`, `production_without_role`, `quiet_role_growth`), `pace_perspective` (`per_game_hidden`, `overlooked`) |
+| `horizon` | `this_week` (withdrawn at kickoff), `stash` (his team is on a bye in the target week), `role_watch`, `season_view` |
+| `nature` | `fact` (one striking observation) or `thesis` (several observations combined into a cautious reading) |
+| `lead_rank`, `family_rank` | position in the lead (1–12) or null; order within the family's variant group |
+| `player_id`, `display_name`, `position`, `team` | the focal player — always one a card can open |
+| `headline`, `dek`, `facts[]`, `counterpoint`, `caveat` | template text from the evidence. `facts[]` (2–4) carry `label`, `value` and `basis` (`observed` nflverse statistic, `model` published model output, `market` ESPN). The dek is the editorial reading; the counterpoint is null unless a rule finds one; the caveat is always printed |
+| `window` | `label`, `first_week`, `last_week`, `weeks`, `baseline_first_week`, `baseline_last_week`; null for a season stat line |
+| `kickoff_utc` | the target-week kickoff of a `this_week` story (after the build, validated); null otherwise |
+| `espn_rostered`, `ceiling_ranks`, `injury`, `opponent`, `home_away` | copies of `evidence.espn_rostered`, `evidence.ceiling_ranks` (upside only) and `evidence.injury`, `evidence.opponent`, `evidence.home_away` (`this_week` only) for the feed slice, which carries no evidence (validated equal) |
+| `chart` | one of `week_strip` (per season week: `status` P/B/D, `in_window`, `points`, `td_points`, `opportunity`, `share`, `rank` — numbers only on `P`; `opportunity_label`, `share_label`, `band`), `interval` (`q10`, `q50`, `q90` and the typical week's), `with_without` (`metric` target/carry/pass share, `absent` {share, games, per_game, reason}, `rows` with `share_with`, `games_with`, `share_without`, `games_without`, `latest_share`), `room` (`room`, `metric`, `team_count`, `team_games`, `team_red_zone`, `team_inside_five`, `rows` with window/baseline games, snap shares, `count`, `share` = count / team_count, `share_baseline`, `red_zone`, `inside_five`), `stat_line` (`games`, `team_games`, `points`, `points_per_game`, `pace_17`, `ppg_rank`, `total_rank`, `cohort_size`, `cohort_min_games`) |
+| `evidence` | the exact values the text and chart print, with numerators, denominators, ranks, cohort sizes and the thresholds they were compared with; keys per family below |
+| `qualification[]` | every predicate the story passed, in rule order: `rule`, `label`, `value`, `threshold`, `passed` (always true) |
+| `also_qualifies` | this player's other qualifying story ids, suppressed by one story per player |
+| `sources` | `nflverse_player_stats`, `nflverse_snap_counts`, `nflverse_pbp`, `nflverse_schedule`, `nflverse_injuries`, `weekly_startsit_v1`, `espn_fantasy_ownership` — what this story read |
+| `source_times` | `espn_observed_at_utc`, `lines_retrieved_at_utc`, `injury_report_final` where the story reads them |
+
+**Evidence keys.** `volume_vs_results`: window/baseline games and opportunities a game,
+`workload_rank`, `production_rank`, `cohort_size`, `gap_places`, `required_gap_places`, window
+points, touchdown points and touchdowns, `share_metric` with the pooled `window_share` and its
+numerator and denominator, `baseline_share`, yards per opportunity and the cohort median,
+red-zone opportunities and the team's (null without complete play-by-play), snap shares,
+`espn_rostered`. `weekly_upside`: quantiles and the typical week's, `matchup_delta_q90`,
+`terms_q90`, `espn_rostered`, `ceiling`, `ceiling_level` (90), `ceiling_rank`, `eligible`,
+`ceiling_ranks`, `eligible_counts`, the role reading (`role_metric`, `role_level`,
+`role_baseline`, `role_passed`, `role_bar`, `role_weeks`), `injury`, opponent and kickoff.
+`opportunity_opening`: the absent player's share, games, per-game count (targets, carries or
+pass attempts, by room), reason, designation and missed weeks; the club's games without him
+(`team_games_without`) and the focal player's own (`games_without`), his shares with and without
+him, his window share, thresholds, opponent, home/away and kickoff when it is this week. `role_battle`: team counts and games, the riser's count, shares, rise, games and snap
+share, the next player's count, an absent member when one explains part of the shift.
+`streak_watch`: category, reason, window and season ranks, band, streak, window points and
+touchdown share, the role measure's level and baseline. `pace_perspective`: games, team games,
+missed games, points, points a game, pace, ranks, cohort, `espn_rostered`.
+
+**Validator** (`ffdraft.artifacts.insight_checks`, independent of the builder):
+`insights.text_number_not_in_evidence`, `insights.forbidden_claim`, `insights.identity`
+(edition, window arithmetic, horizon ⇔ kickoff, interval order, strip sums equal the window
+totals, B/D weeks carry no numbers, room shares are count / team count, pace is points a game ×
+17, the feed copies equal the evidence, each family's threshold, and **every qualification
+predicate re-checked against its threshold** by a per-rule direction table — an unknown rule
+fails). The number rule licenses only the story's own evidence scalars and window, never chart
+series; it proves a printed number is one of the story's values, not that it is used in the
+right sentence, which the templates own. The forbidden-claim check strips player names first
+and matches stems with any ending ("routes", "overdue", "expected-points"). `insights.selection` (lead
+ranks 1..n ≤ 12, one story per player and per id per preset, team and family caps, a
+scoring-independent story identical across presets), `insights.disagrees_with_sources` (strip
+points equal the usage series; strip ranks equal recent form's span ranks; pace totals and
+ranks equal season actuals; categories equal recent form's; quantiles and kickoffs equal the
+weekly projections; every this-week kickoff equals its projection's; strip points equal recent
+form's span points; ESPN shares equal the observed readings; every subject has a usage record)
+and `ros_build_metadata.insights_mismatch` (status, cutoff, counts, family states, every kickoff
+after the build).
+
+### 30.2 `ros_build_metadata.insights`
+
+`status` (`published | withheld`), `withheld_reason`, `rule_version` `insights_v1`,
+`selection_rule_version` `insights_select_v1`, `edition`, `season`, `through_week`,
+`target_week`, `generated_at_utc`, `window` (first and last week, weeks, baseline weeks),
+`rule` (every `InsightRule` constant, including the pre-screen lists), `selection` (`lead_max`,
+`family_order`, `family_caps`, `team_cap`, `one_story_per_player`), `families` (per family:
+`status` `published | empty | unavailable`, `reason`, and per preset `qualified` and
+`published`, plus `suppressed` by reason: `duplicate_player`, `variant_cap`, `prescreen`,
+`below_top_per_ceiling`, `missed_latest_game`, `subject_unavailable`, `game_not_upcoming`,
+`absence_before_window`, `absent_changed_team`),
+`sources` (per source `state` `available | partial | unavailable` and `detail`: nflverse player
+stats, play-by-play, season actuals, recent form, weekly projections, the official injury
+report, ESPN), `counts` (per preset stories and lead), `definitions`, `limitations` and
+`unsupported` (claims deliberately not made, with the reason). Optional and additive; absent or
+null means "Insights unavailable" to the page.
+
+### 30.3 Serving
+
+Two families from the one artifact, each partitioned by scoring preset:
+
+* `insights/<scoring>` — every field except `schema_version`, `evidence`, `qualification` and
+  `also_qualifies`; names from the player dictionary; plus the whole
+  `ros_build_metadata.insights` block as the file's top-level `meta`. Fetched by the Insights tab
+  only. A published edition serves this slice for **every** scoring preset in
+  `ros_build_metadata.insights.counts`, with zero rows when no story qualified, so the tab always
+  has the full account (family states and reasons included). The manifest's inline
+  `ros_build_metadata.insights` keeps only `status`, `withheld_reason`, `edition`,
+  `through_week`, `target_week` and `generated_at_utc` — enough to tell "not published" and
+  "withheld" apart (a withheld edition serves no slice) — so a visit that never opens the tab
+  pays ~20 bytes (gzip) for the block.
+* `insight_evidence/<scoring>` — `scoring_preset`, `story_id`, `player_id`, `evidence`,
+  `qualification`, `also_qualifies`. Fetched only when a reader expands a story's evidence.
+
+No other view and no card shard carries either.

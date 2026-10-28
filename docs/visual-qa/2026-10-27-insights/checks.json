@@ -1,0 +1,448 @@
+{
+ "summary": {
+  "pageOverflow": 0,
+  "offscreenButtons": 0,
+  "smallTargets": 0,
+  "chartTextOutside": 0,
+  "shareClippedText": 0,
+  "shareTextOverlaps": 0,
+  "shareLayoutOverflow": 0,
+  "exportsWrongSize": 0
+ },
+ "capturedAt": "2026-10-28T03:45:41.782Z",
+ "clock": "2026-11-05T12:00:00.000Z",
+ "screens": {
+  "feed-320": {
+   "pageOverflowX": 0,
+   "firstHeadlineTop": 537,
+   "viewportHeight": 640,
+   "offscreenButtons": [],
+   "smallTargets": [],
+   "chartTextOutside": 0,
+   "errors": []
+  },
+  "feed-390": {
+   "pageOverflowX": 0,
+   "firstHeadlineTop": 496,
+   "viewportHeight": 844,
+   "offscreenButtons": [],
+   "smallTargets": [],
+   "chartTextOutside": 0,
+   "errors": []
+  },
+  "share-390": {
+   "pageOverflowX": 0,
+   "firstHeadlineTop": 496,
+   "viewportHeight": 844,
+   "offscreenButtons": [],
+   "smallTargets": [],
+   "chartTextOutside": 0
+  },
+  "feed-short-390x560": {
+   "pageOverflowX": 0,
+   "firstHeadlineTop": 496,
+   "viewportHeight": 560,
+   "offscreenButtons": [],
+   "smallTargets": [],
+   "chartTextOutside": 0,
+   "errors": []
+  },
+  "feed-768": {
+   "pageOverflowX": 0,
+   "firstHeadlineTop": 600,
+   "viewportHeight": 1024,
+   "offscreenButtons": [],
+   "smallTargets": [],
+   "chartTextOutside": 0,
+   "errors": []
+  },
+  "feed-1024": {
+   "pageOverflowX": 0,
+   "firstHeadlineTop": 576,
+   "viewportHeight": 800,
+   "offscreenButtons": [],
+   "smallTargets": [],
+   "chartTextOutside": 0,
+   "errors": []
+  },
+  "feed-1440": {
+   "pageOverflowX": 0,
+   "firstHeadlineTop": 558,
+   "viewportHeight": 900,
+   "offscreenButtons": [],
+   "smallTargets": [],
+   "chartTextOutside": 0,
+   "errors": []
+  },
+  "share-1440": {
+   "pageOverflowX": 0,
+   "firstHeadlineTop": 558,
+   "viewportHeight": 900,
+   "offscreenButtons": [],
+   "smallTargets": [],
+   "chartTextOutside": 0
+  }
+ },
+ "exports": {
+  "upside-land": {
+   "file": "exports/upside-landscape.png",
+   "suggested": "jeisey-tiers-upside-00-0000012-2026w08-landscape.png",
+   "png": {
+    "width": 1200,
+    "height": 675,
+    "bytes": 176356
+   },
+   "width": 1200,
+   "height": 675,
+   "texts": 49,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.2,
+   "layoutOverflow": 0
+  },
+  "upside-port": {
+   "file": "exports/upside-portrait.png",
+   "suggested": "jeisey-tiers-upside-00-0000012-2026w08-portrait.png",
+   "png": {
+    "width": 1080,
+    "height": 1350,
+    "bytes": 244397
+   },
+   "width": 1080,
+   "height": 1350,
+   "texts": 46,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.18,
+   "layoutOverflow": 0
+  },
+  "upside-long-name-land": {
+   "file": "exports/upside-long-name-landscape.png",
+   "suggested": "jeisey-tiers-upside-00-0000095-2026w08-landscape.png",
+   "png": {
+    "width": 1200,
+    "height": 675,
+    "bytes": 179787
+   },
+   "width": 1200,
+   "height": 675,
+   "texts": 50,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.16,
+   "layoutOverflow": 0
+  },
+  "upside-long-name-port": {
+   "file": "exports/upside-long-name-portrait.png",
+   "suggested": "jeisey-tiers-upside-00-0000095-2026w08-portrait.png",
+   "png": {
+    "width": 1080,
+    "height": 1350,
+    "bytes": 251939
+   },
+   "width": 1080,
+   "height": 1350,
+   "texts": 49,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.14,
+   "layoutOverflow": 0
+  },
+  "volume-lagging-land": {
+   "file": "exports/volume-lagging-landscape.png",
+   "suggested": "jeisey-tiers-volume-00-0000002-2026w08-landscape.png",
+   "png": {
+    "width": 1200,
+    "height": 675,
+    "bytes": 165731
+   },
+   "width": 1200,
+   "height": 675,
+   "texts": 62,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.06,
+   "layoutOverflow": 0
+  },
+  "volume-lagging-port": {
+   "file": "exports/volume-lagging-portrait.png",
+   "suggested": "jeisey-tiers-volume-00-0000002-2026w08-portrait.png",
+   "png": {
+    "width": 1080,
+    "height": 1350,
+    "bytes": 245091
+   },
+   "width": 1080,
+   "height": 1350,
+   "texts": 60,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.1,
+   "layoutOverflow": 0
+  },
+  "volume-shrinking-land": {
+   "file": "exports/volume-shrinking-landscape.png",
+   "suggested": "jeisey-tiers-volume-00-0000011-2026w08-landscape.png",
+   "png": {
+    "width": 1200,
+    "height": 675,
+    "bytes": 169133
+   },
+   "width": 1200,
+   "height": 675,
+   "texts": 61,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.12,
+   "layoutOverflow": 0
+  },
+  "volume-shrinking-port": {
+   "file": "exports/volume-shrinking-portrait.png",
+   "suggested": "jeisey-tiers-volume-00-0000011-2026w08-portrait.png",
+   "png": {
+    "width": 1080,
+    "height": 1350,
+    "bytes": 238199
+   },
+   "width": 1080,
+   "height": 1350,
+   "texts": 59,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.14,
+   "layoutOverflow": 0
+  },
+  "streak-touchdowns-land": {
+   "file": "exports/streak-touchdowns-landscape.png",
+   "suggested": "jeisey-tiers-streak-00-0000006-2026w08-landscape.png",
+   "png": {
+    "width": 1200,
+    "height": 675,
+    "bytes": 161936
+   },
+   "width": 1200,
+   "height": 675,
+   "texts": 68,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.02,
+   "layoutOverflow": 0
+  },
+  "streak-touchdowns-port": {
+   "file": "exports/streak-touchdowns-portrait.png",
+   "suggested": "jeisey-tiers-streak-00-0000006-2026w08-portrait.png",
+   "png": {
+    "width": 1080,
+    "height": 1350,
+    "bytes": 244949
+   },
+   "width": 1080,
+   "height": 1350,
+   "texts": 68,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.1,
+   "layoutOverflow": 0
+  },
+  "opening-one-game-land": {
+   "file": "exports/opening-one-game-landscape.png",
+   "suggested": "jeisey-tiers-opening-00-0000004-2026w08-landscape.png",
+   "png": {
+    "width": 1200,
+    "height": 675,
+    "bytes": 200003
+   },
+   "width": 1200,
+   "height": 675,
+   "texts": 52,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.08,
+   "layoutOverflow": 0
+  },
+  "opening-one-game-port": {
+   "file": "exports/opening-one-game-portrait.png",
+   "suggested": "jeisey-tiers-opening-00-0000004-2026w08-portrait.png",
+   "png": {
+    "width": 1080,
+    "height": 1350,
+    "bytes": 287771
+   },
+   "width": 1080,
+   "height": 1350,
+   "texts": 49,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.1,
+   "layoutOverflow": 0
+  },
+  "opening-prospective-land": {
+   "file": "exports/opening-prospective-landscape.png",
+   "suggested": "jeisey-tiers-opening-00-0000014-2026w08-landscape.png",
+   "png": {
+    "width": 1200,
+    "height": 675,
+    "bytes": 183238
+   },
+   "width": 1200,
+   "height": 675,
+   "texts": 40,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.24,
+   "layoutOverflow": 0
+  },
+  "opening-prospective-port": {
+   "file": "exports/opening-prospective-portrait.png",
+   "suggested": "jeisey-tiers-opening-00-0000014-2026w08-portrait.png",
+   "png": {
+    "width": 1080,
+    "height": 1350,
+    "bytes": 264720
+   },
+   "width": 1080,
+   "height": 1350,
+   "texts": 39,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.3,
+   "layoutOverflow": 0
+  },
+  "role-backfield-land": {
+   "file": "exports/role-backfield-landscape.png",
+   "suggested": "jeisey-tiers-role-buf-backfield-2026w08-landscape.png",
+   "png": {
+    "width": 1200,
+    "height": 675,
+    "bytes": 200294
+   },
+   "width": 1200,
+   "height": 675,
+   "texts": 47,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.1,
+   "layoutOverflow": 0
+  },
+  "role-backfield-port": {
+   "file": "exports/role-backfield-portrait.png",
+   "suggested": "jeisey-tiers-role-buf-backfield-2026w08-portrait.png",
+   "png": {
+    "width": 1080,
+    "height": 1350,
+    "bytes": 293802
+   },
+   "width": 1080,
+   "height": 1350,
+   "texts": 44,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.14,
+   "layoutOverflow": 0
+  },
+  "role-receiving-nulls-land": {
+   "file": "exports/role-receiving-nulls-landscape.png",
+   "suggested": "jeisey-tiers-role-was-receiving-2026w08-landscape.png",
+   "png": {
+    "width": 1200,
+    "height": 675,
+    "bytes": 200241
+   },
+   "width": 1200,
+   "height": 675,
+   "texts": 47,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.1,
+   "layoutOverflow": 0
+  },
+  "role-receiving-nulls-port": {
+   "file": "exports/role-receiving-nulls-portrait.png",
+   "suggested": "jeisey-tiers-role-was-receiving-2026w08-portrait.png",
+   "png": {
+    "width": 1080,
+    "height": 1350,
+    "bytes": 276889
+   },
+   "width": 1080,
+   "height": 1350,
+   "texts": 44,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.1,
+   "layoutOverflow": 0
+  },
+  "pace-land": {
+   "file": "exports/pace-landscape.png",
+   "suggested": "jeisey-tiers-pace-00-0000009-2026w08-landscape.png",
+   "png": {
+    "width": 1200,
+    "height": 675,
+    "bytes": 178484
+   },
+   "width": 1200,
+   "height": 675,
+   "texts": 39,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.32,
+   "layoutOverflow": 0
+  },
+  "pace-port": {
+   "file": "exports/pace-portrait.png",
+   "suggested": "jeisey-tiers-pace-00-0000009-2026w08-portrait.png",
+   "png": {
+    "width": 1080,
+    "height": 1350,
+    "bytes": 241853
+   },
+   "width": 1080,
+   "height": 1350,
+   "texts": 37,
+   "clipped": [],
+   "overlaps": 0,
+   "overlapPairs": [],
+   "fits": "true",
+   "scale": 1.28,
+   "layoutOverflow": 0
+  }
+ }
+}

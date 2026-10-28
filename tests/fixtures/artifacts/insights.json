@@ -1,0 +1,4144 @@
+{
+  "schema_version": "1.0",
+  "artifact": "insights",
+  "record_schema": "insight_story",
+  "build_id": "fixture-20260818T120000Z",
+  "generated_at_utc": "2026-08-18T12:00:00Z",
+  "record_count": 24,
+  "records": [
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "HALF",
+      "scoring_dependent": true,
+      "story_id": "pace-00-0000001",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
+      "lead_rank": 3,
+      "family_rank": 3,
+      "player_id": "gsis:00-0000001",
+      "display_name": "Marcus Vandelay",
+      "position": "QB",
+      "team": "ATL",
+      "headline": "Marcus Vandelay is QB2 in points a game and 31% rostered",
+      "dek": "16.9 points a game over 8 games ranks QB2 of 3 QBs with 3+ games, yet most ESPN leagues leave him unrostered.",
+      "facts": [
+        {
+          "label": "Points a game",
+          "value": "16.9 (QB2)",
+          "basis": "observed"
+        },
+        {
+          "label": "Games played",
+          "value": "8 of 8",
+          "basis": "observed"
+        },
+        {
+          "label": "17-game pace (PPG × 17)",
+          "value": "286.6",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "31%",
+          "basis": "market"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
+      "kickoff_utc": null,
+      "espn_rostered": 31.0,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "stat_line",
+        "games": 8,
+        "team_games": 8,
+        "points": 134.88,
+        "points_per_game": 16.86,
+        "pace_17": 286.6,
+        "ppg_rank": 2,
+        "total_rank": 2,
+        "cohort_size": 3,
+        "cohort_min_games": 3
+      },
+      "evidence": {
+        "name": "Marcus Vandelay",
+        "position": "QB",
+        "team": "ATL",
+        "games": 8,
+        "team_games": 8,
+        "points": 134.88,
+        "points_per_game": 16.86,
+        "pace": 286.6,
+        "pace_games": 17,
+        "ppg_rank": 2,
+        "total_rank": 2,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
+        "band": 12,
+        "gap_places": 0,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 31.0,
+        "espn_state": "observed",
+        "ceiling": 50
+      },
+      "qualification": [
+        {
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 8,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 QBs",
+          "value": 2,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 31.0,
+          "threshold": 50,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "HALF",
+      "scoring_dependent": true,
+      "story_id": "pace-00-0000016",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
+      "lead_rank": null,
+      "family_rank": 6,
+      "player_id": "gsis:00-0000016",
+      "display_name": "Xavier Nkemdiche",
+      "position": "TE",
+      "team": "NO",
+      "headline": "Xavier Nkemdiche is TE2 in points a game and 40% rostered",
+      "dek": "5.4 points a game over 7 games ranks TE2 of 3 TEs with 3+ games, yet most ESPN leagues leave him unrostered.",
+      "facts": [
+        {
+          "label": "Points a game",
+          "value": "5.4 (TE2)",
+          "basis": "observed"
+        },
+        {
+          "label": "Games played",
+          "value": "7 of 7",
+          "basis": "observed"
+        },
+        {
+          "label": "17-game pace (PPG × 17)",
+          "value": "91.1",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "40%",
+          "basis": "market"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
+      "kickoff_utc": null,
+      "espn_rostered": 40.2,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "stat_line",
+        "games": 7,
+        "team_games": 7,
+        "points": 37.5,
+        "points_per_game": 5.36,
+        "pace_17": 91.1,
+        "ppg_rank": 2,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3
+      },
+      "evidence": {
+        "name": "Xavier Nkemdiche",
+        "position": "TE",
+        "team": "NO",
+        "games": 7,
+        "team_games": 7,
+        "points": 37.5,
+        "points_per_game": 5.36,
+        "pace": 91.1,
+        "pace_games": 17,
+        "ppg_rank": 2,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
+        "band": 12,
+        "gap_places": -1,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 40.2,
+        "espn_state": "observed",
+        "ceiling": 50
+      },
+      "qualification": [
+        {
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 7,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 TEs",
+          "value": 2,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 40.2,
+          "threshold": 50,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "HALF",
+      "scoring_dependent": true,
+      "story_id": "pace-00-0000011",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
+      "lead_rank": null,
+      "family_rank": 8,
+      "player_id": "gsis:00-0000011",
+      "display_name": "Bram Kowalczyk",
+      "position": "TE",
+      "team": "LV",
+      "headline": "Bram Kowalczyk is TE3 in points a game and 25% rostered",
+      "dek": "4.7 points a game over 8 games ranks TE3 of 3 TEs with 3+ games, yet most ESPN leagues leave him unrostered.",
+      "facts": [
+        {
+          "label": "Points a game",
+          "value": "4.7 (TE3)",
+          "basis": "observed"
+        },
+        {
+          "label": "Games played",
+          "value": "8 of 8",
+          "basis": "observed"
+        },
+        {
+          "label": "17-game pace (PPG × 17)",
+          "value": "79.7",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "25%",
+          "basis": "market"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
+      "kickoff_utc": null,
+      "espn_rostered": 25.0,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "stat_line",
+        "games": 8,
+        "team_games": 8,
+        "points": 37.5,
+        "points_per_game": 4.69,
+        "pace_17": 79.7,
+        "ppg_rank": 3,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3
+      },
+      "evidence": {
+        "name": "Bram Kowalczyk",
+        "position": "TE",
+        "team": "LV",
+        "games": 8,
+        "team_games": 8,
+        "points": 37.5,
+        "points_per_game": 4.69,
+        "pace": 79.7,
+        "pace_games": 17,
+        "ppg_rank": 3,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
+        "band": 12,
+        "gap_places": -2,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 25.0,
+        "espn_state": "observed",
+        "ceiling": 50
+      },
+      "qualification": [
+        {
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 8,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 TEs",
+          "value": 3,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 25.0,
+          "threshold": 50,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "HALF",
+      "scoring_dependent": true,
+      "story_id": "volume-00-0000004",
+      "family": "volume_vs_results",
+      "variant": "shrinking",
+      "horizon": "role_watch",
+      "nature": "thesis",
+      "lead_rank": 2,
+      "family_rank": 1,
+      "player_id": "gsis:00-0000004",
+      "display_name": "Chris Johnson",
+      "position": "WR",
+      "team": "DAL",
+      "headline": "Chris Johnson's target share fell from 26% to 17% over W6–W8",
+      "dek": "A shrinking share is a smaller role, not a cold streak: 'he still gets the ball' no longer holds for these weeks, with targets a game down from 9.0 to 5.7.",
+      "facts": [
+        {
+          "label": "Target share, before → W6–W8",
+          "value": "26% → 17%",
+          "basis": "observed"
+        },
+        {
+          "label": "Targets a game, before → W6–W8",
+          "value": "9.0 → 5.7",
+          "basis": "observed"
+        },
+        {
+          "label": "Points a game, before → W6–W8",
+          "value": "11.7 → 9.0",
+          "basis": "observed"
+        },
+        {
+          "label": "Snap share, before → W6–W8",
+          "value": "93% → 75%",
+          "basis": "observed"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Shares pool his games against his team's; three weeks against his earlier games is a small sample.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": null,
+      "espn_rostered": 22.4,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "week_strip",
+        "weeks": [
+          {
+            "week": 1,
+            "status": "P",
+            "in_window": false,
+            "points": 10.5,
+            "td_points": 0.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 2,
+            "status": "P",
+            "in_window": false,
+            "points": 10.5,
+            "td_points": 0.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 3,
+            "status": "P",
+            "in_window": false,
+            "points": 10.5,
+            "td_points": 0.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 4,
+            "status": "P",
+            "in_window": false,
+            "points": 16.5,
+            "td_points": 6.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 5,
+            "status": "P",
+            "in_window": false,
+            "points": 10.5,
+            "td_points": 0.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 6,
+            "status": "P",
+            "in_window": true,
+            "points": 8.75,
+            "td_points": 0.0,
+            "opportunity": 7.0,
+            "share": 0.206,
+            "rank": null
+          },
+          {
+            "week": 7,
+            "status": "P",
+            "in_window": true,
+            "points": 7.0,
+            "td_points": 0.0,
+            "opportunity": 6.0,
+            "share": 0.176,
+            "rank": null
+          },
+          {
+            "week": 8,
+            "status": "P",
+            "in_window": true,
+            "points": 11.25,
+            "td_points": 6.0,
+            "opportunity": 4.0,
+            "share": 0.118,
+            "rank": null
+          }
+        ],
+        "opportunity_label": "Targets",
+        "share_label": "Target share",
+        "band": null
+      },
+      "evidence": {
+        "name": "Chris Johnson",
+        "position": "WR",
+        "team": "DAL",
+        "window_label": "W6–W8",
+        "opportunity_label": "targets",
+        "window_games": 3,
+        "baseline_games": 5,
+        "min_window_games": 2,
+        "min_baseline_games": 2,
+        "window_opportunities": 17.0,
+        "window_opportunities_per_game": 5.7,
+        "baseline_opportunities_per_game": 9.0,
+        "workload_rank": 21,
+        "production_rank": 5,
+        "cohort_size": 21,
+        "band": 24,
+        "gap_places": -16,
+        "required_gap_places": 12,
+        "hold_percent": 90,
+        "window_points": 27.0,
+        "window_points_per_game": 9.0,
+        "baseline_points_per_game": 11.7,
+        "window_td_points": 6.0,
+        "window_touchdowns": 1,
+        "share_metric": "target_share",
+        "window_share": 0.167,
+        "window_share_numerator": 17.0,
+        "window_share_denominator": 102.0,
+        "baseline_share": 0.265,
+        "role_step": 0.06,
+        "role_floor": 0.16,
+        "window_yards": 150.0,
+        "yards_per_opportunity": 8.8,
+        "cohort_median_yards_per_opportunity": 0.0,
+        "red_zone_opportunities": 3,
+        "team_red_zone_opportunities": 33,
+        "snap_share_window": 0.75,
+        "snap_share_baseline": 0.93,
+        "espn_rostered": 22.4,
+        "espn_state": "observed"
+      },
+      "qualification": [
+        {
+          "rule": "window_games",
+          "label": "Games in W6–W8",
+          "value": 3,
+          "threshold": 2,
+          "passed": true
+        },
+        {
+          "rule": "baseline_games",
+          "label": "Games before the window",
+          "value": 5,
+          "threshold": 2,
+          "passed": true
+        },
+        {
+          "rule": "baseline_role",
+          "label": "Share before the window, at least",
+          "value": 0.265,
+          "threshold": 0.16,
+          "passed": true
+        },
+        {
+          "rule": "share_drop",
+          "label": "Share fell by at least",
+          "value": 0.098,
+          "threshold": 0.06,
+          "passed": true
+        },
+        {
+          "rule": "workload_fell",
+          "label": "Opportunities a game, below 90% of the earlier rate",
+          "value": 5.7,
+          "threshold": 8.1,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000004"
+      ],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "edition": "2026w08",
+      "scoring_preset": "HALF",
+      "scoring_dependent": true,
+      "story_id": "upside-00-0000005",
+      "family": "weekly_upside",
+      "variant": "ceiling",
+      "horizon": "this_week",
+      "nature": "thesis",
+      "lead_rank": 1,
+      "family_rank": 1,
+      "player_id": "gsis:00-0000005",
+      "display_name": "Chris Johnson Jr.",
+      "position": "WR",
+      "team": "DEN",
+      "headline": "Chris Johnson Jr.: a 16.0-point ceiling at 49% rostered",
+      "dek": "No. 1 by week-9 ceiling of 2 WRs with a confirmed role and under 50% rostered on ESPN. The matchup moves his ceiling +4.2 against his typical week, mostly the betting lines.",
+      "facts": [
+        {
+          "label": "Ceiling / median / floor (P90 / P50 / P10)",
+          "value": "16.0 / 4.9 / 0.6",
+          "basis": "model"
+        },
+        {
+          "label": "Snap share, last 2 games",
+          "value": "84%",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "49%",
+          "basis": "market"
+        },
+        {
+          "label": "Matchup vs typical week (P90)",
+          "value": "+4.2",
+          "basis": "model"
+        }
+      ],
+      "counterpoint": "His floor (P10) is 0.6 points: one week in ten at or below it.",
+      "caveat": "P90: one week in ten at or above it, per the weekly model — not a 90% chance. ESPN share describes ESPN leagues, not yours.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "espn_rostered": 48.9,
+      "ceiling_ranks": {
+        "50": 1,
+        "25": null,
+        "10": null
+      },
+      "injury": null,
+      "opponent": "GB",
+      "home_away": "home",
+      "chart": {
+        "type": "interval",
+        "q10": 0.55,
+        "q50": 4.94,
+        "q90": 16.03,
+        "typical_q10": 0.5,
+        "typical_q50": 4.58,
+        "typical_q90": 11.85
+      },
+      "evidence": {
+        "name": "Chris Johnson Jr.",
+        "position": "WR",
+        "team": "DEN",
+        "opponent": "GB",
+        "home_away": "home",
+        "kickoff_utc": "2026-11-08T18:00:00Z",
+        "target_week": 9,
+        "q10": 0.55,
+        "q50": 4.94,
+        "q90": 16.03,
+        "typical_q10": 0.5,
+        "typical_q50": 4.58,
+        "typical_q90": 11.85,
+        "matchup_delta_q90": 4.18,
+        "terms_q90": {
+          "lines": 4.43,
+          "home": 0.07,
+          "rest": 0.0,
+          "roof": 0.13,
+          "opponent": -0.45
+        },
+        "espn_rostered": 48.9,
+        "espn_state": "observed",
+        "ceiling": 50,
+        "ceiling_level": 90,
+        "ceiling_rank": 1,
+        "eligible": 2,
+        "ceiling_ranks": {
+          "50": 1,
+          "25": null,
+          "10": null
+        },
+        "eligible_counts": {
+          "50": 2,
+          "25": 1,
+          "10": 1
+        },
+        "role_metric": "snap_share",
+        "role_level": 0.845,
+        "role_baseline": 0.852,
+        "role_passed": "substantial",
+        "role_bar": 0.8,
+        "role_games": 2,
+        "role_weeks": [
+          7,
+          8
+        ],
+        "injury": null,
+        "model_version": "weekly-startsit-v1"
+      },
+      "qualification": [
+        {
+          "rule": "game_upcoming",
+          "label": "Target-week kickoff after the build",
+          "value": "2026-11-08T18:00:00Z",
+          "threshold": "after build",
+          "passed": true
+        },
+        {
+          "rule": "espn_observed",
+          "label": "ESPN reading state",
+          "value": "observed",
+          "threshold": "observed",
+          "passed": true
+        },
+        {
+          "rule": "espn_below_ceiling",
+          "label": "ESPN rostered %, below",
+          "value": 48.9,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "rule": "role_confirmed",
+          "label": "snap share over his last 2 games (substantial)",
+          "value": 0.845,
+          "threshold": 0.8,
+          "passed": true
+        },
+        {
+          "rule": "latest_current",
+          "label": "Latest appearance in the window, no missed game since",
+          "value": 8,
+          "threshold": 6,
+          "passed": true
+        },
+        {
+          "rule": "prescreen",
+          "label": "Not Out/Doubtful, on a reserve list, released or unsigned",
+          "value": "clear",
+          "threshold": "clear",
+          "passed": true
+        },
+        {
+          "rule": "ceiling_rank",
+          "label": "Ceiling rank among WRs under 50%",
+          "value": 1,
+          "threshold": 3,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000005"
+      ],
+      "sources": [
+        "weekly_startsit_v1",
+        "espn_fantasy_ownership",
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z",
+        "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+        "injury_report_final": false
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "edition": "2026w08",
+      "scoring_preset": "HALF",
+      "scoring_dependent": true,
+      "story_id": "upside-00-0000008",
+      "family": "weekly_upside",
+      "variant": "ceiling",
+      "horizon": "this_week",
+      "nature": "thesis",
+      "lead_rank": 4,
+      "family_rank": 1,
+      "player_id": "gsis:00-0000008",
+      "display_name": "Nnamdi Brightwater",
+      "position": "RB",
+      "team": "IND",
+      "headline": "Nnamdi Brightwater: a 14.9-point ceiling at 7.1% rostered",
+      "dek": "No. 1 by week-9 ceiling of 2 RBs with a confirmed role and under 50% rostered on ESPN. The matchup moves his ceiling +2.3 against his typical week, mostly the betting lines.",
+      "facts": [
+        {
+          "label": "Ceiling / median / floor (P90 / P50 / P10)",
+          "value": "14.9 / 2.8 / 0.7",
+          "basis": "model"
+        },
+        {
+          "label": "Carry share, last 2 games",
+          "value": "46%",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "7.1%",
+          "basis": "market"
+        },
+        {
+          "label": "Matchup vs typical week (P90)",
+          "value": "+2.3",
+          "basis": "model"
+        }
+      ],
+      "counterpoint": "His floor (P10) is 0.7 points: one week in ten at or below it.",
+      "caveat": "P90: one week in ten at or above it, per the weekly model — not a 90% chance. ESPN share describes ESPN leagues, not yours.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "espn_rostered": 7.1,
+      "ceiling_ranks": {
+        "50": 1,
+        "25": 1,
+        "10": 1
+      },
+      "injury": null,
+      "opponent": "HOU",
+      "home_away": "away",
+      "chart": {
+        "type": "interval",
+        "q10": 0.73,
+        "q50": 2.79,
+        "q90": 14.91,
+        "typical_q10": 0.69,
+        "typical_q50": 1.88,
+        "typical_q90": 12.64
+      },
+      "evidence": {
+        "name": "Nnamdi Brightwater",
+        "position": "RB",
+        "team": "IND",
+        "opponent": "HOU",
+        "home_away": "away",
+        "kickoff_utc": "2026-11-08T18:00:00Z",
+        "target_week": 9,
+        "q10": 0.73,
+        "q50": 2.79,
+        "q90": 14.91,
+        "typical_q10": 0.69,
+        "typical_q50": 1.88,
+        "typical_q90": 12.64,
+        "matchup_delta_q90": 2.27,
+        "terms_q90": {
+          "lines": 1.59,
+          "home": 0.08,
+          "rest": 0.07,
+          "roof": 0.0,
+          "opponent": 0.53
+        },
+        "espn_rostered": 7.1,
+        "espn_state": "observed",
+        "ceiling": 50,
+        "ceiling_level": 90,
+        "ceiling_rank": 1,
+        "eligible": 2,
+        "ceiling_ranks": {
+          "50": 1,
+          "25": 1,
+          "10": 1
+        },
+        "eligible_counts": {
+          "50": 2,
+          "25": 2,
+          "10": 2
+        },
+        "role_metric": "carry_share",
+        "role_level": 0.462,
+        "role_baseline": 0.462,
+        "role_passed": "substantial",
+        "role_bar": 0.45,
+        "role_games": 2,
+        "role_weeks": [
+          6,
+          7
+        ],
+        "injury": null,
+        "model_version": "weekly-startsit-v1"
+      },
+      "qualification": [
+        {
+          "rule": "game_upcoming",
+          "label": "Target-week kickoff after the build",
+          "value": "2026-11-08T18:00:00Z",
+          "threshold": "after build",
+          "passed": true
+        },
+        {
+          "rule": "espn_observed",
+          "label": "ESPN reading state",
+          "value": "observed",
+          "threshold": "observed",
+          "passed": true
+        },
+        {
+          "rule": "espn_below_ceiling",
+          "label": "ESPN rostered %, below",
+          "value": 7.1,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "rule": "role_confirmed",
+          "label": "carry share over his last 2 games (substantial)",
+          "value": 0.462,
+          "threshold": 0.45,
+          "passed": true
+        },
+        {
+          "rule": "latest_current",
+          "label": "Latest appearance in the window, no missed game since",
+          "value": 7,
+          "threshold": 6,
+          "passed": true
+        },
+        {
+          "rule": "prescreen",
+          "label": "Not Out/Doubtful, on a reserve list, released or unsigned",
+          "value": "clear",
+          "threshold": "clear",
+          "passed": true
+        },
+        {
+          "rule": "ceiling_rank",
+          "label": "Ceiling rank among RBs under 50%",
+          "value": 1,
+          "threshold": 3,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000008"
+      ],
+      "sources": [
+        "weekly_startsit_v1",
+        "espn_fantasy_ownership",
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z",
+        "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+        "injury_report_final": false
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "edition": "2026w08",
+      "scoring_preset": "HALF",
+      "scoring_dependent": true,
+      "story_id": "upside-00-0000002",
+      "family": "weekly_upside",
+      "variant": "ceiling",
+      "horizon": "this_week",
+      "nature": "thesis",
+      "lead_rank": null,
+      "family_rank": 2,
+      "player_id": "gsis:00-0000002",
+      "display_name": "Dez Okonkwo",
+      "position": "RB",
+      "team": "BUF",
+      "headline": "Dez Okonkwo: a 13.9-point ceiling at 4.2% rostered",
+      "dek": "No. 2 by week-9 ceiling of 2 RBs with a confirmed role and under 50% rostered on ESPN. The matchup changes his ceiling little against his typical week.",
+      "facts": [
+        {
+          "label": "Ceiling / median / floor (P90 / P50 / P10)",
+          "value": "13.9 / 1.9 / 0.8",
+          "basis": "model"
+        },
+        {
+          "label": "Snap share, last 2 games",
+          "value": "78%",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "4.2%",
+          "basis": "market"
+        },
+        {
+          "label": "Matchup vs typical week (P90)",
+          "value": "+0.4",
+          "basis": "model"
+        }
+      ],
+      "counterpoint": "Listed Questionable for week 9 on the official report.",
+      "caveat": "P90: one week in ten at or above it, per the weekly model — not a 90% chance. ESPN share describes ESPN leagues, not yours.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "espn_rostered": 4.2,
+      "ceiling_ranks": {
+        "50": 2,
+        "25": 2,
+        "10": 2
+      },
+      "injury": {
+        "week": 9,
+        "designation": "Questionable",
+        "practice_status": "Limited Participation in Practice",
+        "primary_injury": "Hamstring"
+      },
+      "opponent": "NO",
+      "home_away": "away",
+      "chart": {
+        "type": "interval",
+        "q10": 0.76,
+        "q50": 1.89,
+        "q90": 13.91,
+        "typical_q10": 0.72,
+        "typical_q50": 2.06,
+        "typical_q90": 13.48
+      },
+      "evidence": {
+        "name": "Dez Okonkwo",
+        "position": "RB",
+        "team": "BUF",
+        "opponent": "NO",
+        "home_away": "away",
+        "kickoff_utc": "2026-11-08T18:00:00Z",
+        "target_week": 9,
+        "q10": 0.76,
+        "q50": 1.89,
+        "q90": 13.91,
+        "typical_q10": 0.72,
+        "typical_q50": 2.06,
+        "typical_q90": 13.48,
+        "matchup_delta_q90": 0.43,
+        "terms_q90": {
+          "lines": 1.02,
+          "home": 0.08,
+          "rest": -0.16,
+          "roof": 0.0,
+          "opponent": -0.52
+        },
+        "espn_rostered": 4.2,
+        "espn_state": "observed",
+        "ceiling": 50,
+        "ceiling_level": 90,
+        "ceiling_rank": 2,
+        "eligible": 2,
+        "ceiling_ranks": {
+          "50": 2,
+          "25": 2,
+          "10": 2
+        },
+        "eligible_counts": {
+          "50": 2,
+          "25": 2,
+          "10": 2
+        },
+        "role_metric": "snap_share",
+        "role_level": 0.785,
+        "role_baseline": 0.452,
+        "role_passed": "substantial",
+        "role_bar": 0.55,
+        "role_games": 2,
+        "role_weeks": [
+          7,
+          8
+        ],
+        "injury": {
+          "week": 9,
+          "designation": "Questionable",
+          "practice_status": "Limited Participation in Practice",
+          "primary_injury": "Hamstring"
+        },
+        "model_version": "weekly-startsit-v1"
+      },
+      "qualification": [
+        {
+          "rule": "game_upcoming",
+          "label": "Target-week kickoff after the build",
+          "value": "2026-11-08T18:00:00Z",
+          "threshold": "after build",
+          "passed": true
+        },
+        {
+          "rule": "espn_observed",
+          "label": "ESPN reading state",
+          "value": "observed",
+          "threshold": "observed",
+          "passed": true
+        },
+        {
+          "rule": "espn_below_ceiling",
+          "label": "ESPN rostered %, below",
+          "value": 4.2,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "rule": "role_confirmed",
+          "label": "snap share over his last 2 games (substantial)",
+          "value": 0.785,
+          "threshold": 0.55,
+          "passed": true
+        },
+        {
+          "rule": "latest_current",
+          "label": "Latest appearance in the window, no missed game since",
+          "value": 8,
+          "threshold": 6,
+          "passed": true
+        },
+        {
+          "rule": "prescreen",
+          "label": "Not Out/Doubtful, on a reserve list, released or unsigned",
+          "value": "clear",
+          "threshold": "clear",
+          "passed": true
+        },
+        {
+          "rule": "ceiling_rank",
+          "label": "Ceiling rank among RBs under 50%",
+          "value": 2,
+          "threshold": 3,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000002",
+        "role-buf-backfield"
+      ],
+      "sources": [
+        "weekly_startsit_v1",
+        "espn_fantasy_ownership",
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z",
+        "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+        "injury_report_final": true
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "edition": "2026w08",
+      "scoring_preset": "HALF",
+      "scoring_dependent": true,
+      "story_id": "upside-00-0000015",
+      "family": "weekly_upside",
+      "variant": "ceiling",
+      "horizon": "this_week",
+      "nature": "thesis",
+      "lead_rank": 5,
+      "family_rank": 2,
+      "player_id": "gsis:00-0000015",
+      "display_name": "Hollis Amadi",
+      "position": "WR",
+      "team": "NE",
+      "headline": "Hollis Amadi: a 15.6-point ceiling at 3.3% rostered",
+      "dek": "No. 2 by week-9 ceiling of 2 WRs with a confirmed role and under 50% rostered on ESPN. The matchup moves his ceiling +3.9 against his typical week, mostly the betting lines.",
+      "facts": [
+        {
+          "label": "Ceiling / median / floor (P90 / P50 / P10)",
+          "value": "15.6 / 4.8 / 0.6",
+          "basis": "model"
+        },
+        {
+          "label": "Snap share, last 2 games",
+          "value": "85%",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "3.3%",
+          "basis": "market"
+        },
+        {
+          "label": "Matchup vs typical week (P90)",
+          "value": "+3.9",
+          "basis": "model"
+        }
+      ],
+      "counterpoint": "His floor (P10) is 0.6 points: one week in ten at or below it.",
+      "caveat": "P90: one week in ten at or above it, per the weekly model — not a 90% chance. ESPN share describes ESPN leagues, not yours.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "espn_rostered": 3.3,
+      "ceiling_ranks": {
+        "50": 2,
+        "25": 1,
+        "10": 1
+      },
+      "injury": null,
+      "opponent": "MIN",
+      "home_away": "away",
+      "chart": {
+        "type": "interval",
+        "q10": 0.55,
+        "q50": 4.8,
+        "q90": 15.6,
+        "typical_q10": 0.5,
+        "typical_q50": 4.53,
+        "typical_q90": 11.75
+      },
+      "evidence": {
+        "name": "Hollis Amadi",
+        "position": "WR",
+        "team": "NE",
+        "opponent": "MIN",
+        "home_away": "away",
+        "kickoff_utc": "2026-11-08T18:00:00Z",
+        "target_week": 9,
+        "q10": 0.55,
+        "q50": 4.8,
+        "q90": 15.6,
+        "typical_q10": 0.5,
+        "typical_q50": 4.53,
+        "typical_q90": 11.75,
+        "matchup_delta_q90": 3.85,
+        "terms_q90": {
+          "lines": 4.31,
+          "home": -0.07,
+          "rest": 0.0,
+          "roof": 0.0,
+          "opponent": -0.39
+        },
+        "espn_rostered": 3.3,
+        "espn_state": "observed",
+        "ceiling": 50,
+        "ceiling_level": 90,
+        "ceiling_rank": 2,
+        "eligible": 2,
+        "ceiling_ranks": {
+          "50": 2,
+          "25": 1,
+          "10": 1
+        },
+        "eligible_counts": {
+          "50": 2,
+          "25": 1,
+          "10": 1
+        },
+        "role_metric": "snap_share",
+        "role_level": 0.85,
+        "role_baseline": 0.848,
+        "role_passed": "substantial",
+        "role_bar": 0.8,
+        "role_games": 2,
+        "role_weeks": [
+          6,
+          8
+        ],
+        "injury": null,
+        "model_version": "weekly-startsit-v1"
+      },
+      "qualification": [
+        {
+          "rule": "game_upcoming",
+          "label": "Target-week kickoff after the build",
+          "value": "2026-11-08T18:00:00Z",
+          "threshold": "after build",
+          "passed": true
+        },
+        {
+          "rule": "espn_observed",
+          "label": "ESPN reading state",
+          "value": "observed",
+          "threshold": "observed",
+          "passed": true
+        },
+        {
+          "rule": "espn_below_ceiling",
+          "label": "ESPN rostered %, below",
+          "value": 3.3,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "rule": "role_confirmed",
+          "label": "snap share over his last 2 games (substantial)",
+          "value": 0.85,
+          "threshold": 0.8,
+          "passed": true
+        },
+        {
+          "rule": "latest_current",
+          "label": "Latest appearance in the window, no missed game since",
+          "value": 8,
+          "threshold": 6,
+          "passed": true
+        },
+        {
+          "rule": "prescreen",
+          "label": "Not Out/Doubtful, on a reserve list, released or unsigned",
+          "value": "clear",
+          "threshold": "clear",
+          "passed": true
+        },
+        {
+          "rule": "ceiling_rank",
+          "label": "Ceiling rank among WRs under 50%",
+          "value": 2,
+          "threshold": 3,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000015"
+      ],
+      "sources": [
+        "weekly_startsit_v1",
+        "espn_fantasy_ownership",
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z",
+        "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+        "injury_report_final": false
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "PPR",
+      "scoring_dependent": true,
+      "story_id": "pace-00-0000001",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
+      "lead_rank": 3,
+      "family_rank": 3,
+      "player_id": "gsis:00-0000001",
+      "display_name": "Marcus Vandelay",
+      "position": "QB",
+      "team": "ATL",
+      "headline": "Marcus Vandelay is QB2 in points a game and 31% rostered",
+      "dek": "16.9 points a game over 8 games ranks QB2 of 3 QBs with 3+ games, yet most ESPN leagues leave him unrostered.",
+      "facts": [
+        {
+          "label": "Points a game",
+          "value": "16.9 (QB2)",
+          "basis": "observed"
+        },
+        {
+          "label": "Games played",
+          "value": "8 of 8",
+          "basis": "observed"
+        },
+        {
+          "label": "17-game pace (PPG × 17)",
+          "value": "286.6",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "31%",
+          "basis": "market"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
+      "kickoff_utc": null,
+      "espn_rostered": 31.0,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "stat_line",
+        "games": 8,
+        "team_games": 8,
+        "points": 134.88,
+        "points_per_game": 16.86,
+        "pace_17": 286.6,
+        "ppg_rank": 2,
+        "total_rank": 2,
+        "cohort_size": 3,
+        "cohort_min_games": 3
+      },
+      "evidence": {
+        "name": "Marcus Vandelay",
+        "position": "QB",
+        "team": "ATL",
+        "games": 8,
+        "team_games": 8,
+        "points": 134.88,
+        "points_per_game": 16.86,
+        "pace": 286.6,
+        "pace_games": 17,
+        "ppg_rank": 2,
+        "total_rank": 2,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
+        "band": 12,
+        "gap_places": 0,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 31.0,
+        "espn_state": "observed",
+        "ceiling": 50
+      },
+      "qualification": [
+        {
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 8,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 QBs",
+          "value": 2,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 31.0,
+          "threshold": 50,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "PPR",
+      "scoring_dependent": true,
+      "story_id": "pace-00-0000016",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
+      "lead_rank": null,
+      "family_rank": 6,
+      "player_id": "gsis:00-0000016",
+      "display_name": "Xavier Nkemdiche",
+      "position": "TE",
+      "team": "NO",
+      "headline": "Xavier Nkemdiche is TE2 in points a game and 40% rostered",
+      "dek": "6.9 points a game over 7 games ranks TE2 of 3 TEs with 3+ games, yet most ESPN leagues leave him unrostered.",
+      "facts": [
+        {
+          "label": "Points a game",
+          "value": "6.9 (TE2)",
+          "basis": "observed"
+        },
+        {
+          "label": "Games played",
+          "value": "7 of 7",
+          "basis": "observed"
+        },
+        {
+          "label": "17-game pace (PPG × 17)",
+          "value": "116.6",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "40%",
+          "basis": "market"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
+      "kickoff_utc": null,
+      "espn_rostered": 40.2,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "stat_line",
+        "games": 7,
+        "team_games": 7,
+        "points": 48.0,
+        "points_per_game": 6.86,
+        "pace_17": 116.6,
+        "ppg_rank": 2,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3
+      },
+      "evidence": {
+        "name": "Xavier Nkemdiche",
+        "position": "TE",
+        "team": "NO",
+        "games": 7,
+        "team_games": 7,
+        "points": 48.0,
+        "points_per_game": 6.86,
+        "pace": 116.6,
+        "pace_games": 17,
+        "ppg_rank": 2,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
+        "band": 12,
+        "gap_places": -1,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 40.2,
+        "espn_state": "observed",
+        "ceiling": 50
+      },
+      "qualification": [
+        {
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 7,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 TEs",
+          "value": 2,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 40.2,
+          "threshold": 50,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "PPR",
+      "scoring_dependent": true,
+      "story_id": "pace-00-0000011",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
+      "lead_rank": null,
+      "family_rank": 8,
+      "player_id": "gsis:00-0000011",
+      "display_name": "Bram Kowalczyk",
+      "position": "TE",
+      "team": "LV",
+      "headline": "Bram Kowalczyk is TE3 in points a game and 25% rostered",
+      "dek": "6.0 points a game over 8 games ranks TE3 of 3 TEs with 3+ games, yet most ESPN leagues leave him unrostered.",
+      "facts": [
+        {
+          "label": "Points a game",
+          "value": "6.0 (TE3)",
+          "basis": "observed"
+        },
+        {
+          "label": "Games played",
+          "value": "8 of 8",
+          "basis": "observed"
+        },
+        {
+          "label": "17-game pace (PPG × 17)",
+          "value": "102.0",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "25%",
+          "basis": "market"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
+      "kickoff_utc": null,
+      "espn_rostered": 25.0,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "stat_line",
+        "games": 8,
+        "team_games": 8,
+        "points": 48.0,
+        "points_per_game": 6.0,
+        "pace_17": 102.0,
+        "ppg_rank": 3,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3
+      },
+      "evidence": {
+        "name": "Bram Kowalczyk",
+        "position": "TE",
+        "team": "LV",
+        "games": 8,
+        "team_games": 8,
+        "points": 48.0,
+        "points_per_game": 6.0,
+        "pace": 102.0,
+        "pace_games": 17,
+        "ppg_rank": 3,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
+        "band": 12,
+        "gap_places": -2,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 25.0,
+        "espn_state": "observed",
+        "ceiling": 50
+      },
+      "qualification": [
+        {
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 8,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 TEs",
+          "value": 3,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 25.0,
+          "threshold": 50,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "PPR",
+      "scoring_dependent": true,
+      "story_id": "volume-00-0000004",
+      "family": "volume_vs_results",
+      "variant": "shrinking",
+      "horizon": "role_watch",
+      "nature": "thesis",
+      "lead_rank": 2,
+      "family_rank": 1,
+      "player_id": "gsis:00-0000004",
+      "display_name": "Chris Johnson",
+      "position": "WR",
+      "team": "DAL",
+      "headline": "Chris Johnson's target share fell from 26% to 17% over W6–W8",
+      "dek": "A shrinking share is a smaller role, not a cold streak: 'he still gets the ball' no longer holds for these weeks, with targets a game down from 9.0 to 5.7.",
+      "facts": [
+        {
+          "label": "Target share, before → W6–W8",
+          "value": "26% → 17%",
+          "basis": "observed"
+        },
+        {
+          "label": "Targets a game, before → W6–W8",
+          "value": "9.0 → 5.7",
+          "basis": "observed"
+        },
+        {
+          "label": "Points a game, before → W6–W8",
+          "value": "14.7 → 11.0",
+          "basis": "observed"
+        },
+        {
+          "label": "Snap share, before → W6–W8",
+          "value": "93% → 75%",
+          "basis": "observed"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Shares pool his games against his team's; three weeks against his earlier games is a small sample.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": null,
+      "espn_rostered": 22.4,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "week_strip",
+        "weeks": [
+          {
+            "week": 1,
+            "status": "P",
+            "in_window": false,
+            "points": 13.5,
+            "td_points": 0.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 2,
+            "status": "P",
+            "in_window": false,
+            "points": 13.5,
+            "td_points": 0.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 3,
+            "status": "P",
+            "in_window": false,
+            "points": 13.5,
+            "td_points": 0.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 4,
+            "status": "P",
+            "in_window": false,
+            "points": 19.5,
+            "td_points": 6.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 5,
+            "status": "P",
+            "in_window": false,
+            "points": 13.5,
+            "td_points": 0.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 6,
+            "status": "P",
+            "in_window": true,
+            "points": 11.25,
+            "td_points": 0.0,
+            "opportunity": 7.0,
+            "share": 0.206,
+            "rank": null
+          },
+          {
+            "week": 7,
+            "status": "P",
+            "in_window": true,
+            "points": 9.0,
+            "td_points": 0.0,
+            "opportunity": 6.0,
+            "share": 0.176,
+            "rank": null
+          },
+          {
+            "week": 8,
+            "status": "P",
+            "in_window": true,
+            "points": 12.75,
+            "td_points": 6.0,
+            "opportunity": 4.0,
+            "share": 0.118,
+            "rank": null
+          }
+        ],
+        "opportunity_label": "Targets",
+        "share_label": "Target share",
+        "band": null
+      },
+      "evidence": {
+        "name": "Chris Johnson",
+        "position": "WR",
+        "team": "DAL",
+        "window_label": "W6–W8",
+        "opportunity_label": "targets",
+        "window_games": 3,
+        "baseline_games": 5,
+        "min_window_games": 2,
+        "min_baseline_games": 2,
+        "window_opportunities": 17.0,
+        "window_opportunities_per_game": 5.7,
+        "baseline_opportunities_per_game": 9.0,
+        "workload_rank": 21,
+        "production_rank": 5,
+        "cohort_size": 21,
+        "band": 24,
+        "gap_places": -16,
+        "required_gap_places": 12,
+        "hold_percent": 90,
+        "window_points": 33.0,
+        "window_points_per_game": 11.0,
+        "baseline_points_per_game": 14.7,
+        "window_td_points": 6.0,
+        "window_touchdowns": 1,
+        "share_metric": "target_share",
+        "window_share": 0.167,
+        "window_share_numerator": 17.0,
+        "window_share_denominator": 102.0,
+        "baseline_share": 0.265,
+        "role_step": 0.06,
+        "role_floor": 0.16,
+        "window_yards": 150.0,
+        "yards_per_opportunity": 8.8,
+        "cohort_median_yards_per_opportunity": 0.0,
+        "red_zone_opportunities": 3,
+        "team_red_zone_opportunities": 33,
+        "snap_share_window": 0.75,
+        "snap_share_baseline": 0.93,
+        "espn_rostered": 22.4,
+        "espn_state": "observed"
+      },
+      "qualification": [
+        {
+          "rule": "window_games",
+          "label": "Games in W6–W8",
+          "value": 3,
+          "threshold": 2,
+          "passed": true
+        },
+        {
+          "rule": "baseline_games",
+          "label": "Games before the window",
+          "value": 5,
+          "threshold": 2,
+          "passed": true
+        },
+        {
+          "rule": "baseline_role",
+          "label": "Share before the window, at least",
+          "value": 0.265,
+          "threshold": 0.16,
+          "passed": true
+        },
+        {
+          "rule": "share_drop",
+          "label": "Share fell by at least",
+          "value": 0.098,
+          "threshold": 0.06,
+          "passed": true
+        },
+        {
+          "rule": "workload_fell",
+          "label": "Opportunities a game, below 90% of the earlier rate",
+          "value": 5.7,
+          "threshold": 8.1,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000004"
+      ],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "edition": "2026w08",
+      "scoring_preset": "PPR",
+      "scoring_dependent": true,
+      "story_id": "upside-00-0000005",
+      "family": "weekly_upside",
+      "variant": "ceiling",
+      "horizon": "this_week",
+      "nature": "thesis",
+      "lead_rank": 1,
+      "family_rank": 1,
+      "player_id": "gsis:00-0000005",
+      "display_name": "Chris Johnson Jr.",
+      "position": "WR",
+      "team": "DEN",
+      "headline": "Chris Johnson Jr.: a 18.8-point ceiling at 49% rostered",
+      "dek": "No. 1 by week-9 ceiling of 2 WRs with a confirmed role and under 50% rostered on ESPN. The matchup moves his ceiling +3.1 against his typical week, mostly the betting lines.",
+      "facts": [
+        {
+          "label": "Ceiling / median / floor (P90 / P50 / P10)",
+          "value": "18.8 / 6.8 / 0.6",
+          "basis": "model"
+        },
+        {
+          "label": "Snap share, last 2 games",
+          "value": "84%",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "49%",
+          "basis": "market"
+        },
+        {
+          "label": "Matchup vs typical week (P90)",
+          "value": "+3.1",
+          "basis": "model"
+        }
+      ],
+      "counterpoint": "His floor (P10) is 0.6 points: one week in ten at or below it.",
+      "caveat": "P90: one week in ten at or above it, per the weekly model — not a 90% chance. ESPN share describes ESPN leagues, not yours.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "espn_rostered": 48.9,
+      "ceiling_ranks": {
+        "50": 1,
+        "25": null,
+        "10": null
+      },
+      "injury": null,
+      "opponent": "GB",
+      "home_away": "home",
+      "chart": {
+        "type": "interval",
+        "q10": 0.6,
+        "q50": 6.76,
+        "q90": 18.82,
+        "typical_q10": 0.6,
+        "typical_q50": 6.26,
+        "typical_q90": 15.72
+      },
+      "evidence": {
+        "name": "Chris Johnson Jr.",
+        "position": "WR",
+        "team": "DEN",
+        "opponent": "GB",
+        "home_away": "home",
+        "kickoff_utc": "2026-11-08T18:00:00Z",
+        "target_week": 9,
+        "q10": 0.6,
+        "q50": 6.76,
+        "q90": 18.82,
+        "typical_q10": 0.6,
+        "typical_q50": 6.26,
+        "typical_q90": 15.72,
+        "matchup_delta_q90": 3.1,
+        "terms_q90": {
+          "lines": 3.2,
+          "home": 0.13,
+          "rest": 0.0,
+          "roof": -0.04,
+          "opponent": -0.19
+        },
+        "espn_rostered": 48.9,
+        "espn_state": "observed",
+        "ceiling": 50,
+        "ceiling_level": 90,
+        "ceiling_rank": 1,
+        "eligible": 2,
+        "ceiling_ranks": {
+          "50": 1,
+          "25": null,
+          "10": null
+        },
+        "eligible_counts": {
+          "50": 2,
+          "25": 1,
+          "10": 1
+        },
+        "role_metric": "snap_share",
+        "role_level": 0.845,
+        "role_baseline": 0.852,
+        "role_passed": "substantial",
+        "role_bar": 0.8,
+        "role_games": 2,
+        "role_weeks": [
+          7,
+          8
+        ],
+        "injury": null,
+        "model_version": "weekly-startsit-v1"
+      },
+      "qualification": [
+        {
+          "rule": "game_upcoming",
+          "label": "Target-week kickoff after the build",
+          "value": "2026-11-08T18:00:00Z",
+          "threshold": "after build",
+          "passed": true
+        },
+        {
+          "rule": "espn_observed",
+          "label": "ESPN reading state",
+          "value": "observed",
+          "threshold": "observed",
+          "passed": true
+        },
+        {
+          "rule": "espn_below_ceiling",
+          "label": "ESPN rostered %, below",
+          "value": 48.9,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "rule": "role_confirmed",
+          "label": "snap share over his last 2 games (substantial)",
+          "value": 0.845,
+          "threshold": 0.8,
+          "passed": true
+        },
+        {
+          "rule": "latest_current",
+          "label": "Latest appearance in the window, no missed game since",
+          "value": 8,
+          "threshold": 6,
+          "passed": true
+        },
+        {
+          "rule": "prescreen",
+          "label": "Not Out/Doubtful, on a reserve list, released or unsigned",
+          "value": "clear",
+          "threshold": "clear",
+          "passed": true
+        },
+        {
+          "rule": "ceiling_rank",
+          "label": "Ceiling rank among WRs under 50%",
+          "value": 1,
+          "threshold": 3,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000005"
+      ],
+      "sources": [
+        "weekly_startsit_v1",
+        "espn_fantasy_ownership",
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z",
+        "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+        "injury_report_final": false
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "edition": "2026w08",
+      "scoring_preset": "PPR",
+      "scoring_dependent": true,
+      "story_id": "upside-00-0000008",
+      "family": "weekly_upside",
+      "variant": "ceiling",
+      "horizon": "this_week",
+      "nature": "thesis",
+      "lead_rank": 4,
+      "family_rank": 1,
+      "player_id": "gsis:00-0000008",
+      "display_name": "Nnamdi Brightwater",
+      "position": "RB",
+      "team": "IND",
+      "headline": "Nnamdi Brightwater: a 15.2-point ceiling at 7.1% rostered",
+      "dek": "No. 1 by week-9 ceiling of 2 RBs with a confirmed role and under 50% rostered on ESPN. The matchup moves his ceiling +1.7 against his typical week, mostly the betting lines.",
+      "facts": [
+        {
+          "label": "Ceiling / median / floor (P90 / P50 / P10)",
+          "value": "15.2 / 3.7 / 0.6",
+          "basis": "model"
+        },
+        {
+          "label": "Carry share, last 2 games",
+          "value": "46%",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "7.1%",
+          "basis": "market"
+        },
+        {
+          "label": "Matchup vs typical week (P90)",
+          "value": "+1.7",
+          "basis": "model"
+        }
+      ],
+      "counterpoint": "His floor (P10) is 0.6 points: one week in ten at or below it.",
+      "caveat": "P90: one week in ten at or above it, per the weekly model — not a 90% chance. ESPN share describes ESPN leagues, not yours.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "espn_rostered": 7.1,
+      "ceiling_ranks": {
+        "50": 1,
+        "25": 1,
+        "10": 1
+      },
+      "injury": null,
+      "opponent": "HOU",
+      "home_away": "away",
+      "chart": {
+        "type": "interval",
+        "q10": 0.64,
+        "q50": 3.72,
+        "q90": 15.23,
+        "typical_q10": 0.62,
+        "typical_q50": 2.72,
+        "typical_q90": 13.53
+      },
+      "evidence": {
+        "name": "Nnamdi Brightwater",
+        "position": "RB",
+        "team": "IND",
+        "opponent": "HOU",
+        "home_away": "away",
+        "kickoff_utc": "2026-11-08T18:00:00Z",
+        "target_week": 9,
+        "q10": 0.64,
+        "q50": 3.72,
+        "q90": 15.23,
+        "typical_q10": 0.62,
+        "typical_q50": 2.72,
+        "typical_q90": 13.53,
+        "matchup_delta_q90": 1.7,
+        "terms_q90": {
+          "lines": 1.09,
+          "home": 0.04,
+          "rest": 0.02,
+          "roof": 0.0,
+          "opponent": 0.55
+        },
+        "espn_rostered": 7.1,
+        "espn_state": "observed",
+        "ceiling": 50,
+        "ceiling_level": 90,
+        "ceiling_rank": 1,
+        "eligible": 2,
+        "ceiling_ranks": {
+          "50": 1,
+          "25": 1,
+          "10": 1
+        },
+        "eligible_counts": {
+          "50": 2,
+          "25": 2,
+          "10": 2
+        },
+        "role_metric": "carry_share",
+        "role_level": 0.462,
+        "role_baseline": 0.462,
+        "role_passed": "substantial",
+        "role_bar": 0.45,
+        "role_games": 2,
+        "role_weeks": [
+          6,
+          7
+        ],
+        "injury": null,
+        "model_version": "weekly-startsit-v1"
+      },
+      "qualification": [
+        {
+          "rule": "game_upcoming",
+          "label": "Target-week kickoff after the build",
+          "value": "2026-11-08T18:00:00Z",
+          "threshold": "after build",
+          "passed": true
+        },
+        {
+          "rule": "espn_observed",
+          "label": "ESPN reading state",
+          "value": "observed",
+          "threshold": "observed",
+          "passed": true
+        },
+        {
+          "rule": "espn_below_ceiling",
+          "label": "ESPN rostered %, below",
+          "value": 7.1,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "rule": "role_confirmed",
+          "label": "carry share over his last 2 games (substantial)",
+          "value": 0.462,
+          "threshold": 0.45,
+          "passed": true
+        },
+        {
+          "rule": "latest_current",
+          "label": "Latest appearance in the window, no missed game since",
+          "value": 7,
+          "threshold": 6,
+          "passed": true
+        },
+        {
+          "rule": "prescreen",
+          "label": "Not Out/Doubtful, on a reserve list, released or unsigned",
+          "value": "clear",
+          "threshold": "clear",
+          "passed": true
+        },
+        {
+          "rule": "ceiling_rank",
+          "label": "Ceiling rank among RBs under 50%",
+          "value": 1,
+          "threshold": 3,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000008"
+      ],
+      "sources": [
+        "weekly_startsit_v1",
+        "espn_fantasy_ownership",
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z",
+        "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+        "injury_report_final": false
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "edition": "2026w08",
+      "scoring_preset": "PPR",
+      "scoring_dependent": true,
+      "story_id": "upside-00-0000002",
+      "family": "weekly_upside",
+      "variant": "ceiling",
+      "horizon": "this_week",
+      "nature": "thesis",
+      "lead_rank": null,
+      "family_rank": 2,
+      "player_id": "gsis:00-0000002",
+      "display_name": "Dez Okonkwo",
+      "position": "RB",
+      "team": "BUF",
+      "headline": "Dez Okonkwo: a 14.5-point ceiling at 4.2% rostered",
+      "dek": "No. 2 by week-9 ceiling of 2 RBs with a confirmed role and under 50% rostered on ESPN. The matchup changes his ceiling little against his typical week.",
+      "facts": [
+        {
+          "label": "Ceiling / median / floor (P90 / P50 / P10)",
+          "value": "14.5 / 2.9 / 0.8",
+          "basis": "model"
+        },
+        {
+          "label": "Snap share, last 2 games",
+          "value": "78%",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "4.2%",
+          "basis": "market"
+        },
+        {
+          "label": "Matchup vs typical week (P90)",
+          "value": "+0.1",
+          "basis": "model"
+        }
+      ],
+      "counterpoint": "Listed Questionable for week 9 on the official report.",
+      "caveat": "P90: one week in ten at or above it, per the weekly model — not a 90% chance. ESPN share describes ESPN leagues, not yours.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "espn_rostered": 4.2,
+      "ceiling_ranks": {
+        "50": 2,
+        "25": 2,
+        "10": 2
+      },
+      "injury": {
+        "week": 9,
+        "designation": "Questionable",
+        "practice_status": "Limited Participation in Practice",
+        "primary_injury": "Hamstring"
+      },
+      "opponent": "NO",
+      "home_away": "away",
+      "chart": {
+        "type": "interval",
+        "q10": 0.75,
+        "q50": 2.88,
+        "q90": 14.49,
+        "typical_q10": 0.73,
+        "typical_q50": 2.9,
+        "typical_q90": 14.44
+      },
+      "evidence": {
+        "name": "Dez Okonkwo",
+        "position": "RB",
+        "team": "BUF",
+        "opponent": "NO",
+        "home_away": "away",
+        "kickoff_utc": "2026-11-08T18:00:00Z",
+        "target_week": 9,
+        "q10": 0.75,
+        "q50": 2.88,
+        "q90": 14.49,
+        "typical_q10": 0.73,
+        "typical_q50": 2.9,
+        "typical_q90": 14.44,
+        "matchup_delta_q90": 0.05,
+        "terms_q90": {
+          "lines": 0.74,
+          "home": -0.01,
+          "rest": -0.13,
+          "roof": 0.0,
+          "opponent": -0.54
+        },
+        "espn_rostered": 4.2,
+        "espn_state": "observed",
+        "ceiling": 50,
+        "ceiling_level": 90,
+        "ceiling_rank": 2,
+        "eligible": 2,
+        "ceiling_ranks": {
+          "50": 2,
+          "25": 2,
+          "10": 2
+        },
+        "eligible_counts": {
+          "50": 2,
+          "25": 2,
+          "10": 2
+        },
+        "role_metric": "snap_share",
+        "role_level": 0.785,
+        "role_baseline": 0.452,
+        "role_passed": "substantial",
+        "role_bar": 0.55,
+        "role_games": 2,
+        "role_weeks": [
+          7,
+          8
+        ],
+        "injury": {
+          "week": 9,
+          "designation": "Questionable",
+          "practice_status": "Limited Participation in Practice",
+          "primary_injury": "Hamstring"
+        },
+        "model_version": "weekly-startsit-v1"
+      },
+      "qualification": [
+        {
+          "rule": "game_upcoming",
+          "label": "Target-week kickoff after the build",
+          "value": "2026-11-08T18:00:00Z",
+          "threshold": "after build",
+          "passed": true
+        },
+        {
+          "rule": "espn_observed",
+          "label": "ESPN reading state",
+          "value": "observed",
+          "threshold": "observed",
+          "passed": true
+        },
+        {
+          "rule": "espn_below_ceiling",
+          "label": "ESPN rostered %, below",
+          "value": 4.2,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "rule": "role_confirmed",
+          "label": "snap share over his last 2 games (substantial)",
+          "value": 0.785,
+          "threshold": 0.55,
+          "passed": true
+        },
+        {
+          "rule": "latest_current",
+          "label": "Latest appearance in the window, no missed game since",
+          "value": 8,
+          "threshold": 6,
+          "passed": true
+        },
+        {
+          "rule": "prescreen",
+          "label": "Not Out/Doubtful, on a reserve list, released or unsigned",
+          "value": "clear",
+          "threshold": "clear",
+          "passed": true
+        },
+        {
+          "rule": "ceiling_rank",
+          "label": "Ceiling rank among RBs under 50%",
+          "value": 2,
+          "threshold": 3,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000002",
+        "role-buf-backfield"
+      ],
+      "sources": [
+        "weekly_startsit_v1",
+        "espn_fantasy_ownership",
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z",
+        "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+        "injury_report_final": true
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "edition": "2026w08",
+      "scoring_preset": "PPR",
+      "scoring_dependent": true,
+      "story_id": "upside-00-0000015",
+      "family": "weekly_upside",
+      "variant": "ceiling",
+      "horizon": "this_week",
+      "nature": "thesis",
+      "lead_rank": 5,
+      "family_rank": 2,
+      "player_id": "gsis:00-0000015",
+      "display_name": "Hollis Amadi",
+      "position": "WR",
+      "team": "NE",
+      "headline": "Hollis Amadi: a 18.5-point ceiling at 3.3% rostered",
+      "dek": "No. 2 by week-9 ceiling of 2 WRs with a confirmed role and under 50% rostered on ESPN. The matchup moves his ceiling +2.8 against his typical week, mostly the betting lines.",
+      "facts": [
+        {
+          "label": "Ceiling / median / floor (P90 / P50 / P10)",
+          "value": "18.5 / 6.7 / 0.6",
+          "basis": "model"
+        },
+        {
+          "label": "Snap share, last 2 games",
+          "value": "85%",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "3.3%",
+          "basis": "market"
+        },
+        {
+          "label": "Matchup vs typical week (P90)",
+          "value": "+2.8",
+          "basis": "model"
+        }
+      ],
+      "counterpoint": "His floor (P10) is 0.6 points: one week in ten at or below it.",
+      "caveat": "P90: one week in ten at or above it, per the weekly model — not a 90% chance. ESPN share describes ESPN leagues, not yours.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "espn_rostered": 3.3,
+      "ceiling_ranks": {
+        "50": 2,
+        "25": 1,
+        "10": 1
+      },
+      "injury": null,
+      "opponent": "MIN",
+      "home_away": "away",
+      "chart": {
+        "type": "interval",
+        "q10": 0.6,
+        "q50": 6.7,
+        "q90": 18.5,
+        "typical_q10": 0.6,
+        "typical_q50": 6.35,
+        "typical_q90": 15.68
+      },
+      "evidence": {
+        "name": "Hollis Amadi",
+        "position": "WR",
+        "team": "NE",
+        "opponent": "MIN",
+        "home_away": "away",
+        "kickoff_utc": "2026-11-08T18:00:00Z",
+        "target_week": 9,
+        "q10": 0.6,
+        "q50": 6.7,
+        "q90": 18.5,
+        "typical_q10": 0.6,
+        "typical_q50": 6.35,
+        "typical_q90": 15.68,
+        "matchup_delta_q90": 2.82,
+        "terms_q90": {
+          "lines": 3.14,
+          "home": -0.13,
+          "rest": 0.0,
+          "roof": 0.0,
+          "opponent": -0.19
+        },
+        "espn_rostered": 3.3,
+        "espn_state": "observed",
+        "ceiling": 50,
+        "ceiling_level": 90,
+        "ceiling_rank": 2,
+        "eligible": 2,
+        "ceiling_ranks": {
+          "50": 2,
+          "25": 1,
+          "10": 1
+        },
+        "eligible_counts": {
+          "50": 2,
+          "25": 1,
+          "10": 1
+        },
+        "role_metric": "snap_share",
+        "role_level": 0.85,
+        "role_baseline": 0.848,
+        "role_passed": "substantial",
+        "role_bar": 0.8,
+        "role_games": 2,
+        "role_weeks": [
+          6,
+          8
+        ],
+        "injury": null,
+        "model_version": "weekly-startsit-v1"
+      },
+      "qualification": [
+        {
+          "rule": "game_upcoming",
+          "label": "Target-week kickoff after the build",
+          "value": "2026-11-08T18:00:00Z",
+          "threshold": "after build",
+          "passed": true
+        },
+        {
+          "rule": "espn_observed",
+          "label": "ESPN reading state",
+          "value": "observed",
+          "threshold": "observed",
+          "passed": true
+        },
+        {
+          "rule": "espn_below_ceiling",
+          "label": "ESPN rostered %, below",
+          "value": 3.3,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "rule": "role_confirmed",
+          "label": "snap share over his last 2 games (substantial)",
+          "value": 0.85,
+          "threshold": 0.8,
+          "passed": true
+        },
+        {
+          "rule": "latest_current",
+          "label": "Latest appearance in the window, no missed game since",
+          "value": 8,
+          "threshold": 6,
+          "passed": true
+        },
+        {
+          "rule": "prescreen",
+          "label": "Not Out/Doubtful, on a reserve list, released or unsigned",
+          "value": "clear",
+          "threshold": "clear",
+          "passed": true
+        },
+        {
+          "rule": "ceiling_rank",
+          "label": "Ceiling rank among WRs under 50%",
+          "value": 2,
+          "threshold": 3,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000015"
+      ],
+      "sources": [
+        "weekly_startsit_v1",
+        "espn_fantasy_ownership",
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z",
+        "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+        "injury_report_final": false
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "STD",
+      "scoring_dependent": true,
+      "story_id": "pace-00-0000001",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
+      "lead_rank": 3,
+      "family_rank": 3,
+      "player_id": "gsis:00-0000001",
+      "display_name": "Marcus Vandelay",
+      "position": "QB",
+      "team": "ATL",
+      "headline": "Marcus Vandelay is QB2 in points a game and 31% rostered",
+      "dek": "16.9 points a game over 8 games ranks QB2 of 3 QBs with 3+ games, yet most ESPN leagues leave him unrostered.",
+      "facts": [
+        {
+          "label": "Points a game",
+          "value": "16.9 (QB2)",
+          "basis": "observed"
+        },
+        {
+          "label": "Games played",
+          "value": "8 of 8",
+          "basis": "observed"
+        },
+        {
+          "label": "17-game pace (PPG × 17)",
+          "value": "286.6",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "31%",
+          "basis": "market"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
+      "kickoff_utc": null,
+      "espn_rostered": 31.0,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "stat_line",
+        "games": 8,
+        "team_games": 8,
+        "points": 134.88,
+        "points_per_game": 16.86,
+        "pace_17": 286.6,
+        "ppg_rank": 2,
+        "total_rank": 2,
+        "cohort_size": 3,
+        "cohort_min_games": 3
+      },
+      "evidence": {
+        "name": "Marcus Vandelay",
+        "position": "QB",
+        "team": "ATL",
+        "games": 8,
+        "team_games": 8,
+        "points": 134.88,
+        "points_per_game": 16.86,
+        "pace": 286.6,
+        "pace_games": 17,
+        "ppg_rank": 2,
+        "total_rank": 2,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
+        "band": 12,
+        "gap_places": 0,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 31.0,
+        "espn_state": "observed",
+        "ceiling": 50
+      },
+      "qualification": [
+        {
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 8,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 QBs",
+          "value": 2,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 31.0,
+          "threshold": 50,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "STD",
+      "scoring_dependent": true,
+      "story_id": "pace-00-0000016",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
+      "lead_rank": null,
+      "family_rank": 6,
+      "player_id": "gsis:00-0000016",
+      "display_name": "Xavier Nkemdiche",
+      "position": "TE",
+      "team": "NO",
+      "headline": "Xavier Nkemdiche is TE2 in points a game and 40% rostered",
+      "dek": "3.9 points a game over 7 games ranks TE2 of 3 TEs with 3+ games, yet most ESPN leagues leave him unrostered.",
+      "facts": [
+        {
+          "label": "Points a game",
+          "value": "3.9 (TE2)",
+          "basis": "observed"
+        },
+        {
+          "label": "Games played",
+          "value": "7 of 7",
+          "basis": "observed"
+        },
+        {
+          "label": "17-game pace (PPG × 17)",
+          "value": "65.6",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "40%",
+          "basis": "market"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
+      "kickoff_utc": null,
+      "espn_rostered": 40.2,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "stat_line",
+        "games": 7,
+        "team_games": 7,
+        "points": 27.0,
+        "points_per_game": 3.86,
+        "pace_17": 65.6,
+        "ppg_rank": 2,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3
+      },
+      "evidence": {
+        "name": "Xavier Nkemdiche",
+        "position": "TE",
+        "team": "NO",
+        "games": 7,
+        "team_games": 7,
+        "points": 27.0,
+        "points_per_game": 3.86,
+        "pace": 65.6,
+        "pace_games": 17,
+        "ppg_rank": 2,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
+        "band": 12,
+        "gap_places": -1,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 40.2,
+        "espn_state": "observed",
+        "ceiling": 50
+      },
+      "qualification": [
+        {
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 7,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 TEs",
+          "value": 2,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 40.2,
+          "threshold": 50,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "STD",
+      "scoring_dependent": true,
+      "story_id": "pace-00-0000011",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
+      "lead_rank": null,
+      "family_rank": 8,
+      "player_id": "gsis:00-0000011",
+      "display_name": "Bram Kowalczyk",
+      "position": "TE",
+      "team": "LV",
+      "headline": "Bram Kowalczyk is TE3 in points a game and 25% rostered",
+      "dek": "3.4 points a game over 8 games ranks TE3 of 3 TEs with 3+ games, yet most ESPN leagues leave him unrostered.",
+      "facts": [
+        {
+          "label": "Points a game",
+          "value": "3.4 (TE3)",
+          "basis": "observed"
+        },
+        {
+          "label": "Games played",
+          "value": "8 of 8",
+          "basis": "observed"
+        },
+        {
+          "label": "17-game pace (PPG × 17)",
+          "value": "57.4",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "25%",
+          "basis": "market"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
+      "kickoff_utc": null,
+      "espn_rostered": 25.0,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "stat_line",
+        "games": 8,
+        "team_games": 8,
+        "points": 27.0,
+        "points_per_game": 3.38,
+        "pace_17": 57.4,
+        "ppg_rank": 3,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3
+      },
+      "evidence": {
+        "name": "Bram Kowalczyk",
+        "position": "TE",
+        "team": "LV",
+        "games": 8,
+        "team_games": 8,
+        "points": 27.0,
+        "points_per_game": 3.38,
+        "pace": 57.4,
+        "pace_games": 17,
+        "ppg_rank": 3,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
+        "band": 12,
+        "gap_places": -2,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 25.0,
+        "espn_state": "observed",
+        "ceiling": 50
+      },
+      "qualification": [
+        {
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 8,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 TEs",
+          "value": 3,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 25.0,
+          "threshold": 50,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "STD",
+      "scoring_dependent": true,
+      "story_id": "volume-00-0000004",
+      "family": "volume_vs_results",
+      "variant": "shrinking",
+      "horizon": "role_watch",
+      "nature": "thesis",
+      "lead_rank": 2,
+      "family_rank": 1,
+      "player_id": "gsis:00-0000004",
+      "display_name": "Chris Johnson",
+      "position": "WR",
+      "team": "DAL",
+      "headline": "Chris Johnson's target share fell from 26% to 17% over W6–W8",
+      "dek": "A shrinking share is a smaller role, not a cold streak: 'he still gets the ball' no longer holds for these weeks, with targets a game down from 9.0 to 5.7.",
+      "facts": [
+        {
+          "label": "Target share, before → W6–W8",
+          "value": "26% → 17%",
+          "basis": "observed"
+        },
+        {
+          "label": "Targets a game, before → W6–W8",
+          "value": "9.0 → 5.7",
+          "basis": "observed"
+        },
+        {
+          "label": "Points a game, before → W6–W8",
+          "value": "8.7 → 7.0",
+          "basis": "observed"
+        },
+        {
+          "label": "Snap share, before → W6–W8",
+          "value": "93% → 75%",
+          "basis": "observed"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Shares pool his games against his team's; three weeks against his earlier games is a small sample.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": null,
+      "espn_rostered": 22.4,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "week_strip",
+        "weeks": [
+          {
+            "week": 1,
+            "status": "P",
+            "in_window": false,
+            "points": 7.5,
+            "td_points": 0.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 2,
+            "status": "P",
+            "in_window": false,
+            "points": 7.5,
+            "td_points": 0.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 3,
+            "status": "P",
+            "in_window": false,
+            "points": 7.5,
+            "td_points": 0.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 4,
+            "status": "P",
+            "in_window": false,
+            "points": 13.5,
+            "td_points": 6.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 5,
+            "status": "P",
+            "in_window": false,
+            "points": 7.5,
+            "td_points": 0.0,
+            "opportunity": 9.0,
+            "share": 0.265,
+            "rank": null
+          },
+          {
+            "week": 6,
+            "status": "P",
+            "in_window": true,
+            "points": 6.25,
+            "td_points": 0.0,
+            "opportunity": 7.0,
+            "share": 0.206,
+            "rank": null
+          },
+          {
+            "week": 7,
+            "status": "P",
+            "in_window": true,
+            "points": 5.0,
+            "td_points": 0.0,
+            "opportunity": 6.0,
+            "share": 0.176,
+            "rank": null
+          },
+          {
+            "week": 8,
+            "status": "P",
+            "in_window": true,
+            "points": 9.75,
+            "td_points": 6.0,
+            "opportunity": 4.0,
+            "share": 0.118,
+            "rank": null
+          }
+        ],
+        "opportunity_label": "Targets",
+        "share_label": "Target share",
+        "band": null
+      },
+      "evidence": {
+        "name": "Chris Johnson",
+        "position": "WR",
+        "team": "DAL",
+        "window_label": "W6–W8",
+        "opportunity_label": "targets",
+        "window_games": 3,
+        "baseline_games": 5,
+        "min_window_games": 2,
+        "min_baseline_games": 2,
+        "window_opportunities": 17.0,
+        "window_opportunities_per_game": 5.7,
+        "baseline_opportunities_per_game": 9.0,
+        "workload_rank": 21,
+        "production_rank": 5,
+        "cohort_size": 21,
+        "band": 24,
+        "gap_places": -16,
+        "required_gap_places": 12,
+        "hold_percent": 90,
+        "window_points": 21.0,
+        "window_points_per_game": 7.0,
+        "baseline_points_per_game": 8.7,
+        "window_td_points": 6.0,
+        "window_touchdowns": 1,
+        "share_metric": "target_share",
+        "window_share": 0.167,
+        "window_share_numerator": 17.0,
+        "window_share_denominator": 102.0,
+        "baseline_share": 0.265,
+        "role_step": 0.06,
+        "role_floor": 0.16,
+        "window_yards": 150.0,
+        "yards_per_opportunity": 8.8,
+        "cohort_median_yards_per_opportunity": 0.0,
+        "red_zone_opportunities": 3,
+        "team_red_zone_opportunities": 33,
+        "snap_share_window": 0.75,
+        "snap_share_baseline": 0.93,
+        "espn_rostered": 22.4,
+        "espn_state": "observed"
+      },
+      "qualification": [
+        {
+          "rule": "window_games",
+          "label": "Games in W6–W8",
+          "value": 3,
+          "threshold": 2,
+          "passed": true
+        },
+        {
+          "rule": "baseline_games",
+          "label": "Games before the window",
+          "value": 5,
+          "threshold": 2,
+          "passed": true
+        },
+        {
+          "rule": "baseline_role",
+          "label": "Share before the window, at least",
+          "value": 0.265,
+          "threshold": 0.16,
+          "passed": true
+        },
+        {
+          "rule": "share_drop",
+          "label": "Share fell by at least",
+          "value": 0.098,
+          "threshold": 0.06,
+          "passed": true
+        },
+        {
+          "rule": "workload_fell",
+          "label": "Opportunities a game, below 90% of the earlier rate",
+          "value": 5.7,
+          "threshold": 8.1,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000004"
+      ],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "edition": "2026w08",
+      "scoring_preset": "STD",
+      "scoring_dependent": true,
+      "story_id": "upside-00-0000005",
+      "family": "weekly_upside",
+      "variant": "ceiling",
+      "horizon": "this_week",
+      "nature": "thesis",
+      "lead_rank": 1,
+      "family_rank": 1,
+      "player_id": "gsis:00-0000005",
+      "display_name": "Chris Johnson Jr.",
+      "position": "WR",
+      "team": "DEN",
+      "headline": "Chris Johnson Jr.: a 12.5-point ceiling at 49% rostered",
+      "dek": "No. 1 by week-9 ceiling of 2 WRs with a confirmed role and under 50% rostered on ESPN. The matchup moves his ceiling +3.2 against his typical week, mostly the betting lines.",
+      "facts": [
+        {
+          "label": "Ceiling / median / floor (P90 / P50 / P10)",
+          "value": "12.5 / 3.7 / 0.3",
+          "basis": "model"
+        },
+        {
+          "label": "Snap share, last 2 games",
+          "value": "84%",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "49%",
+          "basis": "market"
+        },
+        {
+          "label": "Matchup vs typical week (P90)",
+          "value": "+3.2",
+          "basis": "model"
+        }
+      ],
+      "counterpoint": "His floor (P10) is 0.3 points: one week in ten at or below it.",
+      "caveat": "P90: one week in ten at or above it, per the weekly model — not a 90% chance. ESPN share describes ESPN leagues, not yours.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "espn_rostered": 48.9,
+      "ceiling_ranks": {
+        "50": 1,
+        "25": null,
+        "10": null
+      },
+      "injury": null,
+      "opponent": "GB",
+      "home_away": "home",
+      "chart": {
+        "type": "interval",
+        "q10": 0.35,
+        "q50": 3.74,
+        "q90": 12.49,
+        "typical_q10": 0.27,
+        "typical_q50": 3.3,
+        "typical_q90": 9.31
+      },
+      "evidence": {
+        "name": "Chris Johnson Jr.",
+        "position": "WR",
+        "team": "DEN",
+        "opponent": "GB",
+        "home_away": "home",
+        "kickoff_utc": "2026-11-08T18:00:00Z",
+        "target_week": 9,
+        "q10": 0.35,
+        "q50": 3.74,
+        "q90": 12.49,
+        "typical_q10": 0.27,
+        "typical_q50": 3.3,
+        "typical_q90": 9.31,
+        "matchup_delta_q90": 3.18,
+        "terms_q90": {
+          "lines": 3.39,
+          "home": 0.17,
+          "rest": 0.0,
+          "roof": -0.06,
+          "opponent": -0.32
+        },
+        "espn_rostered": 48.9,
+        "espn_state": "observed",
+        "ceiling": 50,
+        "ceiling_level": 90,
+        "ceiling_rank": 1,
+        "eligible": 2,
+        "ceiling_ranks": {
+          "50": 1,
+          "25": null,
+          "10": null
+        },
+        "eligible_counts": {
+          "50": 2,
+          "25": 1,
+          "10": 1
+        },
+        "role_metric": "snap_share",
+        "role_level": 0.845,
+        "role_baseline": 0.852,
+        "role_passed": "substantial",
+        "role_bar": 0.8,
+        "role_games": 2,
+        "role_weeks": [
+          7,
+          8
+        ],
+        "injury": null,
+        "model_version": "weekly-startsit-v1"
+      },
+      "qualification": [
+        {
+          "rule": "game_upcoming",
+          "label": "Target-week kickoff after the build",
+          "value": "2026-11-08T18:00:00Z",
+          "threshold": "after build",
+          "passed": true
+        },
+        {
+          "rule": "espn_observed",
+          "label": "ESPN reading state",
+          "value": "observed",
+          "threshold": "observed",
+          "passed": true
+        },
+        {
+          "rule": "espn_below_ceiling",
+          "label": "ESPN rostered %, below",
+          "value": 48.9,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "rule": "role_confirmed",
+          "label": "snap share over his last 2 games (substantial)",
+          "value": 0.845,
+          "threshold": 0.8,
+          "passed": true
+        },
+        {
+          "rule": "latest_current",
+          "label": "Latest appearance in the window, no missed game since",
+          "value": 8,
+          "threshold": 6,
+          "passed": true
+        },
+        {
+          "rule": "prescreen",
+          "label": "Not Out/Doubtful, on a reserve list, released or unsigned",
+          "value": "clear",
+          "threshold": "clear",
+          "passed": true
+        },
+        {
+          "rule": "ceiling_rank",
+          "label": "Ceiling rank among WRs under 50%",
+          "value": 1,
+          "threshold": 3,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000005"
+      ],
+      "sources": [
+        "weekly_startsit_v1",
+        "espn_fantasy_ownership",
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z",
+        "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+        "injury_report_final": false
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "edition": "2026w08",
+      "scoring_preset": "STD",
+      "scoring_dependent": true,
+      "story_id": "upside-00-0000008",
+      "family": "weekly_upside",
+      "variant": "ceiling",
+      "horizon": "this_week",
+      "nature": "thesis",
+      "lead_rank": 4,
+      "family_rank": 1,
+      "player_id": "gsis:00-0000008",
+      "display_name": "Nnamdi Brightwater",
+      "position": "RB",
+      "team": "IND",
+      "headline": "Nnamdi Brightwater: a 16.2-point ceiling at 7.1% rostered",
+      "dek": "No. 1 by week-9 ceiling of 2 RBs with a confirmed role and under 50% rostered on ESPN. The matchup moves his ceiling +3.4 against his typical week, mostly the betting lines.",
+      "facts": [
+        {
+          "label": "Ceiling / median / floor (P90 / P50 / P10)",
+          "value": "16.2 / 2.0 / 0.5",
+          "basis": "model"
+        },
+        {
+          "label": "Carry share, last 2 games",
+          "value": "46%",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "7.1%",
+          "basis": "market"
+        },
+        {
+          "label": "Matchup vs typical week (P90)",
+          "value": "+3.4",
+          "basis": "model"
+        }
+      ],
+      "counterpoint": "His floor (P10) is 0.5 points: one week in ten at or below it.",
+      "caveat": "P90: one week in ten at or above it, per the weekly model — not a 90% chance. ESPN share describes ESPN leagues, not yours.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "espn_rostered": 7.1,
+      "ceiling_ranks": {
+        "50": 1,
+        "25": 1,
+        "10": 1
+      },
+      "injury": null,
+      "opponent": "HOU",
+      "home_away": "away",
+      "chart": {
+        "type": "interval",
+        "q10": 0.45,
+        "q50": 2.01,
+        "q90": 16.18,
+        "typical_q10": 0.2,
+        "typical_q50": 1.62,
+        "typical_q90": 12.8
+      },
+      "evidence": {
+        "name": "Nnamdi Brightwater",
+        "position": "RB",
+        "team": "IND",
+        "opponent": "HOU",
+        "home_away": "away",
+        "kickoff_utc": "2026-11-08T18:00:00Z",
+        "target_week": 9,
+        "q10": 0.45,
+        "q50": 2.01,
+        "q90": 16.18,
+        "typical_q10": 0.2,
+        "typical_q50": 1.62,
+        "typical_q90": 12.8,
+        "matchup_delta_q90": 3.38,
+        "terms_q90": {
+          "lines": 3.0,
+          "home": 0.02,
+          "rest": 0.14,
+          "roof": 0.0,
+          "opponent": 0.22
+        },
+        "espn_rostered": 7.1,
+        "espn_state": "observed",
+        "ceiling": 50,
+        "ceiling_level": 90,
+        "ceiling_rank": 1,
+        "eligible": 2,
+        "ceiling_ranks": {
+          "50": 1,
+          "25": 1,
+          "10": 1
+        },
+        "eligible_counts": {
+          "50": 2,
+          "25": 2,
+          "10": 2
+        },
+        "role_metric": "carry_share",
+        "role_level": 0.462,
+        "role_baseline": 0.462,
+        "role_passed": "substantial",
+        "role_bar": 0.45,
+        "role_games": 2,
+        "role_weeks": [
+          6,
+          7
+        ],
+        "injury": null,
+        "model_version": "weekly-startsit-v1"
+      },
+      "qualification": [
+        {
+          "rule": "game_upcoming",
+          "label": "Target-week kickoff after the build",
+          "value": "2026-11-08T18:00:00Z",
+          "threshold": "after build",
+          "passed": true
+        },
+        {
+          "rule": "espn_observed",
+          "label": "ESPN reading state",
+          "value": "observed",
+          "threshold": "observed",
+          "passed": true
+        },
+        {
+          "rule": "espn_below_ceiling",
+          "label": "ESPN rostered %, below",
+          "value": 7.1,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "rule": "role_confirmed",
+          "label": "carry share over his last 2 games (substantial)",
+          "value": 0.462,
+          "threshold": 0.45,
+          "passed": true
+        },
+        {
+          "rule": "latest_current",
+          "label": "Latest appearance in the window, no missed game since",
+          "value": 7,
+          "threshold": 6,
+          "passed": true
+        },
+        {
+          "rule": "prescreen",
+          "label": "Not Out/Doubtful, on a reserve list, released or unsigned",
+          "value": "clear",
+          "threshold": "clear",
+          "passed": true
+        },
+        {
+          "rule": "ceiling_rank",
+          "label": "Ceiling rank among RBs under 50%",
+          "value": 1,
+          "threshold": 3,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000008"
+      ],
+      "sources": [
+        "weekly_startsit_v1",
+        "espn_fantasy_ownership",
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z",
+        "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+        "injury_report_final": false
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "edition": "2026w08",
+      "scoring_preset": "STD",
+      "scoring_dependent": true,
+      "story_id": "upside-00-0000002",
+      "family": "weekly_upside",
+      "variant": "ceiling",
+      "horizon": "this_week",
+      "nature": "thesis",
+      "lead_rank": null,
+      "family_rank": 2,
+      "player_id": "gsis:00-0000002",
+      "display_name": "Dez Okonkwo",
+      "position": "RB",
+      "team": "BUF",
+      "headline": "Dez Okonkwo: a 14.0-point ceiling at 4.2% rostered",
+      "dek": "No. 2 by week-9 ceiling of 2 RBs with a confirmed role and under 50% rostered on ESPN. The matchup moves his ceiling +1.5 against his typical week, mostly the betting lines.",
+      "facts": [
+        {
+          "label": "Ceiling / median / floor (P90 / P50 / P10)",
+          "value": "14.0 / 1.7 / 0.3",
+          "basis": "model"
+        },
+        {
+          "label": "Snap share, last 2 games",
+          "value": "78%",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "4.2%",
+          "basis": "market"
+        },
+        {
+          "label": "Matchup vs typical week (P90)",
+          "value": "+1.5",
+          "basis": "model"
+        }
+      ],
+      "counterpoint": "Listed Questionable for week 9 on the official report.",
+      "caveat": "P90: one week in ten at or above it, per the weekly model — not a 90% chance. ESPN share describes ESPN leagues, not yours.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "espn_rostered": 4.2,
+      "ceiling_ranks": {
+        "50": 2,
+        "25": 2,
+        "10": 2
+      },
+      "injury": {
+        "week": 9,
+        "designation": "Questionable",
+        "practice_status": "Limited Participation in Practice",
+        "primary_injury": "Hamstring"
+      },
+      "opponent": "NO",
+      "home_away": "away",
+      "chart": {
+        "type": "interval",
+        "q10": 0.33,
+        "q50": 1.69,
+        "q90": 14.04,
+        "typical_q10": 0.28,
+        "typical_q50": 1.69,
+        "typical_q90": 12.5
+      },
+      "evidence": {
+        "name": "Dez Okonkwo",
+        "position": "RB",
+        "team": "BUF",
+        "opponent": "NO",
+        "home_away": "away",
+        "kickoff_utc": "2026-11-08T18:00:00Z",
+        "target_week": 9,
+        "q10": 0.33,
+        "q50": 1.69,
+        "q90": 14.04,
+        "typical_q10": 0.28,
+        "typical_q50": 1.69,
+        "typical_q90": 12.5,
+        "matchup_delta_q90": 1.54,
+        "terms_q90": {
+          "lines": 1.7,
+          "home": 0.02,
+          "rest": 0.0,
+          "roof": 0.0,
+          "opponent": -0.17
+        },
+        "espn_rostered": 4.2,
+        "espn_state": "observed",
+        "ceiling": 50,
+        "ceiling_level": 90,
+        "ceiling_rank": 2,
+        "eligible": 2,
+        "ceiling_ranks": {
+          "50": 2,
+          "25": 2,
+          "10": 2
+        },
+        "eligible_counts": {
+          "50": 2,
+          "25": 2,
+          "10": 2
+        },
+        "role_metric": "snap_share",
+        "role_level": 0.785,
+        "role_baseline": 0.452,
+        "role_passed": "substantial",
+        "role_bar": 0.55,
+        "role_games": 2,
+        "role_weeks": [
+          7,
+          8
+        ],
+        "injury": {
+          "week": 9,
+          "designation": "Questionable",
+          "practice_status": "Limited Participation in Practice",
+          "primary_injury": "Hamstring"
+        },
+        "model_version": "weekly-startsit-v1"
+      },
+      "qualification": [
+        {
+          "rule": "game_upcoming",
+          "label": "Target-week kickoff after the build",
+          "value": "2026-11-08T18:00:00Z",
+          "threshold": "after build",
+          "passed": true
+        },
+        {
+          "rule": "espn_observed",
+          "label": "ESPN reading state",
+          "value": "observed",
+          "threshold": "observed",
+          "passed": true
+        },
+        {
+          "rule": "espn_below_ceiling",
+          "label": "ESPN rostered %, below",
+          "value": 4.2,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "rule": "role_confirmed",
+          "label": "snap share over his last 2 games (substantial)",
+          "value": 0.785,
+          "threshold": 0.55,
+          "passed": true
+        },
+        {
+          "rule": "latest_current",
+          "label": "Latest appearance in the window, no missed game since",
+          "value": 8,
+          "threshold": 6,
+          "passed": true
+        },
+        {
+          "rule": "prescreen",
+          "label": "Not Out/Doubtful, on a reserve list, released or unsigned",
+          "value": "clear",
+          "threshold": "clear",
+          "passed": true
+        },
+        {
+          "rule": "ceiling_rank",
+          "label": "Ceiling rank among RBs under 50%",
+          "value": 2,
+          "threshold": 3,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000002",
+        "role-buf-backfield"
+      ],
+      "sources": [
+        "weekly_startsit_v1",
+        "espn_fantasy_ownership",
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z",
+        "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+        "injury_report_final": true
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": 9,
+      "edition": "2026w08",
+      "scoring_preset": "STD",
+      "scoring_dependent": true,
+      "story_id": "upside-00-0000015",
+      "family": "weekly_upside",
+      "variant": "ceiling",
+      "horizon": "this_week",
+      "nature": "thesis",
+      "lead_rank": 5,
+      "family_rank": 2,
+      "player_id": "gsis:00-0000015",
+      "display_name": "Hollis Amadi",
+      "position": "WR",
+      "team": "NE",
+      "headline": "Hollis Amadi: a 12.0-point ceiling at 3.3% rostered",
+      "dek": "No. 2 by week-9 ceiling of 2 WRs with a confirmed role and under 50% rostered on ESPN. The matchup moves his ceiling +2.7 against his typical week, mostly the betting lines.",
+      "facts": [
+        {
+          "label": "Ceiling / median / floor (P90 / P50 / P10)",
+          "value": "12.0 / 3.6 / 0.3",
+          "basis": "model"
+        },
+        {
+          "label": "Snap share, last 2 games",
+          "value": "85%",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "3.3%",
+          "basis": "market"
+        },
+        {
+          "label": "Matchup vs typical week (P90)",
+          "value": "+2.7",
+          "basis": "model"
+        }
+      ],
+      "counterpoint": "His floor (P10) is 0.3 points: one week in ten at or below it.",
+      "caveat": "P90: one week in ten at or above it, per the weekly model — not a 90% chance. ESPN share describes ESPN leagues, not yours.",
+      "window": {
+        "label": "W6–W8",
+        "first_week": 6,
+        "last_week": 8,
+        "weeks": 3,
+        "baseline_first_week": 1,
+        "baseline_last_week": 5
+      },
+      "kickoff_utc": "2026-11-08T18:00:00Z",
+      "espn_rostered": 3.3,
+      "ceiling_ranks": {
+        "50": 2,
+        "25": 1,
+        "10": 1
+      },
+      "injury": null,
+      "opponent": "MIN",
+      "home_away": "away",
+      "chart": {
+        "type": "interval",
+        "q10": 0.34,
+        "q50": 3.59,
+        "q90": 11.99,
+        "typical_q10": 0.27,
+        "typical_q50": 3.3,
+        "typical_q90": 9.25
+      },
+      "evidence": {
+        "name": "Hollis Amadi",
+        "position": "WR",
+        "team": "NE",
+        "opponent": "MIN",
+        "home_away": "away",
+        "kickoff_utc": "2026-11-08T18:00:00Z",
+        "target_week": 9,
+        "q10": 0.34,
+        "q50": 3.59,
+        "q90": 11.99,
+        "typical_q10": 0.27,
+        "typical_q50": 3.3,
+        "typical_q90": 9.25,
+        "matchup_delta_q90": 2.74,
+        "terms_q90": {
+          "lines": 3.28,
+          "home": -0.16,
+          "rest": 0.0,
+          "roof": 0.0,
+          "opponent": -0.37
+        },
+        "espn_rostered": 3.3,
+        "espn_state": "observed",
+        "ceiling": 50,
+        "ceiling_level": 90,
+        "ceiling_rank": 2,
+        "eligible": 2,
+        "ceiling_ranks": {
+          "50": 2,
+          "25": 1,
+          "10": 1
+        },
+        "eligible_counts": {
+          "50": 2,
+          "25": 1,
+          "10": 1
+        },
+        "role_metric": "snap_share",
+        "role_level": 0.85,
+        "role_baseline": 0.848,
+        "role_passed": "substantial",
+        "role_bar": 0.8,
+        "role_games": 2,
+        "role_weeks": [
+          6,
+          8
+        ],
+        "injury": null,
+        "model_version": "weekly-startsit-v1"
+      },
+      "qualification": [
+        {
+          "rule": "game_upcoming",
+          "label": "Target-week kickoff after the build",
+          "value": "2026-11-08T18:00:00Z",
+          "threshold": "after build",
+          "passed": true
+        },
+        {
+          "rule": "espn_observed",
+          "label": "ESPN reading state",
+          "value": "observed",
+          "threshold": "observed",
+          "passed": true
+        },
+        {
+          "rule": "espn_below_ceiling",
+          "label": "ESPN rostered %, below",
+          "value": 3.3,
+          "threshold": 50,
+          "passed": true
+        },
+        {
+          "rule": "role_confirmed",
+          "label": "snap share over his last 2 games (substantial)",
+          "value": 0.85,
+          "threshold": 0.8,
+          "passed": true
+        },
+        {
+          "rule": "latest_current",
+          "label": "Latest appearance in the window, no missed game since",
+          "value": 8,
+          "threshold": 6,
+          "passed": true
+        },
+        {
+          "rule": "prescreen",
+          "label": "Not Out/Doubtful, on a reserve list, released or unsigned",
+          "value": "clear",
+          "threshold": "clear",
+          "passed": true
+        },
+        {
+          "rule": "ceiling_rank",
+          "label": "Ceiling rank among WRs under 50%",
+          "value": 2,
+          "threshold": 3,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [
+        "pace-00-0000015"
+      ],
+      "sources": [
+        "weekly_startsit_v1",
+        "espn_fantasy_ownership",
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z",
+        "lines_retrieved_at_utc": "2026-11-03T12:00:00Z",
+        "injury_report_final": false
+      }
+    }
+  ]
+}

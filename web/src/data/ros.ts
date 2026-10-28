@@ -582,6 +582,21 @@ export class InSeasonBundle {
     return reading;
   }
 
+  /**
+   * The same reading with an official report the caller holds rather than this bundle's weekly
+   * record: an Insights story carries its own (ADR-116), and the feed loads no projections.
+   */
+  availabilityWithReport(playerId: string, report: WeeklyProjectionRecord["injury"] | null): Availability {
+    if (report === null) return this.availabilityFor(playerId);
+    return readAvailability({
+      status: this.statusByPlayer.get(playerId) ?? null,
+      rosterCode: this.rosterCodeByPlayer.get(playerId) ?? null,
+      report,
+      referenceTime: this.metadata.generated_at_utc,
+      season: this.metadata.season,
+    });
+  }
+
   availableBlocks(): readonly { leaguePreset: string; scoring: ScoringPreset }[] {
     if (this.publishedBlocks !== null) return this.publishedBlocks;
     return [...this.rosByBlock.keys()].map((key) => {

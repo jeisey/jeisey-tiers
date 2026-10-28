@@ -277,3 +277,48 @@ def test_recent_form_reads_no_market_ownership_or_behaviour(graph):
 
 def test_the_in_season_build_does_reach_recent_form(graph):
     assert RECENT_MODULE in _reachable("ffdraft.pipeline.ros", graph)
+
+
+# --------------------------------------------------------------------------------------
+# Insights are downstream of everything and read by nothing (ADR-116)
+# --------------------------------------------------------------------------------------
+
+INSIGHTS_PACKAGE = "ffdraft.insights"
+
+
+def _is_insights(name: str) -> bool:
+    return name == INSIGHTS_PACKAGE or name.startswith(f"{INSIGHTS_PACKAGE}.")
+
+
+@pytest.mark.parametrize("package", VALUE_PACKAGES)
+def test_no_value_producing_module_can_reach_insights(package, graph):
+    """No feature, projection, rank, tier, board, pick or decision tool reads a story."""
+    offenders = [
+        f"{module} -> {reached}"
+        for module in _modules_under(package, graph)
+        if not _is_insights(module)
+        for reached in sorted(_reachable(module, graph))
+        if _is_insights(reached)
+    ]
+    assert not offenders, f"Insights may not reach a value-producing module: {offenders}"
+
+
+def test_insights_import_no_market_ownership_or_behaviour_code(graph):
+    """Insights reads published records (ESPN, adds) as data, never the capture code."""
+    offenders = sorted(
+        name
+        for module in _modules_under(INSIGHTS_PACKAGE, graph)
+        for name in _reachable(module, graph)
+        if any(name == p or name.startswith(f"{p}.") for p in MARKET_PACKAGES)
+    )
+    assert not offenders, offenders
+
+
+def test_the_validator_does_not_import_the_story_builder(graph):
+    """insight_checks re-derives independently; importing the builder would make it circular."""
+    reached = _reachable("ffdraft.artifacts.insight_checks", graph)
+    assert not any(_is_insights(name) for name in reached), sorted(reached)
+
+
+def test_the_in_season_build_does_reach_insights(graph):
+    assert any(_is_insights(name) for name in _reachable("ffdraft.pipeline.ros", graph))

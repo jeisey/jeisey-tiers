@@ -226,6 +226,10 @@ sources:
       # file and the combine 40 (historical, dated). Published descriptive context, read by no
       # model; no raw row is committed or served.
       - inseason_skill_tree_context
+      # ADR-116. Insights: weekly stories over season-to-date player stats, snap counts and
+      # play-by-play reduced to per-player red-zone counts, published as descriptive context
+      # with their numbers, read by no model; no raw row is committed or served.
+      - inseason_insights_context
     verified_loaders:
       load_players: {rows: 25040}
       load_ff_playerids: {rows: 12472, gsis_id_coverage: 0.64, mfl_id_coverage: 1.0}
@@ -620,6 +624,11 @@ sources:
       - "State that the percentages describe ESPN leagues, not the reader's league."
     roles:
       - inseason_crowd_interest_context
+      # ADR-116. Insights prints a story subject's latest rostered % (a board player's, already
+      # published) and applies an ESPN roster ceiling to the weekly-upside family. The same
+      # owner decision and obligations apply: attribution on every story and exported image
+      # that shows a percentage, and the statement that it describes ESPN leagues.
+      - inseason_insights_context
     forbidden_roles:
       - intrinsic_feature
       - ros_feature
@@ -643,7 +652,9 @@ sources:
     redistribution_note: >-
       Owner decision, not clearance (above). Published as two small derived artifacts
       restricted to the players the Opportunity Board shows; no server-side CSV of ESPN
-      values; the full retained universe stays in the private store.
+      values; the full retained universe stays in the private store. ADR-116 copies a story
+      subject's latest rostered % into insights.json (the same board players and values) and
+      into a reader's exported story image, with ESPN attribution.
     decision_ref: "docs/DECISIONS.md ADR-112"
     evidence: "docs/source-probes/2026-10-17/espn-ownership/report.json"
     revisit_if:

@@ -1,0 +1,1026 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/insight_story.schema.json",
+  "title": "InsightStory",
+  "description": "One Insights story in one scoring preset (ADR-116, `insights_v1`): a deterministic finding over the in-season build's published evidence — observed nflverse statistics, the weekly start/sit model's published distribution, and ESPN's public roster share — with its qualification, its numbers, a chart payload, a counterpoint and its essential caveat. Generated at build time from fixed rules and fixed calendar windows; never searched over splits. DOWNSTREAM ONLY: no model, value, rank, tier, Pick of the Week or decision tool reads it. Independent of league size. Wording is generated from the structured evidence by templates, and every number printed in `headline`, `dek` and `facts` is a value of `evidence` or `chart` (validator `insights.text_number_not_in_evidence`).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "build_id",
+    "season",
+    "through_week",
+    "target_week",
+    "edition",
+    "scoring_preset",
+    "scoring_dependent",
+    "story_id",
+    "family",
+    "variant",
+    "horizon",
+    "nature",
+    "lead_rank",
+    "family_rank",
+    "player_id",
+    "display_name",
+    "position",
+    "team",
+    "headline",
+    "dek",
+    "facts",
+    "counterpoint",
+    "caveat",
+    "window",
+    "kickoff_utc",
+    "espn_rostered",
+    "ceiling_ranks",
+    "injury",
+    "opponent",
+    "home_away",
+    "chart",
+    "evidence",
+    "qualification",
+    "also_qualifies",
+    "sources",
+    "source_times"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "build_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "season": {
+      "type": "integer",
+      "minimum": 2000
+    },
+    "through_week": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The last completed regular-season week every observed statistic covers. No partial current-week result is ever read."
+    },
+    "target_week": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "description": "The upcoming week a `this_week` or `stash` story is about (the weekly projections' target week); null for a story about completed weeks only."
+    },
+    "edition": {
+      "type": "string",
+      "pattern": "^[0-9]{4}w[0-9]{2}$",
+      "description": "`{season}w{through_week:02d}`: the completed-week edition. A shared link names it, so a link from an older edition never silently shows a newer finding."
+    },
+    "scoring_preset": {
+      "enum": [
+        "STD",
+        "HALF",
+        "PPR"
+      ]
+    },
+    "scoring_dependent": {
+      "type": "boolean",
+      "description": "False when nothing in the story — qualification, numbers or order — depends on scoring (a role battle): the same story is published in every preset."
+    },
+    "story_id": {
+      "type": "string",
+      "pattern": "^[a-z]+-[a-z0-9-]+$",
+      "maxLength": 64,
+      "description": "`{family short name}-{subject}`, the subject a player's GSIS digits or `{team}-{room}`. Stable for the same finding about the same subject; unique within one preset's stories."
+    },
+    "family": {
+      "enum": [
+        "volume_vs_results",
+        "weekly_upside",
+        "opportunity_opening",
+        "role_battle",
+        "streak_watch",
+        "pace_perspective"
+      ]
+    },
+    "variant": {
+      "enum": [
+        "lagging",
+        "shrinking",
+        "ceiling",
+        "observed",
+        "prospective",
+        "backfield",
+        "receiving",
+        "breakout",
+        "production_without_role",
+        "quiet_role_growth",
+        "per_game_hidden",
+        "overlooked"
+      ]
+    },
+    "horizon": {
+      "enum": [
+        "this_week",
+        "stash",
+        "role_watch",
+        "season_view"
+      ],
+      "description": "`this_week`: a start/pickup idea for the target week, withdrawn at kickoff. `stash`: his team is on a bye in the target week. `role_watch`: a usage pattern to monitor. `season_view`: perspective on completed weeks."
+    },
+    "nature": {
+      "enum": [
+        "fact",
+        "thesis"
+      ],
+      "description": "`fact`: one striking observation. `thesis`: several independent observations combined into a cautious, actionable reading."
+    },
+    "lead_rank": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 12,
+      "description": "Position in the lead selection (`insights_select_v1`), or null for an additional qualified finding."
+    },
+    "family_rank": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Order within its family and variant, by the family's published ordering."
+    },
+    "player_id": {
+      "type": "string",
+      "pattern": "^gsis:",
+      "description": "The focal player: the subject, or for a role battle or an opening the player whose change the headline names. Always a player a card can open."
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "position": {
+      "enum": [
+        "QB",
+        "RB",
+        "WR",
+        "TE"
+      ]
+    },
+    "team": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "headline": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 120
+    },
+    "dek": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 280,
+      "description": "One or two sentences connecting the evidence to a fantasy decision. Editorial interpretation, labelled as such on the page."
+    },
+    "facts": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4,
+      "items": {
+        "$ref": "#/$defs/fact"
+      }
+    },
+    "counterpoint": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 240,
+      "description": "What could undermine the reading, when a rule finds a genuine one; never invented to fill the slot."
+    },
+    "caveat": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 240,
+      "description": "The limitation a reader needs to interpret the claim. Printed in every capture and export."
+    },
+    "window": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/window"
+        }
+      ]
+    },
+    "kickoff_utc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "The target-week kickoff of a `this_week` story, after which the page withdraws it."
+    },
+    "espn_rostered": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "ESPN's percent rostered for the focal player when the story reads it (an observed reading only; unknown is null, never 0). Equals `evidence.espn_rostered`; on the record so the feed slice, which carries no evidence, can print and filter it."
+    },
+    "ceiling_ranks": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "50",
+            "25",
+            "10"
+          ],
+          "properties": {
+            "50": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "25": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "10": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            }
+          }
+        }
+      ],
+      "description": "weekly_upside only: his ceiling rank within position under each ESPN roster ceiling (percent rostered strictly below), published only inside the top `upside_per_position`, else null. Equals `evidence.ceiling_ranks`."
+    },
+    "injury": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "week",
+        "designation",
+        "practice_status",
+        "primary_injury"
+      ],
+      "properties": {
+        "week": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "designation": {
+          "enum": [
+            "Out",
+            "Doubtful",
+            "Questionable",
+            null
+          ]
+        },
+        "practice_status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "primary_injury": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "The official report for the target week (the weekly projection's `injury`), on `this_week` stories only, so the page re-applies the availability policy without the weekly slice."
+    },
+    "opponent": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The target-week opponent of a `this_week` story (equals `evidence.opponent`); null otherwise."
+    },
+    "home_away": {
+      "enum": [
+        "home",
+        "away",
+        null
+      ],
+      "description": "Home or away in the target-week game of a `this_week` story (equals `evidence.home_away`); null otherwise."
+    },
+    "chart": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/week_strip"
+        },
+        {
+          "$ref": "#/$defs/interval"
+        },
+        {
+          "$ref": "#/$defs/with_without"
+        },
+        {
+          "$ref": "#/$defs/room"
+        },
+        {
+          "$ref": "#/$defs/stat_line"
+        }
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "description": "The exact values, numerators and denominators behind the story, by name. Its keys depend on the family (DATA_CONTRACTS §30.1); the validator re-derives the ones the text and chart print.",
+      "additionalProperties": {
+        "type": [
+          "number",
+          "integer",
+          "string",
+          "boolean",
+          "null",
+          "object",
+          "array"
+        ]
+      }
+    },
+    "qualification": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/predicate"
+      },
+      "description": "Every predicate the story passed, in the order the rule checks them, with its value and threshold."
+    },
+    "also_qualifies": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z]+-[a-z0-9-]+$"
+      },
+      "description": "Story ids of this player's other qualifying findings, suppressed by the one-story-per-player rule."
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "nflverse_player_stats",
+          "nflverse_snap_counts",
+          "nflverse_pbp",
+          "nflverse_schedule",
+          "nflverse_injuries",
+          "weekly_startsit_v1",
+          "espn_fantasy_ownership"
+        ]
+      }
+    },
+    "source_times": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "espn_observed_at_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "lines_retrieved_at_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "injury_report_final": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "value",
+        "basis"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "basis": {
+          "enum": [
+            "observed",
+            "model",
+            "market"
+          ],
+          "description": "`observed`: an nflverse statistic. `model`: a published model output. `market`: ESPN's roster share."
+        }
+      }
+    },
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "first_week",
+        "last_week",
+        "weeks",
+        "baseline_first_week",
+        "baseline_last_week"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "first_week": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "last_week": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "weeks": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "baseline_first_week": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "baseline_last_week": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    },
+    "predicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule",
+        "label",
+        "value",
+        "threshold",
+        "passed"
+      ],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "pattern": "^[a-z_0-9]+$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": [
+            "number",
+            "integer",
+            "string",
+            "boolean",
+            "null"
+          ]
+        },
+        "threshold": {
+          "type": [
+            "number",
+            "integer",
+            "string",
+            "boolean",
+            "null"
+          ]
+        },
+        "passed": {
+          "const": true
+        }
+      }
+    },
+    "strip_week": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "week",
+        "status",
+        "in_window",
+        "points",
+        "td_points",
+        "opportunity",
+        "share",
+        "rank"
+      ],
+      "properties": {
+        "week": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "status": {
+          "enum": [
+            "P",
+            "B",
+            "D"
+          ],
+          "description": "P played (a stats row or an offensive snap), B his team had a bye, D his team played without him. Only P carries numbers."
+        },
+        "in_window": {
+          "type": "boolean"
+        },
+        "points": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "td_points": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "opportunity": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "share": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "rank": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    },
+    "week_strip": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "weeks",
+        "opportunity_label",
+        "share_label",
+        "band"
+      ],
+      "properties": {
+        "type": {
+          "const": "week_strip"
+        },
+        "weeks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 18,
+          "items": {
+            "$ref": "#/$defs/strip_week"
+          }
+        },
+        "opportunity_label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "share_label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "band": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "The weekly positional rank at or inside which a week is a strong finish (breakout_v1's band); null when the chart does not mark strong weeks."
+        }
+      }
+    },
+    "interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "q10",
+        "q50",
+        "q90",
+        "typical_q10",
+        "typical_q50",
+        "typical_q90"
+      ],
+      "properties": {
+        "type": {
+          "const": "interval"
+        },
+        "q10": {
+          "type": "number"
+        },
+        "q50": {
+          "type": "number"
+        },
+        "q90": {
+          "type": "number"
+        },
+        "typical_q10": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "typical_q50": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "typical_q90": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "with_without_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "player_id",
+        "name",
+        "position",
+        "share_with",
+        "games_with",
+        "share_without",
+        "games_without",
+        "latest_share"
+      ],
+      "properties": {
+        "player_id": {
+          "type": "string",
+          "pattern": "^gsis:"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": {
+          "enum": [
+            "QB",
+            "RB",
+            "WR",
+            "TE"
+          ]
+        },
+        "share_with": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "games_with": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "share_without": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "games_without": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "latest_share": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "with_without": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "metric",
+        "absent",
+        "rows"
+      ],
+      "properties": {
+        "type": {
+          "const": "with_without"
+        },
+        "metric": {
+          "enum": [
+            "target_share",
+            "carry_share",
+            "pass_share"
+          ]
+        },
+        "absent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "player_id",
+            "name",
+            "position",
+            "share",
+            "games",
+            "per_game",
+            "reason"
+          ],
+          "properties": {
+            "player_id": {
+              "type": "string",
+              "pattern": "^gsis:"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "position": {
+              "enum": [
+                "QB",
+                "RB",
+                "WR",
+                "TE"
+              ]
+            },
+            "share": {
+              "type": "number"
+            },
+            "games": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "per_game": {
+              "type": "number"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/with_without_row"
+          }
+        }
+      }
+    },
+    "room_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "player_id",
+        "name",
+        "position",
+        "window_games",
+        "baseline_games",
+        "snap_share",
+        "snap_share_baseline",
+        "count",
+        "share",
+        "share_baseline",
+        "red_zone",
+        "inside_five"
+      ],
+      "properties": {
+        "player_id": {
+          "type": "string",
+          "pattern": "^gsis:"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": {
+          "enum": [
+            "QB",
+            "RB",
+            "WR",
+            "TE"
+          ]
+        },
+        "window_games": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "baseline_games": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "snap_share": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "snap_share_baseline": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "share": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "share_baseline": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "red_zone": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "inside_five": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "room": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "room",
+        "metric",
+        "team_count",
+        "team_games",
+        "team_red_zone",
+        "team_inside_five",
+        "rows"
+      ],
+      "properties": {
+        "type": {
+          "const": "room"
+        },
+        "room": {
+          "enum": [
+            "backfield",
+            "receiving"
+          ]
+        },
+        "metric": {
+          "enum": [
+            "carries",
+            "targets"
+          ]
+        },
+        "team_count": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The team's carries (backfield) or targets (receiving room) in the window's team games: the denominator of every row's `share`."
+        },
+        "team_games": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "team_red_zone": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "team_inside_five": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/room_row"
+          }
+        }
+      }
+    },
+    "stat_line": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "games",
+        "team_games",
+        "points",
+        "points_per_game",
+        "pace_17",
+        "ppg_rank",
+        "total_rank",
+        "cohort_size",
+        "cohort_min_games"
+      ],
+      "properties": {
+        "type": {
+          "const": "stat_line"
+        },
+        "games": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "team_games": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "points": {
+          "type": "number"
+        },
+        "points_per_game": {
+          "type": "number"
+        },
+        "pace_17": {
+          "type": "number",
+          "description": "Points per game × 17: arithmetic extrapolation, not a projection."
+        },
+        "ppg_rank": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "total_rank": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "cohort_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cohort_min_games": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

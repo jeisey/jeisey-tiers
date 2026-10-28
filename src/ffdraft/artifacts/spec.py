@@ -266,6 +266,23 @@ ARTIFACT_SPECS: Mapping[str, ArtifactSpec] = {
             "model reads them (ADR-113)."
         ),
     ),
+    "insights": ArtifactSpec(
+        artifact="insights",
+        schema_name="insight_story",
+        json_filename="insights.json",
+        # No CSV (ADR-116): a story is prose, a chart payload and its evidence. The numbers it
+        # prints are the published usage, actuals, projections and ESPN readings, each of
+        # which already has its own artifact.
+        csv_filename=None,
+        key_fields=("build_id", "scoring_preset", "story_id"),
+        sort_fields=("scoring_preset", "family", "variant", "family_rank", "story_id"),
+        description=(
+            "Insights stories per scoring preset: deterministic findings over the build's "
+            "published evidence with their qualification, numbers, chart payload, counterpoint "
+            "and caveat. Downstream only; no model, value, rank, tier or decision reads them "
+            "(ADR-116)."
+        ),
+    ),
     "player_skill_tree": ArtifactSpec(
         artifact="player_skill_tree",
         schema_name="player_skill_metric",

@@ -391,15 +391,15 @@ test("a tier can be opened and closed with a thumb", async ({ page }) => {
 });
 
 /*
- * Seven in-season tabs (ADR-100, ADR-106). The row scrolls rather than shrinking anything:
+ * Eight in-season tabs (ADR-100, ADR-106, ADR-116). The row scrolls rather than shrinking anything:
  * every tab keeps a 44px target, "Opportunity" prints as "Opp" and "My Leagues" as "Leagues"
  * with their full accessible names, and the active tab is scrolled fully into view whichever
  * it is.
  */
-test("seven tabs: full tap targets, short labels with full names, the active tab on screen", async ({
+test("eight tabs: full tap targets, short labels with full names, the active tab on screen", async ({
   page,
 }) => {
-  for (const view of ["ros", "myleagues", "startsit", "trade", "opportunity", "potw", "data"]) {
+  for (const view of ["ros", "myleagues", "insights", "startsit", "trade", "opportunity", "potw", "data"]) {
     await page.goto(`/scenario/in-season/?view=${view}`);
     const tablist = page.getByRole("tablist", { name: "Board" });
     await expect(tablist).toBeVisible();
@@ -636,3 +636,49 @@ for (const viewport of [
     }
   });
 }
+
+/*
+ * Insights on a phone (ADR-116): the tab row stays usable at 320 and 390px, nothing scrolls the
+ * page sideways, every control is a 44px target, and the first story is on the first screen of
+ * a short phone — no hero, no tiles above it.
+ */
+test("Insights: the first story on the first screen, 44px targets, no sideways scroll", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-05T12:00:00Z"));
+  for (const [width, height] of [
+    [390, 560],
+    [390, 844],
+    [320, 640],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto(`${IN_SEASON}?view=insights`);
+    const headline = page.locator(".ins-story .ins-headline").first();
+    await expect(headline).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    const top = (await headline.boundingBox())?.y ?? Number.POSITIVE_INFINITY;
+    expect(top, `${String(width)}x${String(height)}: first headline top`).toBeLessThan(height);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, `${String(width)}px overflow`).toBeLessThanOrEqual(1);
+    const tablist = page.getByRole("tablist", { name: "Board" });
+    await expect(tablist.locator('[aria-selected="true"]')).toBeInViewport({ ratio: 1 });
+    for (const tab of await tablist.getByRole("tab").all()) {
+      expect((await tab.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+    }
+    const targets = page.locator(
+      ".ins-chip, .ins-find, .ins-story:first-of-type .ins-actions .button, .ins-story:first-of-type .ins-player",
+    );
+    for (const target of await targets.all()) {
+      if (!(await target.isVisible())) continue;
+      const box = await target.boundingBox();
+      expect(box?.height ?? 0, (await target.textContent()) ?? "").toBeGreaterThanOrEqual(44);
+    }
+  }
+  // The share view fits a phone, and its preview fits the screen.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${IN_SEASON}?view=insights&story=pace-00-0000009&ed=2026w08&share=port`);
+  const preview = page.locator(".ins-share-preview[data-ready] img");
+  await expect(preview).toBeVisible();
+  const box = await preview.boundingBox();
+  expect((box?.x ?? -1) >= 0 && (box?.x ?? 0) + (box?.width ?? 0) <= 390).toBe(true);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+});

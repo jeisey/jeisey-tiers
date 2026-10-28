@@ -55,7 +55,8 @@ describe("parseState", () => {
   it("reads every supported parameter", () => {
     const parsed = parseState(
       "?view=arbitrage&scoring=half&teams=14&position=rb&search=achane&rail=all&only=role.surfaced&espn=lt50&last=6&form=takeover&set=3&duel=00-0036389.00-0039164&margin=-12" +
-        "&give=00-0000001.00-0000013&goal=ceiling&get=2&range=35&comp=rb.wr&keep=00-0000002.00-0000011&shown=0.1.6.3.4&dealt=7&stamp=0a1b2c3d&ret=1&unavail=1&nobye=1&panel=wmm",
+        "&give=00-0000001.00-0000013&goal=ceiling&get=2&range=35&comp=rb.wr&keep=00-0000002.00-0000011&shown=0.1.6.3.4&dealt=7&stamp=0a1b2c3d&ret=1&unavail=1&nobye=1" +
+        "&story=upside-00-0000012&ed=2026w07&ins=week&ceil=25&share=port&panel=wmm",
     );
     expect(parsed.state).toEqual({
       view: "arbitrage",
@@ -88,6 +89,11 @@ describe("parseState", () => {
       returning: true,
       unavailable: true,
       hideBye: true,
+      story: "upside-00-0000012",
+      ed: "2026w07",
+      ins: "week",
+      ceil: 25,
+      share: "port",
       panel: "wmm",
     });
     expect(parsed.normalized).toBe(true);

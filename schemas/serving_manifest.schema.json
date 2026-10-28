@@ -20,7 +20,7 @@
       }
     },
     "build_metadata": { "type": "object", "description": "build_metadata.json, verbatim." },
-    "ros_build_metadata": { "type": "object", "description": "ros_build_metadata.json, verbatim, when an in-season bundle was published." },
+    "ros_build_metadata": { "type": "object", "description": "ros_build_metadata.json, verbatim, when an in-season bundle was published — except its `insights` block, which keeps only `status`, `withheld_reason`, `edition`, `through_week`, `target_week` and `generated_at_utc`; the whole block rides in each `insights/<scoring>` slice as `meta`, and a published edition serves that slice for every preset, empty when no story qualified (ADR-116)." },
     "files": {
       "description": "Served key -> the first 16 hex digits of the file's SHA-256. Key `players`, `<family>/<partition>` or `card/<league>.<scoring>/<bucket>`; the file is served at data/serve/<key>.<hash>.json.",
       "type": "object",

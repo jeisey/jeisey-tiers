@@ -67,12 +67,15 @@ const IN_SEASON_TABS: readonly TabSpec[] = [
   { id: "ros", label: "ROS tiers" },
   // ADR-106: the reader's own saved leagues, beside the weekly tools they feed.
   { id: "myleagues", label: "My Leagues", short: "Leagues", shortOnTablet: true },
+  // ADR-116: the week's findings, read beside the reader's own leagues and before the tools.
+  { id: "insights", label: "Insights" },
   // Second, beside the board it is read against: this week's decision is the one a manager
   // makes most often, and the rest-of-season board is its context (ADR-096).
   { id: "startsit", label: "Start/Sit" },
   // Third: the other decision read off the rest-of-season board, priced in its units (ADR-100).
   { id: "trade", label: "Trade" },
-  { id: "opportunity", label: "Opportunity", short: "Opp" },
+  // ADR-116: "Opp" below 1024px, like "Leagues", so eight tabs still fit a tablet's row.
+  { id: "opportunity", label: "Opportunity", short: "Opp", shortOnTablet: true },
   { id: "potw", label: "POTW" },
   { id: "data", label: "Data" },
 ];

@@ -565,6 +565,23 @@ def run_ros_build(
         records["player_skill_tree"] = tree_records
         records["skill_tree_definitions"] = tree_definitions
 
+    # Insights (ADR-116): deterministic weekly stories over every artifact above. Last, because
+    # it reads them all and none reads it; its failure withholds the stories and nothing else.
+    insight_records, insight_summary = _insights(
+        records=records,
+        loaded=loaded,
+        settings=settings,
+        pbp=plays,
+        pbp_error=plays_error,
+        season=season,
+        cutoff=cutoff,
+        build_id=resolved_build_id,
+        as_of=stamped,
+        gate=gate,
+    )
+    if insight_records:
+        records["insights"] = insight_records
+
     metadata = _ros_metadata(
         settings,
         loaded=loaded,
@@ -590,6 +607,7 @@ def run_ros_build(
         recent_form=recent_summary,
         skill_tree=tree_summary,
         espn_ownership=ownership.metadata,
+        insights=insight_summary,
     )
 
     written: list[Path] = []
@@ -1711,6 +1729,64 @@ def _recent_form(
     return result.records, result.metadata
 
 
+def _insights(
+    *,
+    records: Mapping[str, Sequence[Mapping[str, Any]]],
+    loaded: Any,
+    settings: AppConfig,
+    pbp: pl.DataFrame | None,
+    pbp_error: str | None,
+    season: int,
+    cutoff: RosCutoff,
+    build_id: str,
+    as_of: datetime,
+    gate: QualityGate,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    """Build ``insights`` (ADR-116), or explain why not.
+
+    Downstream of every other in-season artifact: it reads their records and the frames this
+    build already holds, and writes nothing any of them reads. A failure withholds the stories
+    and nothing else.
+    """
+    from ffdraft.artifacts.schemas import record_schema_version
+    from ffdraft.insights import build_insights
+    from ffdraft.ros.dataset import bridged_snap_counts
+
+    sources = loaded.sources
+    try:
+        result = build_insights(
+            weekly=sources.weekly_stats,
+            snap_counts=bridged_snap_counts(sources),
+            schedule=sources.schedule,
+            scoring=settings.league.scoring,
+            season=season,
+            through_week=cutoff.through_week,
+            records=records,
+            plays=pbp,
+            plays_error=pbp_error,
+            generated_at=as_of,
+            build_id=build_id,
+            schema_version=record_schema_version("insight_story"),
+        )
+    except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
+        gate.add(
+            QualityCheck.fail(
+                "ros.insights_failed",
+                stage="ros_build",
+                message=(
+                    "Insights stories could not be built, so insights.json is withheld; every "
+                    "board, value, rank and signal is unaffected"
+                ),
+                observed=f"{type(exc).__name__}: {exc}",
+                expected="an insights block and stories",
+                severity=Severity.WARNING,
+            ),
+        )
+        return [], None
+    gate.extend(result.checks)
+    return result.records, result.metadata
+
+
 def _load_play_by_play(
     pbp: pl.DataFrame | None,
     *,
@@ -2776,6 +2852,7 @@ def _ros_metadata(
     skill_tree: Mapping[str, Any] | None = None,
     espn_ownership: Mapping[str, Any] | None = None,
     recent_form: Mapping[str, Any] | None = None,
+    insights: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     from ffdraft.pipeline.current import _source_metadata
 
@@ -2841,6 +2918,7 @@ def _ros_metadata(
         "weekly": None if weekly is None else dict(weekly),
         "season_actuals": None if season_actuals is None else dict(season_actuals),
         "recent_form": None if recent_form is None else dict(recent_form),
+        "insights": None if insights is None else dict(insights),
         "skill_tree": None if skill_tree is None else dict(skill_tree),
         "espn_ownership": None if espn_ownership is None else dict(espn_ownership),
         "disclosures": {

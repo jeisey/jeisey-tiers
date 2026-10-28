@@ -2,7 +2,7 @@
 
 **Status:** Living document. Part A is the current product scope; Part B is the V1 launch
 specification, kept as a historical record.  
-**Last revised:** 2026-10-13  
+**Last revised:** 2026-10-27  
 **Live site:** <https://jeisey.github.io/jeisey-tiers/>  
 **Deployment:** static GitHub Pages site refreshed by GitHub Actions
 
@@ -22,7 +22,8 @@ modes:
   a draft-market comparison (Arbitrage board / Draft Rail) against published ADP.
 - **In-season mode** (from that kickoff): rest-of-season tiers, My Leagues (the reader's own saved
   leagues, kept in their browser, with Win My Matchup for the week's opponent), a weekly
-  Start/Sit comparison, a Trade explorer, the Opportunity Board and Pick of the Week.
+  Start/Sit comparison, a Trade explorer, the Opportunity Board, Pick of the Week and Insights
+  (deterministic weekly stories with shareable images).
 
 The season state is derived from the published NFL schedule (`season_state_v1`, ADR-079); the
 reader can override the mode, and the draft board stays reachable all season.
@@ -49,7 +50,9 @@ These hold for every feature, current or future.
    side by side and may gate membership; they are never combined into one score (ADR-085,
    ADR-088, ADR-092). The one categorical summary allowed is the Opportunity Board's breakout
    label (CR-033): ordered, published predicates over observed production and role only, each
-   shown with its value and threshold — never weighted, counted or scored (ADR-113).
+   shown with its value and threshold — never weighted, counted or scored (ADR-113). An
+   Insights story (CR-036) is the same kind of reading: it qualifies by explicit predicates,
+   orders by one published quantity and prints each number with its source; never a score.
 5. **Tiers** are contiguous in fair-rank order, discovered rather than fixed per position, never
    hand-edited, and drawn as bands while their boundaries fail the declared stability bar
    (ADR-035, ADR-074).
@@ -254,6 +257,26 @@ These hold for every feature, current or future.
     composes with every other filter.
   * **Never** a model input, a prediction, or read by Pick of the Week, Trade, My Leagues or Win
     My Matchup; it reads no adds, ESPN share, RoS value or market.
+
+- **CR-036 Insights.** An in-season tab of deterministic weekly stories — what changed, the
+  evidence, why it might matter, what could undermine it — each a self-contained visual that
+  exports as a 1200×675 or 1080×1350 PNG (ADR-116, UX_SPEC §6A.23, DATA_CONTRACTS §30):
+  * **Six families**, each with fixed calendar windows (recent form's Last 3 against every earlier
+    week), explicit predicates, minimum samples, an effect threshold and an ordering: workload
+    against results (a lagging or a shrinking role), this week's upside under an ESPN roster
+    ceiling (50%, with 25% and 10%), opportunity openings (a documented or observed absence,
+    including a quarterback change), role battles, breakout and streak readings (recent form's own
+    categories, hot streaks without the role, quiet role growth), and per-game perspective.
+  * **Selection** is editorial and published: one story per player, round-robin across families,
+    at most 12 lead stories and 2 per team, the rest listed as more findings; empty families are
+    legitimate and say why.
+  * **Words from numbers**: template text from validated evidence; every printed number is
+    checked against it; no "due", luck, expected points, route, first-read or confidence claim.
+  * **Time**: completed weeks only; this-week stories carry their kickoff and are withdrawn at the
+    reader's clock by the shared availability policy and the kickoff, including on a page left
+    open; game-day refreshes rebuild them without new completed games.
+  * **Never** a model input, a value, a rank, a tier, a Pick of the Week or decision-tool input,
+    and independent of league size. ESPN percentages describe ESPN leagues.
 
 ## A4. Current non-goals
 

@@ -209,6 +209,44 @@ FAMILIES: tuple[Family, ...] = (
     # rank, like a season rank, does not depend on league size). Read by the Opportunity Board
     # only — never by another view, never in a card shard — so no other tab pays for it.
     Family("recent_form", "recent_form", "scoring", exclude=("schema_version", "display_name")),
+    # ADR-116: the Insights feed, one slice per scoring preset (no story depends on league
+    # size), fetched only by the Insights tab — never by another view, never in a card shard.
+    # The feed carries what a story card and its share image print; the evidence and the
+    # qualification predicates are their own slice, fetched when a reader expands a story.
+    Family(
+        "insights",
+        "insights",
+        "scoring",
+        exclude=("schema_version", "evidence", "qualification", "also_qualifies"),
+    ),
+    Family(
+        "insight_evidence",
+        "insights",
+        "scoring",
+        only=(
+            "scoring_preset",
+            "story_id",
+            "player_id",
+            "evidence",
+            "qualification",
+            "also_qualifies",
+        ),
+    ),
+)
+
+#: ADR-116: the fields of ``ros_build_metadata.insights`` the manifest keeps — its status, edition
+#: and times, which cost the manifest every visit fetches next to nothing. The rest (family
+#: states, counts, the rule's constants, definitions, limitations and unsupported claims) is read
+#: only by the Insights tab, so it rides whole in each ``insights/<scoring>`` slice as ``meta``;
+#: a published build writes that slice for every preset, empty when no story qualified, so the
+#: tab always has the full account and a withheld build needs no more than the summary.
+INSIGHTS_MANIFEST_SUMMARY: tuple[str, ...] = (
+    "status",
+    "withheld_reason",
+    "edition",
+    "through_week",
+    "target_week",
+    "generated_at_utc",
 )
 
 #: What one card shard carries: every per-player record a card reads, per artifact, with the
@@ -637,6 +675,16 @@ def build_serving_layout(
     for key in ("build_metadata", "ros_build_metadata"):
         if key in metadata:
             manifest[key] = metadata[key]
+    insights_meta = _insights_metadata(metadata)
+    if insights_meta is not None:
+        manifest["ros_build_metadata"] = {
+            **metadata["ros_build_metadata"],
+            "insights": {
+                name: insights_meta[name]
+                for name in INSIGHTS_MANIFEST_SUMMARY
+                if name in insights_meta
+            },
+        }
     layout = ServingLayout(manifest=manifest)
     entries: dict[str, str] = {}
 
@@ -673,8 +721,15 @@ def build_serving_layout(
         groups = partitioned.get(f"{family.artifact}|{family.partition}", {})
         all_fields = _field_order(list(envelope.get("records", ())))
         fields = _select_fields(all_fields, family)
-        for key in sorted(groups):
-            rows = [{name: row[name] for name in fields if name in row} for row in groups[key]]
+        keys = set(groups)
+        # ADR-116: a published build serves every preset's stories slice, an empty one too,
+        # because the slice carries the account (`meta`).
+        if family.name == "insights" and (insights_meta or {}).get("status") == "published":
+            keys.update((insights_meta or {}).get("counts") or {})
+        for key in sorted(keys):
+            rows = [
+                {name: row[name] for name in fields if name in row} for row in groups.get(key, ())
+            ]
             join = None
             if family.join is not None:
                 join_family = next(item for item in FAMILIES if item.name == family.join)
@@ -699,6 +754,8 @@ def build_serving_layout(
                 "partition": key,
                 **table,
             }
+            if family.name == "insights" and insights_meta is not None:
+                payload["meta"] = insights_meta
             add(f"{family.name}/{key}", payload, (family.name, key, rows))
 
     # Card shards: one per block and bucket that holds anyone.
@@ -752,6 +809,11 @@ def build_serving_layout(
 
     manifest["files"] = dict(sorted(entries.items()))
     return layout
+
+
+def _insights_metadata(metadata: Mapping[str, Mapping[str, Any]]) -> Mapping[str, Any] | None:
+    block = (metadata.get("ros_build_metadata") or {}).get("insights")
+    return block if isinstance(block, Mapping) else None
 
 
 def _manifest_bytes(manifest: Mapping[str, Any]) -> bytes:

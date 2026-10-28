@@ -94,6 +94,8 @@ def test_pipeline_runs_end_to_end_without_network(pipeline_result):
         # ADR-113. Recent windows and breakout categories by the production builder over the
         # same weekly rows and population as the season actuals.
         "recent_form",
+        # ADR-116. Insights, by the production builder over every record above.
+        "insights",
     }
     assert all(records for records in pipeline_result.records.values())
 

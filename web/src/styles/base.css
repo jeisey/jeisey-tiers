@@ -8771,6 +8771,12 @@ table.sheet.weekboard-table thead th.wb-num {
 .tabs {
   min-width: 0;
   scroll-padding-inline: var(--space-4);
+  /*
+   * A containing block for the visually hidden long labels (ADR-116's eighth tab): without it
+   * they are positioned against the row, outside this scroller's clip, and a label scrolled off
+   * the end of the strip widened the whole page by 23px at 320px.
+   */
+  position: relative;
 }
 
 .tabs-more {

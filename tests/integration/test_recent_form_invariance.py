@@ -61,6 +61,11 @@ def test_every_other_artifact_is_byte_identical(enabled, disabled):
 
 def test_metadata_differs_only_in_the_recent_form_block(enabled, disabled):
     assert _canonical(enabled.build_metadata) == _canonical(disabled.build_metadata)
-    left = {k: v for k, v in enabled.ros_build_metadata.items() if k != "recent_form"}
-    right = {k: v for k, v in disabled.ros_build_metadata.items() if k != "recent_form"}
+    # ADR-116: Insights reads recent form (the streak family), so its block says what it lost.
+    skip = {"recent_form", "insights"}
+    left = {k: v for k, v in enabled.ros_build_metadata.items() if k not in skip}
+    right = {k: v for k, v in disabled.ros_build_metadata.items() if k not in skip}
     assert _canonical(left) == _canonical(right)
+    families = disabled.ros_build_metadata["insights"]["families"]
+    assert families["streak_watch"]["status"] == "unavailable"
+    assert families["streak_watch"]["reason"] == "recent form is withheld for this build"
