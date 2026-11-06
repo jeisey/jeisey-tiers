@@ -55,7 +55,6 @@ def patched_loaders():
     return Wrapper()
 
 
-
 for module in list(sys.modules.values()):
     if getattr(module, "nflverse_loaders", None) is real_loaders:
         module.nflverse_loaders = patched_loaders
