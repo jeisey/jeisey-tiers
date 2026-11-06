@@ -72,6 +72,13 @@ function loadFor(playerId: string): SkillTreeLoad {
   };
 }
 
+/** ADR-117's comparison members for a source that serves no cohorts (an older build). */
+const NO_COHORTS = {
+  hasCohorts: () => false,
+  loadCohort: () => Promise.resolve(null),
+  nameOf: () => null,
+} as const;
+
 function sourceFor(load: (playerId: string) => SkillTreeLoad): SkillTreeSource & { readonly calls: string[] } {
   const calls: string[] = [];
   return {
@@ -82,6 +89,7 @@ function sourceFor(load: (playerId: string) => SkillTreeLoad): SkillTreeSource &
       calls.push(playerId);
       return Promise.resolve(load(playerId));
     },
+    ...NO_COHORTS,
   };
 }
 
@@ -300,6 +308,7 @@ describe("the Skill Tree component", () => {
       status: "published",
       meta: null,
       load: () => Promise.reject(new Error("HTTP 404")),
+      ...NO_COHORTS,
     };
     render(<SkillTree source={broken} playerId="gsis:00-0000001" position="WR" name="X" />);
     expect(await screen.findByText(/could not be loaded \(HTTP 404\)/)).toBeDefined();
@@ -312,7 +321,12 @@ describe("the Skill Tree component", () => {
         next_gen_stats: { status: "unavailable", reason: "next_gen_stats_not_at_cutoff" },
       },
     });
-    const source: SkillTreeSource = { status: "published", meta, load: (id) => Promise.resolve(loadFor(id)) };
+    const source: SkillTreeSource = {
+      status: "published",
+      meta,
+      load: (id) => Promise.resolve(loadFor(id)),
+      ...NO_COHORTS,
+    };
     render(<SkillTree source={source} playerId={playerAt("TE")} position="TE" name="Test End" />);
     expect(await screen.findByText(/does not yet end at the board's cutoff week/)).toBeDefined();
   });

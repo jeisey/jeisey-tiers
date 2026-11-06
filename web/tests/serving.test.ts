@@ -20,6 +20,7 @@ import {
   bucketOf,
   decodeTable,
   fetchServed,
+  parseIndex,
   parseManifest,
   pruneCache,
   type EnvelopeHeader,
@@ -74,7 +75,8 @@ describe("the golden served layout", () => {
   it("decodes every slice to exactly its artifact's matching records", () => {
     const decoded = new Map<string, Row[]>();
     const keys = Object.keys(manifest.files)
-      .filter((key) => key !== "players" && !key.startsWith("card/"))
+      // ADR-117: an index names files; it is decoded by its own test below.
+      .filter((key) => key !== "players" && !key.startsWith("card/") && !key.startsWith("skill_cohort_index/"))
       // The ROS slices first: the Opportunity Board's slices join them.
       .sort((a, b) => Number(!a.startsWith("ros_tiers/")) - Number(!b.startsWith("ros_tiers/")));
     expect(keys.length).toBeGreaterThan(5);
@@ -103,6 +105,45 @@ describe("the golden served layout", () => {
     }
     // The golden board exercises the join, or this test would not be testing it.
     expect(joined).toBeGreaterThan(0);
+  });
+
+  it("decodes every Skill Tree cohort its index names to exactly that metric's cohort (ADR-117)", () => {
+    const indexes = Object.keys(manifest.files).filter((key) => key.startsWith("skill_cohort_index/"));
+    expect(indexes.map((key) => key.split("/")[1]).sort()).toEqual(["QB", "RB", "TE", "WR"]);
+    const { header, records } = envelope("player_skill_tree");
+    let slices = 0;
+    let unranked = 0;
+    for (const key of indexes) {
+      const index = parseIndex(served(key));
+      expect(index).not.toBeNull();
+      if (index === null) continue;
+      expect(index.indexes).toBe("skill_cohort");
+      for (const [entry, digest] of Object.entries(index.files)) {
+        const [position = "", metric = ""] = entry.split(".");
+        expect(position).toBe(index.partition);
+        const payload = read(`serve/skill_cohort/${entry}.${digest}.json`) as Table & { family: string };
+        expect(payload.family).toBe("skill_cohort");
+        const rows = decodeTable<Row>(payload, header, names);
+        const expected = records
+          .filter(
+            (row) =>
+              row.position === position &&
+              row.metric_id === metric &&
+              ["ranked", "below_minimum", "small_cohort"].includes(String(row.state)) &&
+              row.source_season === null,
+          )
+          .map((row) => project(row, payload.fields));
+        expect(rows.map((row) => JSON.stringify(row))).toEqual(expected.map((row) => JSON.stringify(row)));
+        // Every member has a published name, so a comparison can name him.
+        for (const row of rows) expect(names[String(row.player_id)]).toBeTruthy();
+        unranked += rows.filter((row) => row.state !== "ranked").length;
+        slices += 1;
+      }
+    }
+    expect(slices).toBeGreaterThan(40);
+    expect(unranked).toBeGreaterThan(0);
+    // The archive is never a cohort slice: it ranks among historical testers.
+    expect(indexes.some((key) => Object.keys(parseIndex(served(key))?.files ?? {}).some((entry) => entry.endsWith(".combine_forty")))).toBe(false);
   });
 
   it("decodes every card shard to exactly the per-player records of its block and bucket", () => {
@@ -225,5 +266,35 @@ describe("fetchServed and the Cache API (ADR-098)", () => {
     });
     await pruneCache(manifest);
     expect([...store.keys()].map((key) => new URL(key, location.href).pathname)).toEqual([url]);
+  });
+
+  it("keeps the files a cached index of this deploy names, and drops another deploy's (ADR-117)", async () => {
+    const index = JSON.stringify({
+      format: "serving_v1",
+      family: "skill_cohort_index",
+      indexes: "skill_cohort",
+      partition: "RB",
+      files: { "RB.carries": "aaaaaaaaaaaaaaaa" },
+    });
+    const indexDigest = "bbbbbbbbbbbbbbbb";
+    const kept = "/data/serve/skill_cohort/RB.carries.aaaaaaaaaaaaaaaa.json";
+    const stale = "/data/serve/skill_cohort/RB.carries.cccccccccccccccc.json";
+    const { store } = fakeCaches({
+      [url]: body,
+      [`/data/serve/skill_cohort_index/RB.${indexDigest}.json`]: index,
+      [kept]: "{}",
+      [stale]: "{}",
+    });
+    const current = parseManifest({
+      format: "serving_v1",
+      version: "1.0",
+      card_buckets: 64,
+      artifacts: {},
+      files: { players: digest, "skill_cohort_index/RB": indexDigest },
+    });
+    await pruneCache(current);
+    const paths = [...store.keys()].map((key) => new URL(key, location.href).pathname).sort();
+    expect(paths).toContain(kept);
+    expect(paths).not.toContain(stale);
   });
 });

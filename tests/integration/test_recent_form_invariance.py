@@ -53,7 +53,10 @@ def test_the_comparison_is_not_vacuous(enabled, disabled):
 def test_every_other_artifact_is_byte_identical(enabled, disabled):
     others = set(enabled.records) - {"recent_form"}
     assert others == set(disabled.records)
-    for artifact in sorted(others):
+    # ADR-116: Insights is a downstream reader of recent form (its streak family), so withholding
+    # recent form may change which stories it selects — the metadata test below already treats
+    # its block the same way. Every value-bearing artifact stays byte-identical.
+    for artifact in sorted(others - {"insights"}):
         assert _canonical(enabled.records[artifact]) == _canonical(
             disabled.records[artifact],
         ), artifact

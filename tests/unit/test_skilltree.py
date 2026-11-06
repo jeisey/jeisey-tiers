@@ -981,6 +981,9 @@ def test_no_model_or_decision_module_reads_the_skill_tree():
         "signals/skilltree_catalog.py",
         "artifacts/skilltree_checks.py",
         "artifacts/validate.py",
+        # ADR-117: the packager serves cohort slices and validates them with the validator's
+        # own re-derivation; it decides nothing and feeds no model.
+        "artifacts/serving.py",
         "pipeline/ros.py",
         "pipeline/fixture_pipeline.py",
         "sources/nextgen.py",  # its docstring names the reader; it imports nothing of it

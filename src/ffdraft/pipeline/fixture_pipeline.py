@@ -1551,9 +1551,18 @@ def _season_actuals(
         snapshot_frame=pl.DataFrame(),
         catalog=catalog,
     )
+    # The Skill Tree's peer clubs appear here too, as in production, where the tree's
+    # population is exactly the actuals' appearing population: every cohort member a card can
+    # compare against then has a published, registry-sourced name (ADR-117).
+    from ffdraft.pipeline.fixture_season import fixture_skill_peers
+
+    peer_weekly, peer_snaps = fixture_skill_peers(
+        season=FIXTURE_SEASON,
+        through_week=FIXTURE_THROUGH_WEEK,
+    )
     return build_season_actuals(
-        weekly=season.weekly,
-        snap_counts=season.snap_counts,
+        weekly=pl.concat([season.weekly, peer_weekly], how="vertical_relaxed"),
+        snap_counts=pl.concat([season.snap_counts, peer_snaps], how="vertical_relaxed"),
         schedule=season.schedule,
         scoring=app.league.scoring,
         season=FIXTURE_SEASON,

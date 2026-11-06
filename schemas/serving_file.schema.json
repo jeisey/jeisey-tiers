@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/schemas/serving_file.schema.json",
   "title": "ServingFile",
-  "description": "One content-addressed file under data/serve/ (ADR-098, docs/DATA_CONTRACTS.md section 21): the player-name dictionary, a slice (one column-major table of one artifact's records for one partition) or a card shard (one table per artifact for one block and player bucket). Every table decodes to exactly the matching records of its source artifact; the validator proves it.",
+  "description": "One content-addressed file under data/serve/ (ADR-098, docs/DATA_CONTRACTS.md section 21): the player-name dictionary, a slice (one column-major table of one artifact's records for one partition), a slice index (ADR-117: the hashes of an indexed family's slices for one partition prefix) or a card shard (one table per artifact for one block and player bucket). Every table decodes to exactly the matching records of its source artifact; the validator proves it.",
   "$defs": {
     "table": {
       "type": "object",
@@ -52,6 +52,21 @@
       "allOf": [{ "$ref": "#/$defs/table" }],
       "required": ["family", "artifact", "partition"],
       "properties": { "family": { "type": "string", "not": { "const": "card" } } }
+    },
+    {
+      "title": "SliceIndex",
+      "description": "ADR-117: the files of an indexed family (`skill_cohort`) for one partition prefix (a position), by hash. The manifest names the index; the index names the files, each served at data/serve/<indexes>/<key>.<hash>.json.",
+      "required": ["family", "indexes", "partition", "files"],
+      "properties": {
+        "family": { "const": "skill_cohort_index" },
+        "indexes": { "const": "skill_cohort" },
+        "partition": { "type": "string", "pattern": "^[A-Z]+$" },
+        "files": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[A-Z]+\\.[a-z0-9_]+$" },
+          "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{16}$" }
+        }
+      }
     },
     {
       "title": "CardShard",

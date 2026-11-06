@@ -60,8 +60,10 @@ import {
   cardKey,
   decodeTable,
   fetchServed,
+  parseIndex,
   type EnvelopeHeader,
   type Manifest,
+  type SliceIndex,
   type Table,
 } from "./serving";
 import { IN_SEASON_VIEWS, type ResolvedViewId } from "./state";
@@ -222,6 +224,21 @@ export function skillTreeKeys(manifest: Manifest, playerId: string, position: st
 }
 
 /**
+ * The index naming one position's Skill Tree cohort slices (ADR-117), or null when the build
+ * serves none (an older build, or no tree). Never part of `requiredKeys`: only opening a
+ * metric's comparison fetches it, and then the one slice it names.
+ */
+export function skillCohortIndexKey(manifest: Manifest, position: string): string | null {
+  const key = `skill_cohort_index/${position}`;
+  return key in manifest.files ? key : null;
+}
+
+/** The served key of one metric's cohort slice (its hash is in the position's index). */
+export function skillCohortKey(position: string, metricId: string): string {
+  return `skill_cohort/${position}.${metricId}`;
+}
+
+/**
  * One player's ESPN ownership history file (ADR-112): the bucket shard holding his series.
  * Never part of `requiredKeys` — no view and no card open fetches it; only activating a card's
  * In-season usage section does, and a second player in the same bucket costs nothing more.
@@ -266,6 +283,9 @@ const QUIET_FAMILIES: ReadonlySet<string> = new Set([
   "insight_evidence",
   "skill_tree",
   "skill_tree_definitions",
+  // ADR-117: a comparison reads its cohort from the promise it awaited.
+  "skill_cohort",
+  "skill_cohort_index",
   "espn_ownership_series",
 ]);
 
@@ -283,6 +303,20 @@ export interface SkillTreeLoad {
   readonly definitions: readonly Record<string, unknown>[];
 }
 
+/**
+ * One metric's whole positional cohort as served (ADR-117): every reading of that position and
+ * metric that carries a value — ranked, below the minimum, or in a cohort too small to rank —
+ * as decoded `player_skill_tree` records (`player_id`, `state`, `value`, `numerator`,
+ * `denominator`, `rank`, `percentile`, `cohort_size`, `games`, plus the build's `build_id`,
+ * `season`, `through_week`, `position`, `metric_id`). Archive readings (the combine 40) are never
+ * served: they rank among historical testers, a cohort the build does not publish.
+ */
+export interface SkillCohortLoad {
+  readonly position: string;
+  readonly metricId: string;
+  readonly rows: readonly Record<string, unknown>[];
+}
+
 /** What the card needs to offer a Skill Tree and load one on demand (ADR-107). */
 export interface SkillTreeSource {
   /** `incompatible`: published under a record major version this page does not read. */
@@ -291,6 +325,19 @@ export interface SkillTreeSource {
   readonly meta: unknown;
   /** Start fetching (or reuse) a player's two files; resolves with his rows. */
   readonly load: (playerId: string, position: string) => Promise<SkillTreeLoad>;
+  /**
+   * ADR-117: whether this build serves cohort slices for the position at all. An older build
+   * serves none, and the comparison then says so instead of offering itself.
+   */
+  readonly hasCohorts: (position: string) => boolean;
+  /**
+   * ADR-117: fetch (or reuse) one metric's positional cohort — the position's small index, then
+   * the one slice it names. Resolves null when the build serves no cohort for that metric.
+   * Repeated calls share one request; the files never notify the store's subscribers.
+   */
+  readonly loadCohort: (position: string, metricId: string) => Promise<SkillCohortLoad | null>;
+  /** A player's published name (the dictionary every slice resolves through), or null. */
+  readonly nameOf: (playerId: string) => string | null;
 }
 
 function supported(header: EnvelopeHeader | undefined): boolean {
@@ -319,6 +366,8 @@ export class DataStore {
   private readonly sliceMeta = new Map<string, unknown>();
   /** One evidence loader per preset, so a story's Evidence holds a stable function (ADR-116). */
   private readonly evidenceLoaders = new Map<string, () => Promise<readonly Row[]>>();
+  /** Slice indexes (ADR-117), by served key: the hashes of the files the manifest does not name. */
+  private readonly indexes = new Map<string, SliceIndex>();
 
   constructor(manifest: Manifest, base?: string) {
     this.manifest = manifest;
@@ -381,16 +430,32 @@ export class DataStore {
     const definitions = this.manifest.artifacts.skill_tree_definitions;
     if (header === undefined || definitions === undefined) return null;
     const meta = (this.manifest.ros_build_metadata as { skill_tree?: unknown } | undefined)?.skill_tree ?? null;
+    const nameOf = (playerId: string): string | null => this.nameFor(playerId);
     if (!supported(header) || !supported(definitions)) {
       return {
         status: "incompatible",
         meta,
         load: () => Promise.reject(new Error("the Skill Tree's artifact version is not supported")),
+        hasCohorts: () => false,
+        loadCohort: () => Promise.resolve(null),
+        nameOf,
       };
     }
     return {
       status: "published",
       meta,
+      hasCohorts: (position) => skillCohortIndexKey(this.manifest, position) !== null,
+      loadCohort: async (position, metricId) => {
+        const indexKey = skillCohortIndexKey(this.manifest, position);
+        if (indexKey === null) return null;
+        await this.ensure([indexKey]);
+        const key = skillCohortKey(position, metricId);
+        const digest = this.indexes.get(indexKey)?.files[`${position}.${metricId}`];
+        if (digest === undefined) return null;
+        await this.load(key, digest);
+        return { position, metricId, rows: this.tables.get(key) ?? [] };
+      },
+      nameOf,
       load: async (playerId, position) => {
         const keys = skillTreeKeys(this.manifest, playerId, position);
         const definitionsKey = `skill_tree_definitions/${position}`;
@@ -482,7 +547,9 @@ export class DataStore {
 
   isLoaded(keys: readonly string[]): boolean {
     return keys.every((key) =>
-      key === "players" ? this.names !== null : this.tables.has(key) || this.cards.has(key),
+      key === "players"
+        ? this.names !== null
+        : this.tables.has(key) || this.cards.has(key) || this.indexes.has(key),
     );
   }
 
@@ -492,11 +559,15 @@ export class DataStore {
     return Promise.all(work).then(() => undefined);
   }
 
-  private load(key: string): Promise<void> {
+  /**
+   * Fetch and decode one served file. Its hash is the manifest's, or — for a file of an indexed
+   * family (ADR-117), which the manifest does not name — the one its index gave.
+   */
+  private load(key: string, indexedDigest?: string): Promise<void> {
     if (this.isLoaded([key])) return Promise.resolve();
     const existing = this.pending.get(key);
     if (existing !== undefined) return existing;
-    const digest = this.manifest.files[key];
+    const digest = indexedDigest ?? this.manifest.files[key];
     if (digest === undefined) return Promise.resolve();
     // A table that joins another decodes after it; the fetches still run side by side.
     const family = key.split("/", 1)[0] ?? "";
@@ -526,6 +597,13 @@ export class DataStore {
       return;
     }
     const names = this.names ?? {};
+    // ADR-117: an index names files; it holds no records.
+    if (typeof body.family === "string" && body.family.endsWith("_index")) {
+      const index = parseIndex(body);
+      if (index === null) throw new Error(`${key} is not a readable index`);
+      this.indexes.set(key, index);
+      return;
+    }
     if (body.family === "card") {
       const sections: Record<string, readonly Row[]> = {};
       for (const [artifact, table] of Object.entries(body.sections as Record<string, Table>)) {
