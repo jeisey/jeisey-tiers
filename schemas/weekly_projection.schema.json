@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/schemas/weekly_projection.schema.json",
   "title": "WeeklyProjection",
-  "description": "One player's next game as a distribution, from `weekly-startsit-v1` (ADR-096; contract 1.1 adds `explanation`, ADR-099): seven quantiles of fantasy points in the row's scoring preset, GIVEN THAT HE PLAYS, for the game in `target_week`. A decision-layer model: it reads the rest-of-season snapshot's point-in-time features plus the game's sportsbook environment and the opponent's allowed points, and no intrinsic model reads it. The injury block is the league's official report printed beside the projection; the model never reads it. One record per player and scoring preset; league size changes nothing here, only the startable threshold the page compares against (published in `ros_build_metadata.weekly`).",
+  "description": "One player's next game as a distribution, from `weekly-startsit-v1` (ADR-096; contract 1.1 adds `explanation`, ADR-099; contract 1.2 adds the `unmodelled` state and each game's line provenance, ADR-117): seven quantiles of fantasy points in the row's scoring preset, GIVEN THAT HE PLAYS, for the game in `target_week`. A decision-layer model: it reads the rest-of-season snapshot's point-in-time features plus the game's sportsbook environment and the opponent's allowed points, and no intrinsic model reads it. The injury block is the league's official report printed beside the projection; the model never reads it. One record per player and scoring preset; league size changes nothing here, only the startable threshold the page compares against (published in `ros_build_metadata.weekly`).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -38,7 +38,7 @@
     }
   },
   "properties": {
-    "schema_version": {"const": "1.1"},
+    "schema_version": {"const": "1.2"},
     "build_id": {"type": "string", "minLength": 1},
     "season": {"type": "integer", "minimum": 1999},
     "through_week": {"type": "integer", "minimum": 1, "maximum": 22, "description": "The snapshot cutoff: weeks 1..through_week are the only in-season evidence."},
@@ -50,13 +50,13 @@
     "scoring_preset": {"enum": ["STD", "HALF", "PPR"]},
     "model_version": {"const": "weekly-startsit-v1"},
     "game_state": {
-      "enum": ["upcoming", "kicked_off", "bye", "lines_pending"],
-      "description": "`upcoming`: the game had not kicked off when the build ran. `kicked_off`: it had (a Thursday game read on Friday) and the projection is kept for the record, not for a decision. `bye`: his team has no game in target_week; `game`, `quantiles`, `drivers` and `opponent` are null. `lines_pending`: the game exists but its sportsbook total or spread is not posted, and the model was never trained without them, so `game` and `opponent` are published and `quantiles` and `drivers` are null (ADR-096)."
+      "enum": ["upcoming", "kicked_off", "bye", "lines_pending", "unmodelled"],
+      "description": "`upcoming`: the game had not kicked off when the build ran. `kicked_off`: it had (a Thursday game read on Friday) and the projection is kept for the record, not for a decision. `bye`: his team has no game in target_week; `game`, `quantiles`, `drivers` and `opponent` are null. `lines_pending`: the game exists but its sportsbook total or spread is not posted, and the model was never trained without them, so `game` and `opponent` are published and `quantiles` and `drivers` are null (ADR-096). `unmodelled`: the game has both lines but the model returned no finite quantile for him; `game` and `opponent` are published, `quantiles`, `drivers` and `explanation` are null (ADR-117) — the build publishes the failure instead of dropping the row."
     },
     "game": {
       "type": ["object", "null"],
       "additionalProperties": false,
-      "required": ["game_id", "opponent", "home_away", "neutral_site", "kickoff_utc", "roof", "total_line", "team_margin", "team_points"],
+      "required": ["game_id", "opponent", "home_away", "neutral_site", "kickoff_utc", "roof", "total_line", "team_margin", "team_points", "line_source", "lines_observed_at_utc"],
       "properties": {
         "game_id": {"type": "string", "minLength": 1},
         "opponent": {"type": "string", "minLength": 2},
@@ -66,7 +66,9 @@
         "roof": {"type": ["string", "null"]},
         "total_line": {"type": ["number", "null"], "minimum": 0, "description": "Sportsbook game total, from nflverse's schedule. A MODEL INPUT for this model (ADR-096), and for no other."},
         "team_margin": {"type": ["number", "null"], "description": "The spread from this team's side: positive means favoured by that many."},
-        "team_points": {"type": ["number", "null"], "description": "(total + margin) / 2: the sportsbook's implied score for his team."}
+        "team_points": {"type": ["number", "null"], "description": "(total + margin) / 2: the sportsbook's implied score for his team."},
+        "line_source": {"enum": ["schedule", "retained", null], "description": "ADR-117: where this game's total and spread came from. `schedule`: the nflverse schedule the build read. `retained`: that schedule had none, and the build reused the newest retained pregame observation of the same game (`pregame_line_reuse_v1`: same game id, season, week and teams; both lines from one observation; observed before kickoff and at most 48 h before the build). Null exactly when `total_line` is null."},
+        "lines_observed_at_utc": {"type": ["string", "null"], "format": "date-time", "description": "When the lines used were observed: the build's schedule retrieval for `schedule`, the capture's retrieval for `retained`. Null exactly when `line_source` is."}
       }
     },
     "quantiles": {

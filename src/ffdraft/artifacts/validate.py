@@ -69,6 +69,7 @@ from ffdraft.quality import (
     check_range,
     check_unique_contiguous_tiers,
 )
+from ffdraft.timeutil import parse_utc
 
 __all__ = ["validate_artifact_directory"]
 
@@ -496,8 +497,17 @@ def _weekly_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[Qua
             game = record.get("game") or {}
             if game.get("total_line") is not None and game.get("team_margin") is not None:
                 shape.append(f"{label}: lines pending but both lines are posted")
+        elif state == "unmodelled":
+            # ADR-117: the game and the opponent, its lines posted, and no distribution — the
+            # model returned nothing finite for him; published so a page can say so.
+            if carried != ["game", "opponent"]:
+                shape.append(f"{label}: unmodelled but carries {', '.join(carried) or 'nothing'}")
+            game = record.get("game") or {}
+            if game.get("total_line") is None or game.get("team_margin") is None:
+                shape.append(f"{label}: unmodelled but its lines are not posted (lines pending)")
         elif state != "bye" and len(carried) != 4:
             shape.append(f"{label}: playing but missing a block")
+        shape.extend(_line_provenance_problems(label, record.get("game"), record))
         quantiles = record.get("quantiles")
         explanation = record.get("explanation")
         if (quantiles is None) != (explanation is None):
@@ -551,6 +561,35 @@ def _weekly_checks(records: Sequence[Mapping[str, Any]], stage: str) -> list[Qua
             ),
         )
     return checks
+
+
+def _line_provenance_problems(
+    label: str,
+    game: Mapping[str, Any] | None,
+    record: Mapping[str, Any],
+) -> list[str]:
+    """ADR-117: a game's lines say where they came from, and a retained line was pregame.
+
+    ``line_source`` is null exactly when the total is; a ``retained`` line was observed strictly
+    before the game's kickoff. Absent fields are an older contract and are not judged here.
+    """
+    if game is None or "line_source" not in game:
+        return []
+    source = game.get("line_source")
+    observed = game.get("lines_observed_at_utc")
+    problems: list[str] = []
+    if (source is None) != (game.get("total_line") is None):
+        problems.append(f"{label}: line_source {source!r} disagrees with its total")
+    if (source is None) != (observed is None):
+        problems.append(f"{label}: line_source {source!r} disagrees with its observation time")
+    if (
+        source == "retained"
+        and observed is not None
+        and game.get("kickoff_utc") is not None
+        and parse_utc(str(observed)) >= parse_utc(str(game["kickoff_utc"]))
+    ):
+        problems.append(f"{label}: a retained line observed at or after kickoff")
+    return problems
 
 
 #: The levels a typical-week account explains, and its parts (``typical_week_shapley_v1``).
@@ -2822,6 +2861,24 @@ def _weekly_context_cross_checks(
         )
         if other:
             problems.append(f"context weeks {other} not in the projections' {sorted(weeks)}")
+        # ADR-117: one game, one set of lines, one provenance — the context prints the lines
+        # the projection read, and says where they came from in the same words.
+        by_team = {str(record.get("team")): record for record in context.get("records", ())}
+        for record in weekly.get("records", ()):
+            game = record.get("game")
+            side = by_team.get(str(record.get("team")))
+            if game is None or side is None or side.get("game_id") != game.get("game_id"):
+                continue
+            week = side.get("this_week") or {}
+            for name in ("total_line", "team_margin", "line_source", "lines_observed_at_utc"):
+                if name in game and name in week and game.get(name) != week.get(name):
+                    problems.append(
+                        f"{record.get('player_id')}/{record.get('scoring_preset')}: {name} "
+                        f"{game.get(name)!r} != context {week.get(name)!r}",
+                    )
+                    break
+            if len(problems) > 10:
+                break
     if problems:
         return [
             QualityCheck.fail(

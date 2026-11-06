@@ -132,6 +132,7 @@ jobs:
       kind: ${{ steps.plan.outputs.kind }}
       forecast_capture: ${{ steps.forecasts.outcome }}
       injury_capture: ${{ steps.injuries.outcome }}
+      lines_capture: ${{ steps.lines.outcome }}
       mode: ${{ steps.season.outputs.mode }}
       season_state: ${{ steps.season.outputs.state }}
       snapshot_week: ${{ steps.season.outputs.snapshot_week }}
@@ -335,6 +336,24 @@ jobs:
             --store market-data \
             --git-sha "${GITHUB_SHA::7}" | tee forecasts.log
 
+      # ADR-117: the schedule's posted total and spread for every game kicking off within 15
+      # days, read fresh — never through the build's day-keyed nflverse cache — and retained.
+      # A build whose schedule copy has no line for a target-week game may reuse that game's
+      # newest pregame observation (pregame_line_reuse_v1, at most 48 h old). On 2026-11-06 an
+      # upstream update blanked every unplayed week-9 line for ten minutes and the refresh
+      # read that state; this capture is what lets the next build recover. Context and
+      # evidence, never a gate.
+      - name: Capture the schedule's posted lines
+        id: lines
+        if: ${{ inputs.skip_capture != true && steps.season.outputs.mode == 'in_season' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          uv run ffdraft capture-schedule-lines \
+            --season "${{ steps.plan.outputs.season }}" \
+            --store market-data \
+            --git-sha "${GITHUB_SHA::7}" | tee lines.log
+
       - name: Capture the injury report
         id: injuries
         if: ${{ inputs.skip_capture != true && steps.season.outputs.mode == 'in_season' }}
@@ -392,6 +411,7 @@ jobs:
             echo "| Refresh kind | \`${{ steps.plan.outputs.kind }}\` |"
             echo "| Forecast capture | \`${{ steps.forecasts.outcome || 'not run' }}\` |"
             echo "| Injury-report capture | \`${{ steps.injuries.outcome || 'not run' }}\` |"
+            echo "| Schedule-lines capture | \`${{ steps.lines.outcome || 'not run' }}\` |"
             echo "| MFL capture outcome | \`${{ steps.market.outcome || 'not run' }}\` |"
             echo "| ESPN ownership capture | \`${{ steps.espn.outcome || 'not run' }}\` |"
             echo "| Store | \`${{ steps.store.outputs.repository }}@${{ steps.store.outputs.branch }}\` |"
@@ -399,7 +419,7 @@ jobs:
             echo "| Store head after | \`${{ steps.persist.outputs.commit || 'unchanged' }}\` |"
             echo "| Appended | \`${{ steps.persist.outputs.appended || 'no' }}\` |"
             echo
-            for log in snapshot.log ffc.log status.log behavior.log espn.log forecasts.log injuries.log; do
+            for log in snapshot.log ffc.log status.log behavior.log espn.log forecasts.log lines.log injuries.log; do
               if [ -f "${log}" ]; then
                 echo "<details><summary>${log}</summary>"
                 echo
@@ -1020,6 +1040,7 @@ jobs:
             --fact "refresh_kind=${{ needs.capture.outputs.kind }}" \
             --fact "forecast_capture=${{ needs.capture.outputs.forecast_capture || 'not run' }}" \
             --fact "injury_capture=${{ needs.capture.outputs.injury_capture || 'not run' }}" \
+            --fact "lines_capture=${{ needs.capture.outputs.lines_capture || 'not run' }}" \
             --fact "weekly_context_rows=${{ needs.build.outputs.weekly_context_rows || '0' }}" \
             --fact "weekly_explained=${{ needs.build.outputs.weekly_explained || '0' }}" \
             --fact "shadow_status=${{ needs.build.outputs.shadow_status || 'absent' }}" \

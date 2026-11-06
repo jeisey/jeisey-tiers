@@ -36,7 +36,7 @@
     }
   },
   "properties": {
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"const": "1.1"},
     "build_id": {"type": "string", "minLength": 1},
     "season": {"type": "integer", "minimum": 1999},
     "through_week": {"type": "integer", "minimum": 1, "maximum": 22},
@@ -122,15 +122,17 @@
     "this_week": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["total_line", "team_margin", "team_points", "is_home", "rest_advantage", "indoors"],
-      "description": "The game inputs weekly-startsit-v1 reads this week.",
+      "required": ["total_line", "team_margin", "team_points", "is_home", "rest_advantage", "indoors", "line_source", "lines_observed_at_utc"],
+      "description": "The game inputs weekly-startsit-v1 reads this week, and (1.1, ADR-117) where the lines came from.",
       "properties": {
         "total_line": {"$ref": "#/$defs/nullable_number"},
         "team_margin": {"$ref": "#/$defs/nullable_number"},
         "team_points": {"$ref": "#/$defs/nullable_number"},
         "is_home": {"$ref": "#/$defs/nullable_number"},
         "rest_advantage": {"$ref": "#/$defs/nullable_number"},
-        "indoors": {"$ref": "#/$defs/nullable_number"}
+        "indoors": {"$ref": "#/$defs/nullable_number"},
+        "line_source": {"enum": ["schedule", "retained", null], "description": "As `weekly_projection.game.line_source`: `schedule`, `retained` (pregame_line_reuse_v1) or null when no line was available."},
+        "lines_observed_at_utc": {"type": ["string", "null"], "format": "date-time"}
       }
     }
   }

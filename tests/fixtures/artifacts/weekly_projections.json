@@ -7,7 +7,7 @@
   "record_count": 51,
   "records": [
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -27,7 +27,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -48,7 +48,9 @@
         "roof": "outdoors",
         "total_line": null,
         "team_margin": null,
-        "team_points": null
+        "team_points": null,
+        "line_source": null,
+        "lines_observed_at_utc": null
       },
       "quantiles": null,
       "drivers": null,
@@ -65,7 +67,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -86,7 +88,9 @@
         "roof": "outdoors",
         "total_line": 44.5,
         "team_margin": -3.5,
-        "team_points": 20.5
+        "team_points": 20.5,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.69,
@@ -159,7 +163,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -180,7 +184,9 @@
         "roof": "outdoors",
         "total_line": 45.5,
         "team_margin": 0.0,
-        "team_points": 22.75
+        "team_points": 22.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.28,
@@ -258,7 +264,7 @@
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -279,7 +285,9 @@
         "roof": "outdoors",
         "total_line": 45.5,
         "team_margin": 0.0,
-        "team_points": 22.75
+        "team_points": 22.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": -0.06,
@@ -352,7 +360,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -373,7 +381,9 @@
         "roof": "outdoors",
         "total_line": 46.5,
         "team_margin": 3.5,
-        "team_points": 25.0
+        "team_points": 25.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.09,
@@ -446,7 +456,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -467,7 +477,9 @@
         "roof": "outdoors",
         "total_line": 48.5,
         "team_margin": 7.0,
-        "team_points": 27.75
+        "team_points": 27.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.25,
@@ -540,7 +552,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -561,7 +573,9 @@
         "roof": "outdoors",
         "total_line": 43.5,
         "team_margin": 7.0,
-        "team_points": 25.25
+        "team_points": 25.25,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.25,
@@ -634,7 +648,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -655,7 +669,9 @@
         "roof": "outdoors",
         "total_line": 48.5,
         "team_margin": -7.0,
-        "team_points": 20.75
+        "team_points": 20.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": -0.0,
@@ -728,7 +744,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -749,7 +765,9 @@
         "roof": "outdoors",
         "total_line": 43.5,
         "team_margin": -7.0,
-        "team_points": 18.25
+        "team_points": 18.25,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": -0.01,
@@ -822,7 +840,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -843,7 +861,9 @@
         "roof": "outdoors",
         "total_line": 45.5,
         "team_margin": 0.0,
-        "team_points": 22.75
+        "team_points": 22.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.03,
@@ -916,7 +936,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -937,7 +957,9 @@
         "roof": "outdoors",
         "total_line": 46.5,
         "team_margin": -3.5,
-        "team_points": 21.5
+        "team_points": 21.5,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.22,
@@ -1015,7 +1037,7 @@
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1036,7 +1058,9 @@
         "roof": "dome",
         "total_line": 47.5,
         "team_margin": 7.0,
-        "team_points": 27.25
+        "team_points": 27.25,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.18,
@@ -1109,7 +1133,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1130,7 +1154,9 @@
         "roof": "dome",
         "total_line": 47.5,
         "team_margin": -7.0,
-        "team_points": 20.25
+        "team_points": 20.25,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.18,
@@ -1203,7 +1229,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1223,7 +1249,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1244,7 +1270,9 @@
         "roof": "outdoors",
         "total_line": null,
         "team_margin": null,
-        "team_points": null
+        "team_points": null,
+        "line_source": null,
+        "lines_observed_at_utc": null
       },
       "quantiles": null,
       "drivers": null,
@@ -1261,7 +1289,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1282,7 +1310,9 @@
         "roof": "outdoors",
         "total_line": 44.5,
         "team_margin": 3.5,
-        "team_points": 24.0
+        "team_points": 24.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.18,
@@ -1355,7 +1385,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1375,7 +1405,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1396,7 +1426,9 @@
         "roof": "outdoors",
         "total_line": null,
         "team_margin": null,
-        "team_points": null
+        "team_points": null,
+        "line_source": null,
+        "lines_observed_at_utc": null
       },
       "quantiles": null,
       "drivers": null,
@@ -1413,7 +1445,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1434,7 +1466,9 @@
         "roof": "outdoors",
         "total_line": 44.5,
         "team_margin": -3.5,
-        "team_points": 20.5
+        "team_points": 20.5,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.44,
@@ -1507,7 +1541,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1528,7 +1562,9 @@
         "roof": "outdoors",
         "total_line": 45.5,
         "team_margin": 0.0,
-        "team_points": 22.75
+        "team_points": 22.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.26,
@@ -1606,7 +1642,7 @@
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1627,7 +1663,9 @@
         "roof": "outdoors",
         "total_line": 45.5,
         "team_margin": 0.0,
-        "team_points": 22.75
+        "team_points": 22.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": -0.08,
@@ -1700,7 +1738,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1721,7 +1759,9 @@
         "roof": "outdoors",
         "total_line": 46.5,
         "team_margin": 3.5,
-        "team_points": 25.0
+        "team_points": 25.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.1,
@@ -1794,7 +1834,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1815,7 +1855,9 @@
         "roof": "outdoors",
         "total_line": 48.5,
         "team_margin": 7.0,
-        "team_points": 27.75
+        "team_points": 27.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.22,
@@ -1888,7 +1930,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -1909,7 +1951,9 @@
         "roof": "outdoors",
         "total_line": 43.5,
         "team_margin": 7.0,
-        "team_points": 25.25
+        "team_points": 25.25,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.23,
@@ -1982,7 +2026,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2003,7 +2047,9 @@
         "roof": "outdoors",
         "total_line": 48.5,
         "team_margin": -7.0,
-        "team_points": 20.75
+        "team_points": 20.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.0,
@@ -2076,7 +2122,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2097,7 +2143,9 @@
         "roof": "outdoors",
         "total_line": 43.5,
         "team_margin": -7.0,
-        "team_points": 18.25
+        "team_points": 18.25,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.0,
@@ -2170,7 +2218,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2191,7 +2239,9 @@
         "roof": "outdoors",
         "total_line": 45.5,
         "team_margin": 0.0,
-        "team_points": 22.75
+        "team_points": 22.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.0,
@@ -2264,7 +2314,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2285,7 +2335,9 @@
         "roof": "outdoors",
         "total_line": 46.5,
         "team_margin": -3.5,
-        "team_points": 21.5
+        "team_points": 21.5,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.4,
@@ -2363,7 +2415,7 @@
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2384,7 +2436,9 @@
         "roof": "dome",
         "total_line": 47.5,
         "team_margin": 7.0,
-        "team_points": 27.25
+        "team_points": 27.25,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.43,
@@ -2457,7 +2511,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2478,7 +2532,9 @@
         "roof": "dome",
         "total_line": 47.5,
         "team_margin": -7.0,
-        "team_points": 20.25
+        "team_points": 20.25,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.43,
@@ -2551,7 +2607,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2571,7 +2627,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2592,7 +2648,9 @@
         "roof": "outdoors",
         "total_line": null,
         "team_margin": null,
-        "team_points": null
+        "team_points": null,
+        "line_source": null,
+        "lines_observed_at_utc": null
       },
       "quantiles": null,
       "drivers": null,
@@ -2609,7 +2667,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2630,7 +2688,9 @@
         "roof": "outdoors",
         "total_line": 44.5,
         "team_margin": 3.5,
-        "team_points": 24.0
+        "team_points": 24.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.43,
@@ -2703,7 +2763,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2723,7 +2783,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2744,7 +2804,9 @@
         "roof": "outdoors",
         "total_line": null,
         "team_margin": null,
-        "team_points": null
+        "team_points": null,
+        "line_source": null,
+        "lines_observed_at_utc": null
       },
       "quantiles": null,
       "drivers": null,
@@ -2761,7 +2823,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2782,7 +2844,9 @@
         "roof": "outdoors",
         "total_line": 44.5,
         "team_margin": -3.5,
-        "team_points": 20.5
+        "team_points": 20.5,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.51,
@@ -2855,7 +2919,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2876,7 +2940,9 @@
         "roof": "outdoors",
         "total_line": 45.5,
         "team_margin": 0.0,
-        "team_points": 22.75
+        "team_points": 22.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.21,
@@ -2954,7 +3020,7 @@
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -2975,7 +3041,9 @@
         "roof": "outdoors",
         "total_line": 45.5,
         "team_margin": 0.0,
-        "team_points": 22.75
+        "team_points": 22.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": -0.08,
@@ -3048,7 +3116,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3069,7 +3137,9 @@
         "roof": "outdoors",
         "total_line": 46.5,
         "team_margin": 3.5,
-        "team_points": 25.0
+        "team_points": 25.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.01,
@@ -3142,7 +3212,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3163,7 +3233,9 @@
         "roof": "outdoors",
         "total_line": 48.5,
         "team_margin": 7.0,
-        "team_points": 27.75
+        "team_points": 27.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.23,
@@ -3236,7 +3308,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3257,7 +3329,9 @@
         "roof": "outdoors",
         "total_line": 43.5,
         "team_margin": 7.0,
-        "team_points": 25.25
+        "team_points": 25.25,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.22,
@@ -3330,7 +3404,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3351,7 +3425,9 @@
         "roof": "outdoors",
         "total_line": 48.5,
         "team_margin": -7.0,
-        "team_points": 20.75
+        "team_points": 20.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.01,
@@ -3424,7 +3500,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3445,7 +3521,9 @@
         "roof": "outdoors",
         "total_line": 43.5,
         "team_margin": -7.0,
-        "team_points": 18.25
+        "team_points": 18.25,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.01,
@@ -3518,7 +3596,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3539,7 +3617,9 @@
         "roof": "outdoors",
         "total_line": 45.5,
         "team_margin": 0.0,
-        "team_points": 22.75
+        "team_points": 22.75,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.01,
@@ -3612,7 +3692,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3633,7 +3713,9 @@
         "roof": "outdoors",
         "total_line": 46.5,
         "team_margin": -3.5,
-        "team_points": 21.5
+        "team_points": 21.5,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.02,
@@ -3711,7 +3793,7 @@
       }
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3732,7 +3814,9 @@
         "roof": "dome",
         "total_line": 47.5,
         "team_margin": 7.0,
-        "team_points": 27.25
+        "team_points": 27.25,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.03,
@@ -3805,7 +3889,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3826,7 +3910,9 @@
         "roof": "dome",
         "total_line": 47.5,
         "team_margin": -7.0,
-        "team_points": 20.25
+        "team_points": 20.25,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.01,
@@ -3899,7 +3985,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3919,7 +4005,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3940,7 +4026,9 @@
         "roof": "outdoors",
         "total_line": null,
         "team_margin": null,
-        "team_points": null
+        "team_points": null,
+        "line_source": null,
+        "lines_observed_at_utc": null
       },
       "quantiles": null,
       "drivers": null,
@@ -3957,7 +4045,7 @@
       "injury": null
     },
     {
-      "schema_version": "1.1",
+      "schema_version": "1.2",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -3978,7 +4066,9 @@
         "roof": "outdoors",
         "total_line": 44.5,
         "team_margin": 3.5,
-        "team_points": 24.0
+        "team_points": 24.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       },
       "quantiles": {
         "q05": 0.03,

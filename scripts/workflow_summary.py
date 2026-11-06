@@ -50,6 +50,8 @@ RUN_FACTS: tuple[tuple[str, str], ...] = (
     ("refresh_kind", "Refresh kind"),
     ("forecast_capture", "Forecast capture"),
     ("injury_capture", "Injury-report capture"),
+    # ADR-117: the schedule's posted lines, captured fresh before every in-season build.
+    ("lines_capture", "Schedule-lines capture"),
     ("weekly_context_rows", "Game-day context rows"),
     ("weekly_explained", "Explained projections"),
     ("shadow_status", "Weekly v2 shadow"),
@@ -363,6 +365,53 @@ def _serving_section(artifacts: Path, budget: Any) -> list[str]:
     return lines
 
 
+def _weekly_lines_section(artifacts: Path) -> list[str]:
+    """ADR-117: where the target week's lines came from, and what had none.
+
+    The weekly layer withholds a distribution for a game with no line, which is right and is
+    also how one upstream blank silently cost a slate on 2026-11-06; the deploy passed. This
+    section makes the count impossible to miss.
+    """
+    ros = _read_json(artifacts / "ros_build_metadata.json")
+    weekly = (ros or {}).get("weekly") if isinstance(ros, Mapping) else None
+    lines = (weekly or {}).get("lines") if isinstance(weekly, Mapping) else None
+    if not isinstance(lines, Mapping):
+        return []
+    out = [
+        "### Start/Sit lines (week {week})".format(week=weekly.get("target_week", "?")),
+        "",
+        *_table(
+            ["Games", "From the schedule", "Retained pregame", "No line", "Players lines-pending"],
+            [
+                [
+                    str(lines.get("target_games", 0)),
+                    str(lines.get("from_schedule", 0)),
+                    str(lines.get("from_retained", 0)),
+                    str(lines.get("unlined", 0)),
+                    str(weekly.get("lines_pending", 0)),
+                ],
+            ],
+        ),
+    ]
+    if lines.get("from_retained"):
+        observed = sorted(
+            {str(item.get("observed_at_utc")) for item in lines.get("retained") or ()},
+        )
+        out.append(
+            f"> The schedule this build read had no line for {lines['from_retained']} game(s); "
+            f"their newest retained pregame lines were used (observed {', '.join(observed)}).",
+        )
+        out.append("")
+    if lines.get("unlined"):
+        out.append(
+            f"> **{lines['unlined']} game(s) had no line at all** "
+            f"({', '.join(lines.get('unlined_game_ids') or ())}): their players have no "
+            "distribution, so Start/Sit and Win My Matchup cannot project them.",
+        )
+        out.append("")
+    return out
+
+
 def render(
     artifacts: Path,
     store: Path | None,
@@ -392,6 +441,7 @@ def render(
     lines.extend(_market_section(metadata, _read_json(artifacts / "arbitrage.json")))
     lines.extend(_identity_section(store, metadata))
     lines.extend(_artifact_section(artifacts, metadata))
+    lines.extend(_weekly_lines_section(artifacts))
     lines.extend(_serving_section(artifacts, budget))
     lines.extend(_quality_section(metadata))
     return "\n".join(lines) + "\n"

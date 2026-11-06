@@ -1970,6 +1970,16 @@ def _weekly_layer(
             }
             for record in opportunity_records
         }
+        # ADR-117: the target week's lines — the schedule's, or a game's newest retained pregame
+        # observation when the schedule the build read has none (pregame_line_reuse_v1).
+        schedule, line_provenance, lines = _target_week_lines(
+            loaded.sources.schedule,
+            season=season,
+            week=cutoff.through_week + 1,
+            as_of=as_of,
+            store=store,
+            gate=gate,
+        )
         reports, reports_at, report_frame = _injury_reports(
             injuries,
             season=season,
@@ -1989,7 +1999,7 @@ def _weekly_layer(
                 sleeper_signings=False,
             ),
             weekly=loaded.sources.weekly_stats,
-            schedule=loaded.sources.schedule,
+            schedule=schedule,
             scoring=settings.league.scoring,
             season=season,
             through_week=cutoff.through_week,
@@ -1998,6 +2008,7 @@ def _weekly_layer(
             schema_version=record_schema_version("weekly_projection"),
             injury_reports=reports,
             venues=load_venue_registry(),
+            line_provenance=line_provenance,
         )
     except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
         gate.add(
@@ -2059,6 +2070,8 @@ def _weekly_layer(
         report_frame=report_frame,
         store=store,
         forecast_rows=forecast_rows,
+        schedule=schedule,
+        line_provenance=line_provenance,
     )
     shadow_summary = _weekly_shadow(
         result=result,
@@ -2085,7 +2098,8 @@ def _weekly_layer(
             observed=(
                 f"{summary['records']} record(s): {summary['upcoming']} upcoming, "
                 f"{summary['kicked_off']} kicked off, {summary['bye']} on bye, "
-                f"{summary.get('lines_pending', 0)} awaiting a posted line; "
+                f"{summary.get('lines_pending', 0)} awaiting a posted line, "
+                f"{summary.get('unmodelled', 0)} unmodelled; "
                 f"{summary['injury_reports_matched']} with an injury report"
             ),
         ),
@@ -2096,6 +2110,7 @@ def _weekly_layer(
         through_week=cutoff.through_week,
         injuries_retrieved_at=reports_at,
         context=context_summary,
+        lines=lines,
     )
     metadata["_context_records"] = context_records
     metadata["shadow"] = shadow_summary
@@ -2235,8 +2250,14 @@ def _weekly_context_layer(
     report_frame: pl.DataFrame | None,
     store: Path | None,
     forecast_rows: Sequence[Mapping[str, Any]] | None,
+    schedule: pl.DataFrame | None = None,
+    line_provenance: Mapping[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
-    """``weekly_context`` (ADR-099): published facts beside the projections, or nothing."""
+    """``weekly_context`` (ADR-099): published facts beside the projections, or nothing.
+
+    ``schedule`` and ``line_provenance`` are the ones the projections read (ADR-117), so the
+    context prints the same lines and says where they came from in the same words.
+    """
     from ffdraft.artifacts.schemas import record_schema_version
     from ffdraft.artifacts.validate import weekly_context_checks
     from ffdraft.contracts.quality import critical_failures
@@ -2253,7 +2274,8 @@ def _weekly_context_layer(
             gate=gate,
         )
         records, summary = build_weekly_context_records(
-            schedule=loaded.sources.schedule,
+            schedule=schedule if schedule is not None else loaded.sources.schedule,
+            line_provenance=line_provenance,
             season=season,
             through_week=cutoff.through_week,
             as_of=as_of,
@@ -2360,6 +2382,74 @@ def _forecast_readings(
     return {str(row["game_id"]): dict(row) for row in rows}, meta
 
 
+def _target_week_lines(
+    schedule: pl.DataFrame,
+    *,
+    season: int,
+    week: int,
+    as_of: datetime,
+    store: Path | None,
+    gate: QualityGate,
+) -> tuple[pl.DataFrame, dict[str, Any], dict[str, Any]]:
+    """ADR-117: the schedule with ``pregame_line_reuse_v1`` applied, per-game provenance, and the
+    ``weekly.lines`` metadata block. Two warnings make an upstream line problem visible in the
+    build log and summary: games the build lined from a retained observation, and games it
+    could not line at all.
+    """
+    from ffdraft.weekly.lines import apply_retained_lines, lines_summary, retained_observations
+
+    observations: list[Any] = []
+    keys: list[str] = []
+    if store is not None:
+        observations, keys = retained_observations(store, season=season, as_of=as_of)
+    patched, provenance = apply_retained_lines(
+        schedule,
+        observations,
+        season=season,
+        week=week,
+        as_of=as_of,
+        schedule_observed_at=as_of,
+    )
+    summary = {
+        **lines_summary(provenance, schedule_observed_at=as_of),
+        "captures_read": keys,
+    }
+    if summary["from_retained"]:
+        gate.add(
+            QualityCheck.fail(
+                "ros.weekly_lines_retained",
+                stage="ros_build",
+                message=(
+                    "the schedule the build read had no total or spread for some week-"
+                    f"{week} games; their newest retained pregame lines were used "
+                    "(pregame_line_reuse_v1) and every such game says so"
+                ),
+                observed="; ".join(
+                    f"{item['game_id']} @ {item['observed_at_utc']}" for item in summary["retained"]
+                ),
+                expected="every target-week game lined in the schedule itself",
+                severity=Severity.WARNING,
+            ),
+        )
+    if summary["unlined"]:
+        gate.add(
+            QualityCheck.fail(
+                "ros.weekly_lines_unavailable",
+                stage="ros_build",
+                message=(
+                    f"week-{week} games with no posted total or spread in the schedule and no "
+                    "retained pregame observation within the reuse window: their players are "
+                    "published lines_pending, without a distribution"
+                ),
+                observed=f"{summary['unlined']} of {summary['target_games']} game(s): "
+                + ", ".join(summary["unlined_game_ids"][:16]),
+                expected="lines for every target-week game",
+                severity=Severity.WARNING,
+            ),
+        )
+    return patched, dict(provenance), summary
+
+
 def weekly_metadata(
     model: Any,
     summary: Mapping[str, Any],
@@ -2367,6 +2457,7 @@ def weekly_metadata(
     through_week: int,
     injuries_retrieved_at: datetime | None,
     context: Mapping[str, Any] | None = None,
+    lines: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """``ros_build_metadata.weekly``: one definition for the build and the fixture (ADR-096)."""
     from ffdraft.weekly.frozen import (
@@ -2391,6 +2482,8 @@ def weekly_metadata(
         "kicked_off": summary["kicked_off"],
         "bye": summary["bye"],
         "lines_pending": summary.get("lines_pending", 0),
+        "unmodelled": summary.get("unmodelled", 0),
+        "lines": dict(lines) if lines is not None else None,
         "quantile_levels": list(WEEKLY_QUANTILE_LEVELS),
         "distribution_rule": {
             "version": WEEKLY_DISTRIBUTION_RULE_VERSION,

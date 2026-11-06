@@ -1818,13 +1818,26 @@ def _weekly_records(
     model = WeeklyModel.load(model_dir)
     snapshot, players, reports = weekly_serve_inputs(opportunity, usage, app=app)
     as_of = parse_utc(FIXTURE_INSEASON_AS_OF)
+    # ADR-117: the production line rule with no retained capture — the fixture's unlined game
+    # stays lines_pending, and every game says where its lines came from.
+    from ffdraft.weekly.lines import apply_retained_lines, lines_summary
+
+    schedule, line_provenance = apply_retained_lines(
+        season.schedule,
+        [],
+        season=FIXTURE_SEASON,
+        week=FIXTURE_THROUGH_WEEK + 1,
+        as_of=as_of,
+        schedule_observed_at=as_of,
+    )
+    lines = {**lines_summary(line_provenance, schedule_observed_at=as_of), "captures_read": []}
     result = build_weekly_projection_records(
         model=model,
         snapshot=snapshot,
         players=players,
         current_teams={},
         weekly=season.weekly,
-        schedule=season.schedule,
+        schedule=schedule,
         scoring=app.league.scoring,
         season=FIXTURE_SEASON,
         through_week=FIXTURE_THROUGH_WEEK,
@@ -1833,6 +1846,7 @@ def _weekly_records(
         schema_version=record_schema_version("weekly_projection"),
         injury_reports=reports,
         venues=load_venue_registry(),
+        line_provenance=line_provenance,
     )
     if not result.records:
         return [], None, []
@@ -1851,6 +1865,7 @@ def _weekly_records(
             through_week=FIXTURE_THROUGH_WEEK,
             injuries_retrieved_at=as_of,
             context=context_summary,
+            lines=lines,
         ),
         context,
     )

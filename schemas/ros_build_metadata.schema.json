@@ -250,6 +250,36 @@
         "kicked_off": {"type": "integer", "minimum": 0},
         "bye": {"type": "integer", "minimum": 0},
         "lines_pending": {"type": "integer", "minimum": 0, "description": "Players whose game has no posted total or spread yet: published without a distribution."},
+        "unmodelled": {"type": "integer", "minimum": 0, "description": "ADR-117: players whose game had lines but for whom the model returned no finite quantile; published as `unmodelled`, without a distribution."},
+        "lines": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["rule_version", "max_age_hours", "schedule_retrieved_at_utc", "target_games", "from_schedule", "from_retained", "unlined", "unlined_game_ids", "retained", "captures_read"],
+          "description": "ADR-117: where the target week's lines came from. `from_schedule` games had both lines in the schedule the build read; `from_retained` reused the newest retained pregame observation of the same game (`pregame_line_reuse_v1`); `unlined` games had neither, and their players are `lines_pending`. `captures_read` are the retained `schedule_lines` snapshot keys within the reuse window.",
+          "properties": {
+            "rule_version": {"const": "pregame_line_reuse_v1"},
+            "max_age_hours": {"type": "integer", "minimum": 1},
+            "schedule_retrieved_at_utc": {"type": "string", "format": "date-time"},
+            "target_games": {"type": "integer", "minimum": 0},
+            "from_schedule": {"type": "integer", "minimum": 0},
+            "from_retained": {"type": "integer", "minimum": 0},
+            "unlined": {"type": "integer", "minimum": 0},
+            "unlined_game_ids": {"type": "array", "items": {"type": "string"}},
+            "retained": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["game_id", "observed_at_utc"],
+                "properties": {
+                  "game_id": {"type": "string"},
+                  "observed_at_utc": {"type": ["string", "null"], "format": "date-time"}
+                }
+              }
+            },
+            "captures_read": {"type": "array", "items": {"type": "string"}}
+          }
+        },
         "quantile_levels": {"type": "array", "items": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}, "minItems": 3},
         "distribution_rule": {
           "type": "object",

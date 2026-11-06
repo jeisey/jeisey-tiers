@@ -120,6 +120,21 @@
     "kicked_off": 0,
     "bye": 6,
     "lines_pending": 6,
+    "unmodelled": 0,
+    "lines": {
+      "rule_version": "pregame_line_reuse_v1",
+      "max_age_hours": 48,
+      "schedule_retrieved_at_utc": "2026-11-03T12:00:00Z",
+      "target_games": 7,
+      "from_schedule": 6,
+      "from_retained": 0,
+      "unlined": 1,
+      "unlined_game_ids": [
+        "2026_09_LAC_KC"
+      ],
+      "retained": [],
+      "captures_read": []
+    },
     "quantile_levels": [
       0.05,
       0.1,

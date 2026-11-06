@@ -19,6 +19,11 @@ discipline as the market and status captures (ADR-038):
     One record per prospective look taken (``prospective.due_look``): the exact scored rows it
     judged and its verdict. Written by ``weekly-v2-prospective.yml`` before the verdict is
     reported; a look already recorded is never taken again.
+``schedule_lines``
+    ADR-117: every regular-season game kicking off within 15 days, with the total and spread
+    nflverse's schedule posted at the capture (null when it posted none), from a fresh download.
+    The serving build may reuse a game's newest pregame observation when the schedule it read
+    has none (``weekly.lines.pregame_line_reuse_v1``).
 """
 
 from __future__ import annotations
@@ -44,6 +49,7 @@ __all__ = [
     "FORECAST_SOURCE_ID",
     "GAMEDAY_PREFIX",
     "INJURY_SOURCE_ID",
+    "LINES_SOURCE_ID",
     "LOOK_SOURCE_ID",
     "SHADOW_SOURCE_ID",
     "GamedayCapture",
@@ -58,11 +64,13 @@ FORECAST_SOURCE_ID = "weather_forecast"
 INJURY_SOURCE_ID = "nflverse_injuries"
 SHADOW_SOURCE_ID = "weekly_shadow"
 LOOK_SOURCE_ID = "weekly_v2_look"
+LINES_SOURCE_ID = "schedule_lines"
 GAMEDAY_SOURCES: tuple[str, ...] = (
     FORECAST_SOURCE_ID,
     INJURY_SOURCE_ID,
     SHADOW_SOURCE_ID,
     LOOK_SOURCE_ID,
+    LINES_SOURCE_ID,
 )
 
 PAYLOAD_FILENAME = "rows.json.gz"
