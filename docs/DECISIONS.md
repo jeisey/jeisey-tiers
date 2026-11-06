@@ -8518,3 +8518,119 @@ retained. Details: `docs/UX_SPEC.md` §6A.23.
   clearance.
 * Deferred: historical comparisons (needs a comparable published cohort), expected-points
   readings (ADR-086), any route-based or QB–receiver-fit claim, threshold-exceedance probabilities.
+
+## ADR-117 — Skill Tree comparisons over the exact ranking cohort, portraits for every reachable card, and weekly lines that survive an upstream blank
+
+**Status:** accepted, 2026-11-06. **Relies on:** ADR-098 (served slices, budgets), ADR-107 (the
+Skill Tree, its percentile convention), ADR-087 (portraits), ADR-096 (weekly start/sit and
+`lines_pending`), ADR-099 (game-day captures), ADR-101/102 (availability, employment), ADR-110
+(Win My Matchup). **Amends:** ADR-107 (meter rule and legend), ADR-087 (portrait population),
+ADR-096 (line provenance, `unmodelled`), UX_SPEC §6A.17 and §6A.18.
+
+Three owner reports from the 2026-11-06 review (baseline `main` at `ce9fe82`), each reproduced on
+retained `daily-refresh` artifacts before any change: run `40690404597`
+(`refresh-build-40690404597`, Oct 28) and run `42217730020` (`refresh-build-42217730020`, Nov 6).
+
+### 1. Skill Tree — the percentile audit
+
+**Evidence.** Dameon Pierce (`gsis:00-0037258`), RB yards per carry: nflverse weekly stats give
+weeks 5–7 with PHI at 11 carries/14 yards, 12/35, 14/47 and no week-8 row, so 37 carries and 96
+yards = 2.594, published 2.59 on both builds. Oct 28 (through week 7): 60 qualified backs (25+
+carries), Pierce the unique last — rank 60, percentile 0.0. Nov 6 (through week 8): his reading is
+unchanged, but Josh Jacobs (75 on 32 = 2.34) crossed the minimum below him; rank 65 of 66,
+percentile 100 × 1 / 65 = 1.5. Both cohorts are committed verbatim as regression fixtures
+(`tests/fixtures/skill_tree/rb_yards_per_carry_2026w0{7,8}.json`) and every member's published
+rank and percentile re-derives from them. A changed qualified cohort legitimately changes a
+percentile; historical ranks are not frozen.
+
+**Finding.** The convention (`100 × (strictly behind + (ties − 1) / 2) ÷ (cohort − 1)`,
+competition ranks on published values, cohort ≥ 5) is implemented correctly and is kept. One
+defect in the checking, not the numbers: `skilltree_checks` re-derived ranks with the builder's
+own `percentile_ranks`, so a defect in the convention would have validated itself. The validator
+now has its own `rederive_ranks` — pairwise counts over each value's published decimal text, exact
+rationals, compared with the one-place published percentile within half a unit — and the cohort
+slices below are checked with it. Tests cover unique extremes (0 and 100), tied first and tied last
+(a tied last group is above 0), lower-is-better, values that publish alike tying, insufficient
+cohorts, and a corrupted rank, percentile or cohort size being caught.
+
+### 2. Skill Tree — the comparison's data: one metric's cohort, behind an index
+
+A ranked KPI is compared against the **exact** cohort its published rank was computed over. The
+card's bucket shard is not that cohort, and fetching every bucket is not acceptable, so the build
+serves each position × metric cohort as its own slice of `player_skill_tree` (`skill_cohort`
+family, partition `position_metric`): every reading of that position and metric with a value —
+`ranked`, `below_minimum` or `small_cohort` — and the fields `player_id`, `state`, `value`,
+`numerator`, `denominator`, `rank`, `percentile`, `cohort_size`, `games` plus the build's
+`build_id`, `season`, `through_week`, `position`, `metric_id` (lifted into constants). Archive
+readings (the combine 40) are never served: they rank among the position's historical combine
+testers, a cohort the build does not publish, and today's players are not a substitute.
+
+Measured on the Nov 6 build: one file per metric is 0.4–3.3 kB gzip; one per position would be
+8–24 kB. Listing ~90 per-metric files in the manifest would cost every visit about 1.3 kB, so
+they are named instead in a per-position **index** (`skill_cohort_index/<POS>`, the only manifest
+entries: four). Opening a comparison fetches the position's index and the one slice it names,
+both hash-verified; a second metric at the same position reuses the index; the files never notify
+the store's subscribers; the cache pruner keeps files a cached index of the current deploy names.
+
+**Identity.** Every cohort member is named through the served player dictionary.
+`season_actuals` — every appearing player, named from the canonical registry, exactly the tree's
+population (666 = 666 on Nov 6) — is now the dictionary's lowest-precedence source, so a member no
+board publishes (one on Nov 6) has a verified name and no board's name changes. The Python fixture
+season now feeds its synthetic peer clubs to the season actuals as well as the tree, mirroring
+production; that moved fixture season ranks, recent form and Insights goldens, and the recent-form
+invariance test now excludes Insights from its byte-identical set, as its metadata test already
+did, because Insights reads recent form by design (ADR-116).
+
+**Validation** (`serving._skill_cohort_problems`, critical through `serving.slice_not_subset`):
+every slice decodes to exactly its artifact rows; members are exactly the tree's cohort readings
+for that position and metric; unique players; one position, metric, build and cutoff (the tree's);
+every ranked row's `cohort_size` equals the ranked count; ranks and percentiles re-derive with the
+validator's own function; every member has a dictionary name; every cohort the tree has is served.
+Index files name only served files whose bytes match their hashes.
+
+### 3. Weekly lines — what failed on 2026-11-06, and the fix
+
+**Evidence.** Same code (`ce9fe82`) lined 30 of 30 teams on Nov 4, Nov 5 12:31Z and Nov 5 22:53Z,
+then 2 of 30 on Nov 6 12:32Z — only the completed Thursday game (JAX @ BAL). The upstream history
+explains it: `nflverse/nfldata` commit `63cbbc1` at 2026-11-06T11:45:17Z blanked the whole odds
+block (moneylines, spread, total, odds) of all 14 unplayed week-9 games, and `13d8e46` at
+11:55:20Z restored them. The 12:32Z refresh read the `nflverse-data` schedules release built from
+the blank state through its day-keyed cache and published, per preset, 33 `kicked_off`, 38 `bye`
+and 479 `lines_pending` (1,437 across presets); the deploy passed. The source does supply pregame
+lines; this was a transient blank that nothing detected because nothing remembered the lines.
+
+**Decision.**
+
+* **`capture-schedule-lines`** (capture job, before every in-season build, `continue-on-error`):
+  every REG game kicking off within 15 days with the total and spread nflverse's schedule posts at
+  that moment — a blank kept as a blank — from a fresh download that never goes through the build's
+  cache, retained under `gameday/schedule_lines/` with the ADR-099 discipline (append-only,
+  content-hashed, re-verified by `validate-market-history`).
+* **`pregame_line_reuse_v1`.** A target-week game whose schedule row lacks a total or a spread
+  takes the newest retained observation of the **same** game (same `game_id`, season, week, home
+  and away team) carrying **both** lines, observed strictly before the scheduled kickoff (which must
+  have a published time), at or before the build, and at most 48 hours before it. Otherwise it
+  stays `lines_pending`. The schedule always wins when it has both lines; nothing is imputed,
+  averaged or carried across games or weeks, and only the serving build's target week passes
+  through the rule — never training or evaluation rows. The reused value is the source's own
+  pregame number, exactly what the build would have read had it run at the capture.
+* **Provenance in the contract.** `weekly_projection` 1.2 and `weekly_game_context` 1.1 add
+  `line_source` (`schedule` · `retained` · null exactly when there is no total) and
+  `lines_observed_at_utc` to every game; `ros_build_metadata.weekly.lines` records the rule, the
+  counts from each source, the unlined game ids, every reused observation's time and the captures
+  read. The validator requires provenance to agree with the lines, a retained observation to
+  precede kickoff, and the context to print the projection's lines and provenance.
+* **`unmodelled`.** A row whose prediction is not finite is now published as `unmodelled` (game
+  and opponent, no distribution) instead of being dropped, so a page can tell "the model produced
+  nothing" from "no record of him".
+* **Detection.** Two build warnings (`ros.weekly_lines_retained`, `ros.weekly_lines_unavailable`)
+  and a "Start/Sit lines" section in the refresh summary with the counts and, when any game is
+  unlined, a bold line naming them.
+
+**Replay.** See Evidence: the Nov 6 build re-run with the upstream blank and the previous evening's
+capture.
+
+**Not done.** No second line source: nflverse's schedule is the documented source
+(`docs/DATA_SOURCES.md`) and a retained observation of it fixes the observed failure without a
+new rights decision. If nflverse stops publishing pregame lines, the honest state is still
+`lines_pending` with its reason, and a new source needs its own ADR.

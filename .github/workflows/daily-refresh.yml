@@ -76,7 +76,8 @@ on:
     # The news-reactive slots (ADR-099, docs/OPERATIONS.md 16.8). Injury designations move on
     # Thursday and Friday afternoons (Friday's report carries the final game statuses for
     # Sunday) and a Sunday-morning forecast is the one nearest a 1 pm kickoff. These runs are
-    # `refresh_kind=news`: they capture ONLY the kickoff forecasts and the injury report —
+    # `refresh_kind=news`: they capture ONLY the kickoff forecasts, the schedule's posted
+    # lines (ADR-117) and the injury report —
     # MFL's player database is asked for at most once a day (ADR-017) and Sleeper's status
     # map is captured once a day — and re-infer the weekly layer offline from the committed
     # models. Nothing is ever retrained in a workflow.

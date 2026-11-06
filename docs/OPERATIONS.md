@@ -1171,9 +1171,25 @@ or `Injury-report capture`.
   skipped.
 - `ffdraft capture-injury-report` retains the season's nflverse report with per-week and
   per-row content digests.
+- `ffdraft capture-schedule-lines` (ADR-117) retains the total and spread nflverse's schedule
+  posts for every REG game kicking off within 15 days, blanks included, from a fresh download
+  that bypasses the build's day cache. Summary row: `Schedule-lines capture`.
 
 `validate-market-history` re-hashes the `gameday/` prefix along with `market/`, `status/` and
 `behavior/`, before anything is pushed.
+
+**When a week has no lines (ADR-117).** `build-ros` applies `pregame_line_reuse_v1` to the target
+week: a game the schedule left without a total or spread takes its newest retained pregame
+observation (at most 48 h old). The summary's **Start/Sit lines** table shows how many games came
+from the schedule, from a retained capture, or had none; `ros.weekly_lines_retained` and
+`ros.weekly_lines_unavailable` are the build-log warnings. Unlined games publish their players as
+`lines_pending`, and Start/Sit and Win My Matchup say the source has no line rather than asking the
+reader to decide anything. To recover: check the upstream file
+(`https://github.com/nflverse/nfldata/commits/master/data/games.csv` — an automated update can
+blank and then restore lines), then re-run `daily-refresh` (`workflow_dispatch`) once it has lines
+again. A news-reactive run uses an hourly cache key; any run's capture step reads fresh, so a re-run
+recovers even when the day's cached schedule is the blank one. Nothing here may be fixed by hand:
+no line is ever typed in, imputed or carried from another week.
 
 **What the build adds.** `build-ros` publishes `weekly_context.json`: the venue, the roof,
 the forecast with its status, the lagged starters listed on either team's report, and the
@@ -1197,7 +1213,8 @@ leaves that game out of the holdout; nothing is backfilled.
 | Friday 17:47 | after Friday's report, which carries the final game statuses for Sunday |
 | Sunday 10:23 | the freshest forecast before the 1 pm kickoffs |
 
-These runs are `refresh_kind=news`. They capture only forecasts and the injury report. MFL's
+These runs are `refresh_kind=news`. They capture only forecasts, the schedule's lines (ADR-117)
+and the injury report. MFL's
 player database is asked for at most once a day (ADR-017), and Sleeper's status map and
 trending feeds once a day, so the news runs skip all of those. The build rebuilds from the
 retained store and the committed models: inference only, never a fit. Its nflverse cache key
