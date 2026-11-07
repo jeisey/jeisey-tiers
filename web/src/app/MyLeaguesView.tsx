@@ -40,6 +40,8 @@ import { canAddLeague, setPrefs, updateLeague } from "../data/leagueOps";
 import { publishActiveLeague } from "../data/leagueSignal";
 import { universeFor } from "../data/leagueUniverse";
 import {
+  DATA_CAUSES,
+  DATA_CAUSE_TEXT,
   LINEUP_RULE_VERSION,
   MODE_LABELS,
   comparablesFor,
@@ -584,6 +586,7 @@ function ReadyWorkspace({
       availabilityFor: availabilityOf,
       positionOf: (id: string) => universe.get(id)?.position ?? null,
       targetWeek: weekly?.target_week ?? null,
+      buildId: bundle.metadata.build_id,
       now: clock,
     }),
     [bundle, scoring, availabilityOf, universe, weekly, clock],
@@ -765,7 +768,7 @@ function ReadyWorkspace({
               <AutoLineup
                 proposal={proposal}
                 league={league}
-                weekly={{ target: weekly.target_week, generated: bundle.metadata.generated_at_utc, kickedOff: weekly.kicked_off > 0 && weekly.upcoming === 0 }}
+                weekly={{ target: weekly.target_week, generated: bundle.metadata.generated_at_utc, kickedOff: weekly.kicked_off > 0 && weekly.upcoming === 0 && weekly.lines_pending === 0 && (weekly.unmodelled ?? 0) === 0 }}
                 name={name}
                 writable={writable}
                 onMode={(next) => {
@@ -1019,11 +1022,25 @@ function AutoLineup({
       )}
       {unscored.length > 0 && (
         <ul className="lg-gaps" data-kind="unscored" aria-label="Players left in place">
-          {unscored.map((gap) => (
-            <li key={`${gap.slot.group}:${String(gap.slot.index)}`}>
-              <strong>{slotLongName(gap.slot, league.slots)}:</strong> {gap.reason}
-            </li>
-          ))}
+          {unscored
+            .filter((gap) => gap.cause === null)
+            .map((gap) => (
+              <li key={`${gap.slot.group}:${String(gap.slot.index)}`}>
+                <strong>{slotLongName(gap.slot, league.slots)}:</strong> {gap.reason}
+              </li>
+            ))}
+          {/* A data gap is the build's, not a choice: each cause is explained once for all it covers. */}
+          {DATA_CAUSES.map((cause) => {
+            const group = unscored.filter((gap) => gap.cause === cause);
+            if (group.length === 0) return null;
+            const who = group.map((gap) => `${slotLongName(gap.slot, league.slots)} (${name(proposal.roster[gap.slot.group][gap.slot.index] ?? "")})`);
+            return (
+              <li key={cause}>
+                <strong>{`${DATA_CAUSE_TEXT[cause][0]}:`}</strong>
+                {` ${who.join("; ")}, left where you put ${group.length === 1 ? "him" : "them"}. ${DATA_CAUSE_TEXT[cause][1]}`}
+              </li>
+            );
+          })}
         </ul>
       )}
       <div className="lg-auto-actions">

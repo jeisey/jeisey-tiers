@@ -707,9 +707,13 @@ function WeekBlock({
     <>
       {q === null ? (
         <p className="cohort-note">
-          {record.game_state === "lines_pending" && game !== null
-            ? `${game.home_away === "home" || game.neutral_site ? "vs" : "@"} ${game.opponent}: no sportsbook line is posted for this game yet, and the week-${String(record.target_week)} projection needs one. It publishes once the line does.`
-            : `His team is on bye in week ${String(record.target_week)}, so there is no start to decide.`}
+          {game === null
+            ? `His team is on bye in week ${String(record.target_week)}, so there is no start to decide.`
+            : `${game.home_away === "home" || game.neutral_site ? "vs" : "@"} ${game.opponent}: ${
+                record.game_state === "unmodelled"
+                  ? "the model returned no week-" + String(record.target_week) + " projection for him in this build, though the game has lines."
+                  : "this build has no sportsbook line for this game, and the week-" + String(record.target_week) + " projection needs one. It publishes once a build has the line."
+              }`}
         </p>
       ) : (
         <div className="readout-grid">

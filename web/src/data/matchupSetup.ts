@@ -12,6 +12,13 @@
  * teams — disables Simulate and is named. Nothing unknown becomes an unnoticed zero, and a missing
  * projection never falls back to rest-of-season points or last week's statistics.
  *
+ * **A blocking slot says whose move it is** (`cause`). A *decision* is the reader's: fill or
+ * confirm an empty slot, count an absent player as 0, enter a completed game's final, resolve a
+ * player on both teams, replace a position that cannot fill the slot. A *data* cause (lineup.ts's
+ * `DATA_CAUSES`) is the build's: no line, no prediction, no record, a stale record, an unknown
+ * kickoff, an unknown id. No lineup decision can supply a missing projection, so the two are
+ * counted apart, and a data gap is never offered a zero, a final or any other stand-in.
+ *
  * **The opponent is simulated as entered**, never optimised. **Proposals** reuse Auto
  * Start/Sit's exact assignment (`lineup_assignment_v1`, all three objectives) and a bounded set of
  * single bench swaps; they move only players `readWeek` calls candidates, so locks, pinned
@@ -33,7 +40,19 @@ import {
   type SlotCounts,
   type StarterGroup,
 } from "./leagueContract";
-import { MODE_LABELS, optimizeLineup, readWeek, readWeeks, type LineupMove, type PlayerWeek, type WeekContext } from "./lineup";
+import {
+  DATA_CAUSE_TEXT,
+  MODE_LABELS,
+  distributionGap,
+  isDataCause,
+  optimizeLineup,
+  readWeek,
+  readWeeks,
+  type DataCause,
+  type LineupMove,
+  type PlayerWeek,
+  type WeekContext,
+} from "./lineup";
 import {
   MATCHUP_DRAWS,
   MATCHUP_ENGINE_VERSION,
@@ -58,6 +77,13 @@ export type SlotKind = "modelled" | "final" | "bye" | "zero" | "empty" | "blocki
 /** What the reader can do about a blocking slot. */
 export type SlotFix = "fill" | "count_zero" | "final" | "replace" | "resolve_overlap";
 
+/**
+ * Why a slot blocks. The reader's decisions: `empty` (fill it or leave it empty), `absent` (count
+ * as 0), `final_needed` (kicked off with no distribution: a completed game's final), `overlap`,
+ * `position`. Every other cause is a `DataCause`: the build did not publish a usable projection.
+ */
+export type BlockCause = "empty" | "absent" | "final_needed" | "overlap" | "position" | DataCause;
+
 export interface SlotReading {
   readonly side: Side;
   readonly slot: SlotRef;
@@ -73,6 +99,8 @@ export interface SlotReading {
   /** Why the slot blocks, or what the fixed value is, in a sentence. */
   readonly note: string | null;
   readonly fix: SlotFix | null;
+  /** Why it blocks, as a code; null when it does not. */
+  readonly cause: BlockCause | null;
 }
 
 export interface MatchupSetup {
@@ -84,6 +112,9 @@ export interface MatchupSetup {
   /** Players entered for the opponent who are also on my roster. */
   readonly overlaps: readonly string[];
   readonly blocking: readonly SlotReading[];
+  /** The blocking slots the reader can resolve, and those only a build with the data can. */
+  readonly decisions: readonly SlotReading[];
+  readonly dataGaps: readonly SlotReading[];
   readonly complete: boolean;
   /** Starters, either side, whose games have kicked off: the finals scenario applies to them. */
   readonly lockedStarters: readonly SlotReading[];
@@ -122,8 +153,13 @@ export function opponentLineup(
   return { starters, overflow };
 }
 
-function reading(base: Omit<SlotReading, "fixed" | "conditional" | "locked" | "note" | "fix"> & Partial<SlotReading>): SlotReading {
-  return { fixed: 0, conditional: false, locked: false, note: null, fix: null, ...base };
+function reading(base: Omit<SlotReading, "fixed" | "conditional" | "locked" | "note" | "fix" | "cause"> & Partial<SlotReading>): SlotReading {
+  return { fixed: 0, conditional: false, locked: false, note: null, fix: null, cause: null, ...base };
+}
+
+/** A starter the build gave no usable projection: a data gap, named by its cause's label. */
+function dataGap(side: Side, slot: SlotRef, id: string, week: PlayerWeek, cause: DataCause): SlotReading {
+  return reading({ side, slot, id, week, kind: "blocking", note: `${DATA_CAUSE_TEXT[cause][0]}.`, fix: "replace", cause });
 }
 
 function isBye(record: WeeklyProjectionRecord | null): boolean {
@@ -143,17 +179,15 @@ export function readSlot(
     const confirmed = entry?.confirmedEmpty[side].includes(slotKeyOf(slot.group as StarterGroup, slot.index)) === true;
     return confirmed
       ? reading({ side, slot, id, week: null, kind: "empty", note: "Left empty: counts 0." })
-      : reading({ side, slot, id, week: null, kind: "blocking", note: "This starting slot is empty.", fix: "fill" });
+      : reading({ side, slot, id, week: null, kind: "blocking", note: "This starting slot is empty.", fix: "fill", cause: "empty" });
   }
   if (overlaps.has(id)) {
-    return reading({ side, slot, id, week: null, kind: "blocking", note: "He is entered for both teams. A player can be on only one.", fix: "resolve_overlap" });
+    return reading({ side, slot, id, week: null, kind: "blocking", note: "He is entered for both teams. A player can be on only one.", fix: "resolve_overlap", cause: "overlap" });
   }
   const week = readWeek(id, context);
-  if (week.position === null) {
-    return reading({ side, slot, id, week, kind: "blocking", note: week.reason ?? "This build has no record of him.", fix: "replace" });
-  }
+  if (week.position === null) return dataGap(side, slot, id, week, "unresolved");
   if (!slotAccepts(slot.group, week.position)) {
-    return reading({ side, slot, id, week, kind: "blocking", note: "His position cannot fill this slot.", fix: "replace" });
+    return reading({ side, slot, id, week, kind: "blocking", note: "His position cannot fill this slot.", fix: "replace", cause: "position" });
   }
   const final = entry?.finals[id];
   const zeroed = entry?.countZero.includes(id) === true;
@@ -169,6 +203,8 @@ export function readSlot(
         note: week.conditional ? "If active: simulated as playing." : null,
       });
     case "locked": {
+      // A final is the reader's confirmation for a kicked-off game, counted once in place of his
+      // distribution; 0 and negative finals are finals. A game not kicked off never takes one.
       if (scenario === "finals" && final !== undefined) {
         return reading({ side, slot, id, week, kind: "final", fixed: final, note: `Final score you confirmed: ${final.toFixed(2)}.` });
       }
@@ -183,9 +219,11 @@ export function readSlot(
           kind: "blocking",
           note: `${week.availability?.headline ?? "Not available"}, and his game has kicked off. Count him as 0${scenario === "finals" ? " or enter his final score" : ""}.`,
           fix: "count_zero",
+          cause: "absent",
         });
       }
-      if (week.record?.quantiles != null) {
+      const gap = week.record === null ? "no_record" : distributionGap(week.record);
+      if (gap === null) {
         return reading({
           side,
           slot,
@@ -194,7 +232,7 @@ export function readSlot(
           kind: "modelled",
           locked: true,
           conditional: week.conditional,
-          note: "Game kicked off: simulated from his pregame projection; the current score is not used.",
+          note: `Game kicked off${scenario === "finals" ? ", no final entered" : ""}: simulated from his pregame projection; the current score is not used.`,
         });
       }
       return reading({
@@ -203,11 +241,11 @@ export function readSlot(
         id,
         week,
         kind: "blocking",
-        note:
-          scenario === "finals"
-            ? "His game has started and no distribution was published for it. Enter his final score once it is final."
-            : "His game has started and no distribution was published for it. Use “With final scores” and enter his final score once it is final.",
+        note: `His game has kicked off with no projection (${DATA_CAUSE_TEXT[gap][0].toLowerCase()}). ${
+          scenario === "finals" ? "Enter his final score once the game is over." : "Use “With final scores” and enter his final score once the game is over."
+        }`,
         fix: "final",
+        cause: "final_needed",
       });
     }
     case "sidelined":
@@ -223,9 +261,10 @@ export function readSlot(
         kind: "blocking",
         note: `${(week.reason ?? "Not playing this week.").replace(/\.$/, "")}. Count him as 0, or start someone else.`,
         fix: "count_zero",
+        cause: "absent",
       });
     case "pinned":
-      return reading({ side, slot, id, week, kind: "blocking", note: week.reason ?? "His week is unknown.", fix: "replace" });
+      return dataGap(side, slot, id, week, isDataCause(week.cause) ? week.cause : "no_record");
   }
 }
 
@@ -249,6 +288,8 @@ export function readSetup(input: SetupInput): MatchupSetup {
     overflow: opponent.overflow,
     overlaps: [...overlaps].sort(),
     blocking,
+    decisions: blocking.filter((line) => !isDataCause(line.cause)),
+    dataGaps: blocking.filter((line) => isDataCause(line.cause)),
     complete: blocking.length === 0 && overlaps.size === 0 && opponent.overflow.length === 0,
     lockedStarters,
   };
@@ -461,8 +502,17 @@ export function buildSimInput(
     opponent,
     variants,
   };
+  // Each slot as everything the engine reads from it — a modelled player's record (build, game,
+  // team, quantiles), so a refreshed record with the same build id still changes the answer —
+  // plus whether he is locked, which changes what a lineup change may move.
   const describe = (lines: readonly SlotReading[]): string =>
-    lines.map((line) => `${slotKey(line.slot)}=${line.kind}:${line.id ?? "-"}:${String(line.fixed)}`).join(";");
+    lines
+      .map((line) => {
+        const record = line.kind === "modelled" ? line.week?.record : null;
+        const data = record == null ? "" : `:${record.build_id}/${record.game?.game_id ?? ""}/${record.team}/${quantileValues(record)?.join(",") ?? ""}`;
+        return `${slotKey(line.slot)}=${line.kind}${line.locked ? "!" : ""}:${line.id ?? "-"}:${String(line.fixed)}${data}`;
+      })
+      .join(";");
   const fingerprint = JSON.stringify({
     engine: MATCHUP_ENGINE_VERSION,
     setup: MATCHUP_SETUP_VERSION,

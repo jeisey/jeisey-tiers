@@ -138,7 +138,7 @@ export function boardSearchPool(
       availability: availability(record.player_id),
       meta:
         record.quantiles === null
-          ? `${team(record.team)} · ${record.game_state === "lines_pending" ? "line pending" : "bye"}`
+          ? `${team(record.team)} · ${record.game_state === "lines_pending" ? "line pending" : record.game_state === "unmodelled" ? "no projection" : "bye"}`
           : `${team(record.team)} · median ${formatValue(record.quantiles.q50)}`,
     }));
   }

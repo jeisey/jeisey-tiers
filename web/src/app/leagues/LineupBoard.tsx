@@ -17,7 +17,7 @@ import { useId, useState } from "react";
 import { AvailabilityBadge, PositionTag } from "../../components/primitives";
 import { WhyWeek } from "../../components/WhyWeek";
 import type { RosWeeklyMetadata, WeeklyProjectionRecord } from "../../data/contracts";
-import { EM_DASH, formatValue } from "../../data/format";
+import { EM_DASH, formatValue, retainedLinesNote } from "../../data/format";
 import {
   STARTER_GROUPS,
   SLOT_LABELS,
@@ -275,8 +275,8 @@ function SlotRow({
                   <span aria-hidden="true"> · </span>
                   <span data-active={mode === "q90" || undefined}>{points(quantiles.q90)}</span>
                 </span>
-              ) : record.game_state === "lines_pending" ? (
-                <span className="lg-muted">no line yet</span>
+              ) : record.game_state === "lines_pending" || record.game_state === "unmodelled" ? (
+                <span className="lg-muted">{record.game_state === "unmodelled" ? "no prediction" : "no line in this build"}</span>
               ) : null}
             </>
           )}
@@ -390,8 +390,8 @@ function SlotDetail({
             <dt>Lines</dt>
             <dd>
               {game.total_line === null
-                ? "No line posted yet."
-                : `Total ${formatValue(game.total_line)} · team implied ${formatValue(game.team_points)} pts`}
+                ? "None in this build."
+                : [`Total ${formatValue(game.total_line)} · team implied ${formatValue(game.team_points)} pts`, retainedLinesNote(game)].filter(Boolean).join(". ")}
             </dd>
           </div>
         )}

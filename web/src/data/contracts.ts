@@ -1462,10 +1462,28 @@ export const WEEKLY_DRIVER_FAMILIES = [
 export type WeeklyDriverFamily = (typeof WEEKLY_DRIVER_FAMILIES)[number];
 
 /**
- * `lines_pending`: the game exists but its sportsbook total or spread is not posted. The model
- * never trained without them, so the build publishes the game and no distribution (ADR-096).
+ * `lines_pending`: the game exists but the build had no sportsbook total or spread for it. The
+ * model never trained without them, so the build publishes the game and no distribution
+ * (ADR-096). `unmodelled` (contract 1.2): the game has lines but the model returned no finite
+ * prediction; the game and opponent are published, the distribution is not. An older build
+ * never says `unmodelled` (such rows were dropped).
  */
-export type WeeklyGameState = "upcoming" | "kicked_off" | "bye" | "lines_pending";
+export type WeeklyGameState = "upcoming" | "kicked_off" | "bye" | "lines_pending" | "unmodelled";
+
+/**
+ * Where a published game's lines came from (contract 1.2): this build's schedule read, or a
+ * pregame observation of the same game the build retained (`pregame_line_reuse_v1`) because the
+ * schedule had none. Null exactly when the game has no lines; absent on an older build, which
+ * is unknown — never read as `schedule`.
+ */
+export type WeeklyLineSource = "schedule" | "retained";
+
+/** The line provenance a 1.2 game carries; both absent on an older build. */
+export interface WeeklyLineProvenance {
+  readonly line_source?: WeeklyLineSource | null;
+  /** When the lines used were observed (schedule: the build's read; retained: the capture). */
+  readonly lines_observed_at_utc?: string | null;
+}
 
 /** The game-specific input groups a typical-week account splits a difference into (ADR-099). */
 export const WEEKLY_EXPLANATION_GROUPS = ["lines", "home", "rest", "roof", "opponent"] as const;
@@ -1501,7 +1519,7 @@ export interface WeeklyProjectionRecord {
   readonly scoring_preset: ScoringPreset;
   readonly model_version: string;
   readonly game_state: WeeklyGameState;
-  readonly game: {
+  readonly game: (WeeklyLineProvenance & {
     readonly game_id: string;
     readonly opponent: string;
     readonly home_away: "home" | "away";
@@ -1511,7 +1529,7 @@ export interface WeeklyProjectionRecord {
     readonly total_line: number | null;
     readonly team_margin: number | null;
     readonly team_points: number | null;
-  } | null;
+  }) | null;
   readonly quantiles: Readonly<Record<WeeklyQuantileKey, number>> | null;
   /** Ten parts that sum to `quantiles.q50`. */
   readonly drivers:
@@ -1641,7 +1659,8 @@ export interface WeeklyGameContextRecord {
     readonly home_share: number;
     readonly indoors_share: number | null;
   };
-  readonly this_week: {
+  /** Contract 1.1 adds the same line provenance as the projection's `game`. */
+  readonly this_week: WeeklyLineProvenance & {
     readonly total_line: number | null;
     readonly team_margin: number | null;
     readonly team_points: number | null;
@@ -1649,6 +1668,24 @@ export interface WeeklyGameContextRecord {
     readonly rest_advantage: number | null;
     readonly indoors: number | null;
   };
+}
+
+/**
+ * `ros_build_metadata.weekly.lines` (`pregame_line_reuse_v1`): where the target week's lines
+ * came from. Absent on an older build: no line provenance was published.
+ */
+export interface WeeklyLinesBlock {
+  readonly rule_version: string;
+  readonly max_age_hours: number;
+  readonly target_games: number;
+  readonly from_schedule: number;
+  readonly from_retained: number;
+  readonly unlined: number;
+  readonly unlined_game_ids: readonly string[];
+  readonly retained: readonly { readonly game_id: string; readonly observed_at_utc: string }[];
+  readonly schedule_retrieved_at_utc: string | null;
+  /** The retained captures the rule read; not printed by the page. */
+  readonly captures_read?: readonly unknown[];
 }
 
 export interface WeeklyCalibrationRow {
@@ -1673,6 +1710,10 @@ export interface RosWeeklyMetadata {
   readonly kicked_off: number;
   readonly bye: number;
   readonly lines_pending: number;
+  /** Contract 1.2's state; absent on an older build. */
+  readonly unmodelled?: number;
+  /** Where the lines came from; absent on an older build. */
+  readonly lines?: WeeklyLinesBlock | null;
   readonly quantile_levels: readonly number[];
   readonly distribution_rule: {
     readonly version: string;
