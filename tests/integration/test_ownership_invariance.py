@@ -66,11 +66,30 @@ def test_every_other_artifact_is_byte_identical(with_espn, without_espn):
         ), artifact
 
 
+def _without_downstream_surfaces(metadata: dict) -> dict:
+    """The portrait block counts each card surface (portrait_population_v1); the Insights
+    surface is downstream of ESPN, so its cell is the one count allowed to differ. The portrait
+    records themselves are compared byte for byte above."""
+    block = metadata.get("player_headshots")
+    if not isinstance(block, dict):
+        return metadata
+    by_surface = {k: v for k, v in block["by_surface"].items() if k not in DOWNSTREAM}
+    return {**metadata, "player_headshots": {**block, "by_surface": by_surface}}
+
+
 def test_both_metadata_objects_differ_only_in_the_espn_block(with_espn, without_espn):
     assert _canonical(with_espn.build_metadata) == _canonical(without_espn.build_metadata)
     skip = {"espn_ownership", *DOWNSTREAM}
-    left = {k: v for k, v in with_espn.ros_build_metadata.items() if k not in skip}
-    right = {k: v for k, v in without_espn.ros_build_metadata.items() if k not in skip}
+    left = {
+        k: v
+        for k, v in _without_downstream_surfaces(with_espn.ros_build_metadata).items()
+        if k not in skip
+    }
+    right = {
+        k: v
+        for k, v in _without_downstream_surfaces(without_espn.ros_build_metadata).items()
+        if k not in skip
+    }
     assert _canonical(left) == _canonical(right)
 
 

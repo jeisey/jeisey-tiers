@@ -60,7 +60,13 @@ from ffdraft.artifacts.spec import (
 )
 from ffdraft.contracts import QualityCheck
 from ffdraft.contracts.enums import Severity
-from ffdraft.headshots import HEADSHOT_HOST, HEADSHOT_PROVIDER, headshot_url
+from ffdraft.headshots import (
+    HEADSHOT_HOST,
+    HEADSHOT_PROVIDER,
+    PORTRAIT_POPULATION_RULE,
+    PORTRAIT_SURFACE_ARTIFACTS,
+    headshot_url,
+)
 from ffdraft.quality import (
     QualityGate,
     check_duplicate_keys,
@@ -229,6 +235,7 @@ def validate_artifact_directory(
     gate.extend(_ros_metadata_checks(directory, envelopes))
     gate.extend(_cross_artifact_checks(envelopes))
     gate.extend(_headshot_cross_checks(envelopes))
+    gate.extend(_headshot_metadata_checks(directory, envelopes))
     gate.extend(_in_season_cross_checks(envelopes))
     gate.extend(_behavior_series_cross_checks(envelopes))
     gate.extend(_signal_cross_checks(envelopes))
@@ -1139,19 +1146,23 @@ def _headshot_checks(
 
     The record schema already pins the host with a pattern, so this is a second reading of the
     same claim rather than the only one - deliberately, because it is the check that has to
-    survive a future schema edit. It asserts two things the pattern alone cannot: that the URL
-    and the id agree, so a row cannot carry one player's id beside another's picture, and that
-    every row names the provider its id came from.
+    survive a future schema edit. It asserts three things the pattern alone cannot: that the
+    URL and the id agree, so a row cannot carry one player's id beside another's picture; that
+    every row names the provider its id came from; and that no provider id is published for two
+    players, because one picture under two names is an identity mistake the crosswalk refuses
+    (`ffdraft.headshots.crosswalk_from_registry`) and the validator re-checks.
     """
     wrong_host: list[str] = []
     disagreeing: list[str] = []
     wrong_provider: list[str] = []
+    holders: dict[str, set[str]] = {}
 
     for record in records:
         player_id = str(record.get("player_id"))
         provider = record.get("provider")
         provider_id = str(record.get("provider_player_id") or "")
         url = str(record.get("image_url") or "")
+        holders.setdefault(f"{provider}:{provider_id}", set()).add(player_id)
         if provider != HEADSHOT_PROVIDER:
             wrong_provider.append(f"{player_id}: {provider!r}")
             continue
@@ -1196,6 +1207,24 @@ def _headshot_checks(
                 ),
                 observed="; ".join(disagreeing[:10]),
                 expected="image_url == headshot_url(provider_player_id)",
+            ),
+        )
+    shared = sorted(
+        f"{key}: {', '.join(sorted(players))}"
+        for key, players in holders.items()
+        if len(players) > 1
+    )
+    if shared:
+        checks.append(
+            QualityCheck.fail(
+                "artifact.headshot_provider_id_shared",
+                stage=stage,
+                message=(
+                    "one provider id is published for more than one player, so one picture "
+                    "would appear under two names; a shared id is refused for both"
+                ),
+                observed="; ".join(shared[:10]),
+                expected="each provider id on at most one player",
             ),
         )
     if not checks:
@@ -1690,10 +1719,14 @@ def _build_metadata_checks(
 ) -> list[QualityCheck]:
     path = directory / BUILD_METADATA_FILENAME
     stage = "artifacts.build_metadata"
+    # ADR-087 / portrait_population_v1: the portrait file is the in-season bundle's when that
+    # bundle wrote and described it, and is then checked against its metadata instead.
+    portraits_in_season = portrait_bundle(directory, envelopes) == "ros"
     draft_envelopes = {
         artifact: envelope
         for artifact, envelope in envelopes.items()
         if artifact not in _IN_SEASON_ARTIFACTS
+        and not (artifact == _PORTRAIT_ARTIFACT and portraits_in_season)
     }
     if not path.is_file():
         if not draft_envelopes:
@@ -2207,10 +2240,12 @@ def _ros_metadata_checks(
 ) -> list[QualityCheck]:
     """Validate the in-season bundle's own metadata, and only when that bundle exists."""
     stage = "artifacts.ros_build_metadata"
+    portraits_in_season = portrait_bundle(directory, envelopes) == "ros"
     in_season = {
         artifact: envelope
         for artifact, envelope in envelopes.items()
         if artifact in _IN_SEASON_ARTIFACTS
+        or (artifact == _PORTRAIT_ARTIFACT and portraits_in_season)
     }
     path = directory / ROS_BUILD_METADATA_FILENAME
     if not in_season:
@@ -2537,47 +2572,259 @@ def _trend_series_agreement(
     return checks
 
 
-def _headshot_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[QualityCheck]:
-    """A portrait may only describe a player the board publishes.
+#: The one artifact either bundle may write (ADR-087, `portrait_population_v1`): the draft build
+#: writes it over its own board, and the rest-of-season build, when it runs, rewrites it over
+#: every card surface. It belongs to the bundle whose build id it carries and whose metadata
+#: describes it — see :func:`portrait_bundle`.
+_PORTRAIT_ARTIFACT = "player_headshots"
 
-    One direction only, and that asymmetry is the contract. A board row with no portrait is
-    the normal state - the crosswalk does not reach every player and the card draws a monogram
-    instead - so the missing direction is not a finding and is reported as coverage rather
-    than as a failure. A *portrait* with no board row is the other thing entirely: it is
-    either an identity mistake or payload for a card nobody can open.
+
+def _read_metadata(directory: Path, filename: str) -> Mapping[str, Any] | None:
+    try:
+        payload = json.loads((directory / filename).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return payload if isinstance(payload, Mapping) else None
+
+
+def portrait_bundle(directory: Path, envelopes: Mapping[str, Mapping[str, Any]]) -> str:
+    """``"ros"`` when the in-season bundle wrote the portrait artifact, else ``"draft"``.
+
+    The in-season bundle owns it exactly when the artifact carries that bundle's build id **and**
+    that bundle's metadata describes it (a ``player_headshots`` block). Anything else is the
+    draft bundle's, and its build id is checked against ``build_metadata`` as before — so an
+    artifact stamped with neither id still fails, and a ROS-stamped artifact that no ROS
+    metadata describes fails too.
     """
-    headshots = envelopes.get("player_headshots")
-    tiers = envelopes.get("tiers")
-    if headshots is None or tiers is None:
+    envelope = envelopes.get(_PORTRAIT_ARTIFACT)
+    if envelope is None:
+        return "draft"
+    ros = _read_metadata(directory, ROS_BUILD_METADATA_FILENAME)
+    if (
+        ros is not None
+        and ros.get("build_id") == envelope.get("build_id")
+        and isinstance(ros.get("player_headshots"), Mapping)
+    ):
+        return "ros"
+    return "draft"
+
+
+def _card_surfaces(envelopes: Mapping[str, Mapping[str, Any]]) -> dict[str, set[str]]:
+    """Every card surface present, as its distinct players - recomputed from the files."""
+    return {
+        name: {
+            str(record.get("player_id"))
+            for record in envelopes[name].get("records", ())
+            if record.get("player_id")
+        }
+        for name in PORTRAIT_SURFACE_ARTIFACTS
+        if name in envelopes
+    }
+
+
+def _headshot_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[QualityCheck]:
+    """A portrait may only describe a player some card surface names (`portrait_population_v1`).
+
+    One direction only, and that asymmetry is the contract. A surface player with no portrait
+    is the normal state - the crosswalk does not reach every player and the card draws a
+    monogram instead - so the missing direction is not a finding and is reported as coverage
+    rather than as a failure. A *portrait* for a player no surface names is the other thing
+    entirely: it is either an identity mistake or payload for a card nobody can open.
+
+    The union is recomputed here from the envelopes present, never read from metadata, so it
+    is the published site's own card surfaces that a portrait is checked against.
+    """
+    headshots = envelopes.get(_PORTRAIT_ARTIFACT)
+    if headshots is None:
         return []
 
-    board = {str(record.get("player_id")) for record in tiers.get("records", ())}
-    orphans = sorted(
-        {
-            str(record.get("player_id"))
-            for record in headshots.get("records", ())
-            if str(record.get("player_id")) not in board
-        },
-    )
+    surfaces = _card_surfaces(envelopes)
+    union: set[str] = set().union(*surfaces.values()) if surfaces else set()
+    portraits = {str(record.get("player_id")) for record in headshots.get("records", ())}
+    orphans = sorted(portraits - union)
     if orphans:
         return [
             QualityCheck.fail(
-                "cross_artifact.headshot_player_not_in_tiers",
+                "cross_artifact.headshot_player_outside_card_surfaces",
                 stage="artifacts",
-                message="every portrait must describe a player the tier board publishes",
-                observed="; ".join(orphans[:10]),
-                expected="portrait players are a subset of tier players",
+                message=(
+                    "every portrait must describe a player a card surface names "
+                    f"({PORTRAIT_POPULATION_RULE}); one outside them all is an identity "
+                    "mistake or a picture nobody can open"
+                ),
+                observed=f"{len(orphans)} player(s): " + "; ".join(orphans[:10]),
+                expected=(
+                    "portrait players within the players of "
+                    + (", ".join(surfaces) or "the card surfaces (none present)")
+                ),
             ),
         ]
-    covered = len({str(r.get("player_id")) for r in headshots.get("records", ())})
+    detail = ", ".join(
+        f"{name} {len(players & portraits)}/{len(players)}" for name, players in surfaces.items()
+    )
     return [
         QualityCheck.ok(
             "cross_artifact.headshot_coverage",
             stage="artifacts",
-            message="board players with a published portrait",
-            observed=f"{covered}/{len(board)} player(s)",
+            message=(
+                f"card-surface players with a published portrait ({PORTRAIT_POPULATION_RULE}); "
+                "a crosswalk coverage, not a count of images that load"
+            ),
+            observed=f"{len(portraits & union)}/{len(union)} player(s) ({detail})",
         ),
     ]
+
+
+def _headshot_metadata_checks(
+    directory: Path,
+    envelopes: Mapping[str, Mapping[str, Any]],
+) -> list[QualityCheck]:
+    """The metadata block that describes the portrait artifact must describe *that* file.
+
+    Two bundles can each carry a ``player_headshots`` block; :func:`portrait_bundle` decides
+    which one describes the published file, and every count in it is re-derived from the
+    envelopes present: rows, the population over the surfaces it says it read, and each
+    surface's players and covered players. A count that disagrees is a build writing one
+    file and describing another, which is critical - this is not a coverage floor.
+
+    Two observations are reported and never fail: card surfaces present that the block did
+    not read (the arbitrage board is built after the draft build's portraits; their cards
+    draw a monogram), and the other bundle's block, which then describes a superseded set.
+    """
+    headshots = envelopes.get(_PORTRAIT_ARTIFACT)
+    if headshots is None:
+        return []
+    stage = "artifacts.player_headshots"
+    bundle = portrait_bundle(directory, envelopes)
+    owner_name, other_name = (
+        (ROS_BUILD_METADATA_FILENAME, BUILD_METADATA_FILENAME)
+        if bundle == "ros"
+        else (BUILD_METADATA_FILENAME, ROS_BUILD_METADATA_FILENAME)
+    )
+    owner = _read_metadata(directory, owner_name)
+    if owner is None:
+        # The bundle checks already report a missing or unreadable metadata file.
+        return []
+    block = owner.get("player_headshots")
+    if not isinstance(block, Mapping):
+        return [
+            QualityCheck.fail(
+                "cross_artifact.headshot_metadata_missing",
+                stage=stage,
+                message=(
+                    f"{owner_name} carries no player_headshots block for the portrait file it "
+                    "owns; the coverage of what was published is not recorded"
+                ),
+                observed=f"{len(headshots.get('records', ()))} portrait row(s)",
+                expected="a player_headshots block",
+                severity=Severity.WARNING,
+            ),
+        ]
+
+    portraits = {str(record.get("player_id")) for record in headshots.get("records", ())}
+    surfaces = _card_surfaces(envelopes)
+    problems: list[str] = []
+    checks: list[QualityCheck] = []
+    if block.get("resolved") != len(portraits):
+        problems.append(f"resolved {block.get('resolved')} != {len(portraits)} portrait row(s)")
+
+    population = block.get("population")
+    read: list[str] = []
+    if isinstance(population, Mapping):
+        read = [str(name) for name in population.get("surfaces_read", ())]
+        absent = [name for name in read if name not in surfaces]
+        if absent:
+            checks.append(
+                QualityCheck.ok(
+                    "cross_artifact.headshot_population_not_rederivable",
+                    stage=stage,
+                    message=(
+                        "the portrait set was built over surfaces this directory does not "
+                        "hold, so its population cannot be re-derived here"
+                    ),
+                    observed=", ".join(absent),
+                ),
+            )
+        else:
+            union: set[str] = set().union(*(surfaces[name] for name in read)) if read else set()
+            if population.get("players") != len(union):
+                problems.append(f"population.players {population.get('players')} != {len(union)}")
+            if block.get("published_players") != len(union):
+                problems.append(
+                    f"published_players {block.get('published_players')} != {len(union)}"
+                )
+            by_surface = block.get("by_surface")
+            cells = by_surface if isinstance(by_surface, Mapping) else {}
+            for name in read:
+                cell = cells.get(name)
+                want = (len(surfaces[name]), len(surfaces[name] & portraits))
+                got = (
+                    (cell.get("players"), cell.get("resolved"))
+                    if isinstance(cell, Mapping)
+                    else None
+                )
+                if got != want:
+                    problems.append(f"by_surface.{name} {got} != {want}")
+        unread = [name for name in surfaces if name not in read]
+        if unread:
+            covered: set[str] = set().union(*(surfaces[name] for name in read)) if read else set()
+            beyond = set().union(*(surfaces[name] for name in unread)) - covered
+            checks.append(
+                QualityCheck.ok(
+                    "cross_artifact.headshot_population_scope",
+                    stage=stage,
+                    message=(
+                        "card surfaces published after this portrait set was built; players "
+                        "only they name have no portrait and their cards draw a monogram"
+                    ),
+                    observed=f"{len(beyond)} player(s) only on {', '.join(unread)}",
+                ),
+            )
+
+    if problems:
+        checks.append(
+            QualityCheck.fail(
+                "cross_artifact.headshot_metadata_disagrees",
+                stage=stage,
+                message=(
+                    f"{owner_name}.player_headshots does not describe the published portrait "
+                    "file; a reader of the coverage figure would be told about another set"
+                ),
+                observed="; ".join(problems[:10]),
+                expected="every count re-derived from the published envelopes",
+            ),
+        )
+    else:
+        checks.append(
+            QualityCheck.ok(
+                "cross_artifact.headshot_metadata_agrees",
+                stage=stage,
+                message=f"{owner_name}.player_headshots describes the published portrait file",
+                observed=(
+                    f"{len(portraits)} row(s); population "
+                    f"{block.get('published_players')} over {', '.join(read) or 'legacy tiers'}"
+                ),
+            ),
+        )
+
+    other = _read_metadata(directory, other_name)
+    other_block = (other or {}).get("player_headshots")
+    if isinstance(other_block, Mapping):
+        checks.append(
+            QualityCheck.ok(
+                "cross_artifact.headshot_metadata_superseded",
+                stage=stage,
+                message=(
+                    f"{other_name}.player_headshots describes a portrait set this directory "
+                    f"no longer holds; {owner_name} describes the published one"
+                ),
+                observed=(
+                    f"{other_block.get('resolved')}/{other_block.get('published_players')} "
+                    "in the superseded set"
+                ),
+            ),
+        )
+    return checks
 
 
 def _behavior_series_cross_checks(

@@ -3,6 +3,58 @@
   "$id": "https://example.invalid/schemas/build_metadata.schema.json",
   "title": "BuildMetadata",
   "description": "Build-level provenance the frontend reads for freshness, source status and methodology. Phase 5 adds arbitrage_method_version, the market block and the player_status block. All three are optional, so a build that produced only the intrinsic board still validates, and an arbitrage build merges into this file rather than rewriting it (Phase-4 warnings must survive).",
+  "$defs": {
+    "portrait_population": {
+      "type": "object",
+      "description": "portrait_population_v1: the coverage denominator is the distinct players of every card surface listed in `surfaces_read` (tiers, arbitrage, ros_tiers, inseason_opportunity, weekly_projections, season_actuals, insights - whichever this build read).",
+      "additionalProperties": false,
+      "required": ["rule_version", "surfaces_read", "players"],
+      "properties": {
+        "rule_version": {"const": "portrait_population_v1"},
+        "surfaces_read": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["tiers", "arbitrage", "ros_tiers", "inseason_opportunity", "weekly_projections", "season_actuals", "insights"]}
+        },
+        "players": {"type": "integer", "minimum": 0}
+      }
+    },
+    "portrait_counts_by_key": {
+      "type": "object",
+      "description": "Per card surface (keys are surface artifacts) or per position: players in the population, and how many of them have a portrait row.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["players", "resolved"],
+        "properties": {
+          "players": {"type": "integer", "minimum": 0},
+          "resolved": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "portrait_unresolved_reasons": {
+      "type": "object",
+      "description": "Population players with no portrait row, by reason. Kept separate on purpose: no registry entry, no id on any verified bridge, a malformed id, and an id another player also holds (refused for both) are different failures with different remedies.",
+      "additionalProperties": false,
+      "required": ["not_in_identity_registry", "no_espn_id", "invalid_espn_id", "ambiguous_espn_id"],
+      "properties": {
+        "not_in_identity_registry": {"type": "integer", "minimum": 0},
+        "no_espn_id": {"type": "integer", "minimum": 0},
+        "invalid_espn_id": {"type": "integer", "minimum": 0},
+        "ambiguous_espn_id": {"type": "integer", "minimum": 0}
+      }
+    },
+    "portrait_bridges": {
+      "type": "object",
+      "description": "Published portrait rows by the nflverse bridge that supplied the id: the roster row the identity registry kept, or nflverse's player master filling a roster gap by the same GSIS id.",
+      "additionalProperties": false,
+      "required": ["nflverse_roster", "nflverse_player_master"],
+      "properties": {
+        "nflverse_roster": {"type": "integer", "minimum": 0},
+        "nflverse_player_master": {"type": "integer", "minimum": 0}
+      }
+    }
+  },
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -118,15 +170,24 @@
     },
     "player_headshots": {
       "type": ["object", "null"],
-      "description": "Portrait-artifact provenance (ADR-087). Decoration only: nothing described here can move a projection, a fair rank, a tier or an arbitrage score, and no field here is a measurement of a player. `host` is the single third-party origin the page may reach; the Data view names it so a reader can see what opening a card costs before opening one.",
+      "description": "Portrait-artifact provenance (ADR-087): the portrait set the DRAFT build wrote. Decoration only: nothing described here can move a projection, a fair rank, a tier or an arbitrage score, and no field here is a measurement of a player. `host` is the single third-party origin the page may reach. Since `portrait_population_v1` the denominator is named by `population`: the distinct players of every card surface this build read (the draft build reads the tier board). When a rest-of-season build ran after it, that build rewrote the artifact over every card surface and `ros_build_metadata.player_headshots` describes the published file; this block then describes the superseded draft-time set. A block without `population` (builds before 2026-11-06) counted the tier board's players.",
       "additionalProperties": true,
       "properties": {
         "provider": {"type": "string"},
         "host": {"type": "string"},
-        "published_players": {"type": "integer", "minimum": 0},
-        "resolved": {"type": "integer", "minimum": 0},
-        "coverage": {"type": "number", "minimum": 0, "maximum": 1},
-        "source_ids": {"type": "array", "items": {"type": "string"}}
+        "published_players": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The coverage denominator: distinct players in `population` (since portrait_population_v1). Older blocks: the tier board's players."
+        },
+        "resolved": {"type": "integer", "minimum": 0, "description": "Players with a published portrait row: the artifact's record count."},
+        "coverage": {"type": "number", "minimum": 0, "maximum": 1, "description": "resolved / published_players. A crosswalk coverage, NOT a count of images that load: the pipeline never contacts the provider."},
+        "source_ids": {"type": "array", "items": {"type": "string"}},
+        "population": {"$ref": "#/$defs/portrait_population"},
+        "by_surface": {"$ref": "#/$defs/portrait_counts_by_key"},
+        "by_position": {"$ref": "#/$defs/portrait_counts_by_key"},
+        "unresolved_reasons": {"$ref": "#/$defs/portrait_unresolved_reasons"},
+        "bridges": {"$ref": "#/$defs/portrait_bridges"}
       }
     },
     "player_status": {

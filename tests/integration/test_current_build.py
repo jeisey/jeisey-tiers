@@ -538,9 +538,10 @@ def test_after_the_anchor_status_widens_and_portraits_stay_on_the_board(
     """The 2026-10-02 refresh failure: the in-season status population leaked into portraits.
 
     ADR-101 gives every rostered core player a status row once the draft anchor passes, so
-    the in-season views can read their availability. Portraits are published only for the
-    tier board's players (`cross_artifact.headshot_player_not_in_tiers` fails closed
-    otherwise), so the two populations must stay separate.
+    the in-season views can read their availability. Portraits are published for the card
+    surfaces only (`portrait_population_v1`; the draft build's surface is the tier board, and
+    `cross_artifact.headshot_player_outside_card_surfaces` fails closed otherwise), so the two
+    populations must stay separate: a rostered player no surface names gets no portrait.
     """
     _, model_dir = production_model
     out_dir = tmp_path / "artifacts"
