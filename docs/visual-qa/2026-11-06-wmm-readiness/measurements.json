@@ -1,0 +1,294 @@
+{
+ "prefix": "/scenario/in-season/",
+ "report": [
+  {
+   "screen": "01-outage",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-outage-in-view",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "03-outage-lineup",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "04-startsit-retained",
+   "size": "1440x1000",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "01-outage",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-outage-in-view",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "03-outage-lineup",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "04-startsit-retained",
+   "size": "1280x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "01-outage",
+   "size": "1280x720",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-outage-in-view",
+   "size": "1280x720",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "03-outage-lineup",
+   "size": "1280x720",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "04-startsit-retained",
+   "size": "1280x720",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "01-outage",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-outage-in-view",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "03-outage-lineup",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "04-startsit-retained",
+   "size": "1024x900",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "01-outage",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-outage-in-view",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "03-outage-lineup",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "04-startsit-retained",
+   "size": "768x1024",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "01-outage",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-outage-in-view",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "03-outage-lineup",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "04-startsit-retained",
+   "size": "390x844",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "01-outage",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-outage-in-view",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "03-outage-lineup",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "04-startsit-retained",
+   "size": "390x600",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "01-outage",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "02-outage-in-view",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "03-outage-lineup",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  },
+  {
+   "screen": "04-startsit-retained",
+   "size": "320x800",
+   "overflow": 0,
+   "clipped": [],
+   "truncated": [],
+   "dialogFits": null,
+   "chartFits": null
+  }
+ ],
+ "consoleErrors": []
+}
