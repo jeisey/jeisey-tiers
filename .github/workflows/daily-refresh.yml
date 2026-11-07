@@ -694,9 +694,20 @@ jobs:
           print(f"arbitrage_rows={count('arbitrage.json')}")
           # Portrait coverage, so the first real build says how many cards get a picture
           # rather than leaving it to be noticed. Decoration, so it gates nothing (ADR-087).
-          headshots = meta.get("player_headshots") or {}
-          print(f"headshot_coverage={headshots.get('resolved', 0)}/{headshots.get('published_players', 0)}")
+          # ADR-117: in season build-ros rewrites the portrait set over every card surface and
+          # describes it in its own metadata; the draft block then describes a superseded set.
           ros_meta = data / "ros_build_metadata.json"
+          ros_block = (
+              json.loads(ros_meta.read_text(encoding="utf-8")).get("player_headshots")
+              if ros_meta.is_file()
+              else None
+          )
+          headshots = ros_block or meta.get("player_headshots") or {}
+          surfaces = ",".join((headshots.get("population") or {}).get("surfaces_read") or ["tiers"])
+          print(
+              f"headshot_coverage={headshots.get('resolved', 0)}/"
+              f"{headshots.get('published_players', 0)} over {surfaces}"
+          )
           if ros_meta.is_file():
               ros = json.loads(ros_meta.read_text(encoding="utf-8"))
               print(f"ros_rows={count('ros_tiers.json')}")
