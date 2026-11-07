@@ -880,8 +880,8 @@ def fixture_combine(weekly: pl.DataFrame) -> tuple[pl.DataFrame, dict[str, str]]
 
 #: Peer clubs the Skill Tree fixture adds so every position has a rankable cohort (the fixture
 #: board has three quarterbacks and three tight ends; a rank needs five). Their rows reach the
-#: Skill Tree and season-actuals builders only — as in production, the tree's population is the
-#: actuals' appearing population (ADR-117); no board or usage record describes them.
+#: Skill Tree builder only — no board, actuals or usage record describes them. Their names reach
+#: the served dictionary through the tree's own ``display_name`` (ADR-117).
 _PEER_TEAMS: tuple[str, ...] = ("PHA", "PHB", "PHC", "PHD", "PHE", "PHF")
 
 

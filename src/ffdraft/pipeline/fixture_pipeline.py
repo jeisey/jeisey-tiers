@@ -1551,18 +1551,9 @@ def _season_actuals(
         snapshot_frame=pl.DataFrame(),
         catalog=catalog,
     )
-    # The Skill Tree's peer clubs appear here too, as in production, where the tree's
-    # population is exactly the actuals' appearing population: every cohort member a card can
-    # compare against then has a published, registry-sourced name (ADR-117).
-    from ffdraft.pipeline.fixture_season import fixture_skill_peers
-
-    peer_weekly, peer_snaps = fixture_skill_peers(
-        season=FIXTURE_SEASON,
-        through_week=FIXTURE_THROUGH_WEEK,
-    )
     return build_season_actuals(
-        weekly=pl.concat([season.weekly, peer_weekly], how="vertical_relaxed"),
-        snap_counts=pl.concat([season.snap_counts, peer_snaps], how="vertical_relaxed"),
+        weekly=season.weekly,
+        snap_counts=season.snap_counts,
         schedule=season.schedule,
         scoring=app.league.scoring,
         season=FIXTURE_SEASON,
@@ -1682,7 +1673,7 @@ def _skill_tree(
         player_id: {"display_name": player.display_name, "position": str(player.position)}
         for player_id, player in (identity.players.items() if identity is not None else ())
     }
-    positions, _, include = season_actuals_inputs(
+    positions, names, include = season_actuals_inputs(
         records,
         snapshot_frame=pl.DataFrame(),
         catalog=catalog,
@@ -1711,6 +1702,7 @@ def _skill_tree(
         build_id=build_id,
         metric_schema_version=record_schema_version("player_skill_metric"),
         definition_schema_version=record_schema_version("skill_tree_definition"),
+        names=names,
     )
 
 

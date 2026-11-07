@@ -4,7 +4,7 @@
   "record_schema": "season_actuals_record",
   "build_id": "fixture-20260818T120000Z",
   "generated_at_utc": "2026-08-18T12:00:00Z",
-  "record_count": 177,
+  "record_count": 105,
   "records": [
     {
       "schema_version": "1.0",
@@ -26,97 +26,13 @@
       "season": 2026,
       "through_week": 8,
       "scoring_preset": "HALF",
-      "player_id": "gsis:00-9801000",
-      "display_name": "PHB QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 138.28,
-      "points_per_game": 17.29,
-      "season_position_rank": 2
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9804000",
-      "display_name": "PHE QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 138.28,
-      "points_per_game": 17.29,
-      "season_position_rank": 2
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9802000",
-      "display_name": "PHC QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 137.72,
-      "points_per_game": 17.21,
-      "season_position_rank": 4
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9805000",
-      "display_name": "PHF QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 137.72,
-      "points_per_game": 17.21,
-      "season_position_rank": 4
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
       "player_id": "gsis:00-0000001",
       "display_name": "Marcus Vandelay",
       "position": "QB",
       "games_played": 8,
       "points": 134.88,
       "points_per_game": 16.86,
-      "season_position_rank": 6
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9800000",
-      "display_name": "PHA QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 134.88,
-      "points_per_game": 16.86,
-      "season_position_rank": 6
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9803000",
-      "display_name": "PHD QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 134.88,
-      "points_per_game": 16.86,
-      "season_position_rank": 6
+      "season_position_rank": 2
     },
     {
       "schema_version": "1.0",
@@ -130,77 +46,7 @@
       "games_played": 5,
       "points": 81.02,
       "points_per_game": 16.2,
-      "season_position_rank": 9
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9805001",
-      "display_name": "PHF RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 97.4,
-      "points_per_game": 13.91,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9804001",
-      "display_name": "PHE RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 97.1,
-      "points_per_game": 13.87,
-      "season_position_rank": 2
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9803001",
-      "display_name": "PHD RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 79.9,
-      "points_per_game": 11.41,
       "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9801001",
-      "display_name": "PHB RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 76.8,
-      "points_per_game": 10.97,
-      "season_position_rank": 4
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9802001",
-      "display_name": "PHC RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 73.6,
-      "points_per_game": 10.51,
-      "season_position_rank": 5
     },
     {
       "schema_version": "1.0",
@@ -214,7 +60,7 @@
       "games_played": 8,
       "points": 72.1,
       "points_per_game": 9.01,
-      "season_position_rank": 6
+      "season_position_rank": 1
     },
     {
       "schema_version": "1.0",
@@ -228,7 +74,7 @@
       "games_played": 7,
       "points": 65.2,
       "points_per_game": 9.31,
-      "season_position_rank": 7
+      "season_position_rank": 2
     },
     {
       "schema_version": "1.0",
@@ -242,21 +88,7 @@
       "games_played": 7,
       "points": 65.2,
       "points_per_game": 9.31,
-      "season_position_rank": 7
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9800001",
-      "display_name": "PHA RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 65.2,
-      "points_per_game": 9.31,
-      "season_position_rank": 7
+      "season_position_rank": 2
     },
     {
       "schema_version": "1.0",
@@ -270,7 +102,7 @@
       "games_played": 5,
       "points": 44.0,
       "points_per_game": 8.8,
-      "season_position_rank": 10
+      "season_position_rank": 4
     },
     {
       "schema_version": "1.0",
@@ -284,7 +116,7 @@
       "games_played": 1,
       "points": 4.2,
       "points_per_game": 4.2,
-      "season_position_rank": 11
+      "season_position_rank": 5
     },
     {
       "schema_version": "1.0",
@@ -306,69 +138,13 @@
       "season": 2026,
       "through_week": 8,
       "scoring_preset": "HALF",
-      "player_id": "gsis:00-9800003",
-      "display_name": "PHA TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 43.5,
-      "points_per_game": 6.21,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9801003",
-      "display_name": "PHB TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 43.5,
-      "points_per_game": 6.21,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9802003",
-      "display_name": "PHC TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 43.5,
-      "points_per_game": 6.21,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9804003",
-      "display_name": "PHE TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 43.5,
-      "points_per_game": 6.21,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
       "player_id": "gsis:00-0000011",
       "display_name": "Bram Kowalczyk",
       "position": "TE",
       "games_played": 8,
       "points": 37.5,
       "points_per_game": 4.69,
-      "season_position_rank": 5
+      "season_position_rank": 1
     },
     {
       "schema_version": "1.0",
@@ -382,35 +158,7 @@
       "games_played": 7,
       "points": 37.5,
       "points_per_game": 5.36,
-      "season_position_rank": 5
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9803003",
-      "display_name": "PHD TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 37.5,
-      "points_per_game": 5.36,
-      "season_position_rank": 5
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9805003",
-      "display_name": "PHF TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 37.5,
-      "points_per_game": 5.36,
-      "season_position_rank": 5
+      "season_position_rank": 1
     },
     {
       "schema_version": "1.0",
@@ -424,7 +172,7 @@
       "games_played": 5,
       "points": 28.5,
       "points_per_game": 5.7,
-      "season_position_rank": 9
+      "season_position_rank": 3
     },
     {
       "schema_version": "1.0",
@@ -502,97 +250,13 @@
       "season": 2026,
       "through_week": 8,
       "scoring_preset": "HALF",
-      "player_id": "gsis:00-9800002",
-      "display_name": "PHA WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 73.25,
-      "points_per_game": 10.46,
-      "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9801002",
-      "display_name": "PHB WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 73.25,
-      "points_per_game": 10.46,
-      "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9802002",
-      "display_name": "PHC WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 73.25,
-      "points_per_game": 10.46,
-      "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9804002",
-      "display_name": "PHE WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 73.25,
-      "points_per_game": 10.46,
-      "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9803002",
-      "display_name": "PHD WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 67.25,
-      "points_per_game": 9.61,
-      "season_position_rank": 10
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
-      "player_id": "gsis:00-9805002",
-      "display_name": "PHF WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 67.25,
-      "points_per_game": 9.61,
-      "season_position_rank": 10
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "HALF",
       "player_id": "gsis:00-0000012",
       "display_name": "Yusuf Lindqvist",
       "position": "WR",
       "games_played": 5,
       "points": 49.75,
       "points_per_game": 9.95,
-      "season_position_rank": 12
+      "season_position_rank": 6
     },
     {
       "schema_version": "1.0",
@@ -606,7 +270,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -620,7 +284,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -634,7 +298,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -648,7 +312,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -662,7 +326,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -676,7 +340,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -690,7 +354,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -704,7 +368,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -718,7 +382,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -732,7 +396,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -746,7 +410,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -760,7 +424,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -774,7 +438,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -788,7 +452,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -802,7 +466,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -816,7 +480,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -852,97 +516,13 @@
       "season": 2026,
       "through_week": 8,
       "scoring_preset": "PPR",
-      "player_id": "gsis:00-9801000",
-      "display_name": "PHB QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 138.28,
-      "points_per_game": 17.29,
-      "season_position_rank": 2
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9804000",
-      "display_name": "PHE QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 138.28,
-      "points_per_game": 17.29,
-      "season_position_rank": 2
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9802000",
-      "display_name": "PHC QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 137.72,
-      "points_per_game": 17.21,
-      "season_position_rank": 4
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9805000",
-      "display_name": "PHF QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 137.72,
-      "points_per_game": 17.21,
-      "season_position_rank": 4
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
       "player_id": "gsis:00-0000001",
       "display_name": "Marcus Vandelay",
       "position": "QB",
       "games_played": 8,
       "points": 134.88,
       "points_per_game": 16.86,
-      "season_position_rank": 6
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9800000",
-      "display_name": "PHA QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 134.88,
-      "points_per_game": 16.86,
-      "season_position_rank": 6
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9803000",
-      "display_name": "PHD QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 134.88,
-      "points_per_game": 16.86,
-      "season_position_rank": 6
+      "season_position_rank": 2
     },
     {
       "schema_version": "1.0",
@@ -956,63 +536,7 @@
       "games_played": 5,
       "points": 81.02,
       "points_per_game": 16.2,
-      "season_position_rank": 9
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9805001",
-      "display_name": "PHF RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 107.9,
-      "points_per_game": 15.41,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9804001",
-      "display_name": "PHE RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 107.6,
-      "points_per_game": 15.37,
-      "season_position_rank": 2
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9803001",
-      "display_name": "PHD RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 86.9,
-      "points_per_game": 12.41,
       "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9801001",
-      "display_name": "PHB RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 83.8,
-      "points_per_game": 11.97,
-      "season_position_rank": 4
     },
     {
       "schema_version": "1.0",
@@ -1026,21 +550,7 @@
       "games_played": 8,
       "points": 80.6,
       "points_per_game": 10.07,
-      "season_position_rank": 5
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9802001",
-      "display_name": "PHC RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 80.6,
-      "points_per_game": 11.51,
-      "season_position_rank": 5
+      "season_position_rank": 1
     },
     {
       "schema_version": "1.0",
@@ -1054,7 +564,7 @@
       "games_played": 7,
       "points": 72.2,
       "points_per_game": 10.31,
-      "season_position_rank": 7
+      "season_position_rank": 2
     },
     {
       "schema_version": "1.0",
@@ -1068,21 +578,7 @@
       "games_played": 7,
       "points": 72.2,
       "points_per_game": 10.31,
-      "season_position_rank": 7
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9800001",
-      "display_name": "PHA RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 72.2,
-      "points_per_game": 10.31,
-      "season_position_rank": 7
+      "season_position_rank": 2
     },
     {
       "schema_version": "1.0",
@@ -1096,7 +592,7 @@
       "games_played": 5,
       "points": 49.0,
       "points_per_game": 9.8,
-      "season_position_rank": 10
+      "season_position_rank": 4
     },
     {
       "schema_version": "1.0",
@@ -1110,7 +606,7 @@
       "games_played": 1,
       "points": 4.7,
       "points_per_game": 4.7,
-      "season_position_rank": 11
+      "season_position_rank": 5
     },
     {
       "schema_version": "1.0",
@@ -1132,69 +628,13 @@
       "season": 2026,
       "through_week": 8,
       "scoring_preset": "PPR",
-      "player_id": "gsis:00-9800003",
-      "display_name": "PHA TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 54.0,
-      "points_per_game": 7.71,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9801003",
-      "display_name": "PHB TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 54.0,
-      "points_per_game": 7.71,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9802003",
-      "display_name": "PHC TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 54.0,
-      "points_per_game": 7.71,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9804003",
-      "display_name": "PHE TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 54.0,
-      "points_per_game": 7.71,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
       "player_id": "gsis:00-0000011",
       "display_name": "Bram Kowalczyk",
       "position": "TE",
       "games_played": 8,
       "points": 48.0,
       "points_per_game": 6.0,
-      "season_position_rank": 5
+      "season_position_rank": 1
     },
     {
       "schema_version": "1.0",
@@ -1208,35 +648,7 @@
       "games_played": 7,
       "points": 48.0,
       "points_per_game": 6.86,
-      "season_position_rank": 5
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9803003",
-      "display_name": "PHD TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 48.0,
-      "points_per_game": 6.86,
-      "season_position_rank": 5
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9805003",
-      "display_name": "PHF TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 48.0,
-      "points_per_game": 6.86,
-      "season_position_rank": 5
+      "season_position_rank": 1
     },
     {
       "schema_version": "1.0",
@@ -1250,7 +662,7 @@
       "games_played": 5,
       "points": 36.0,
       "points_per_game": 7.2,
-      "season_position_rank": 9
+      "season_position_rank": 3
     },
     {
       "schema_version": "1.0",
@@ -1328,97 +740,13 @@
       "season": 2026,
       "through_week": 8,
       "scoring_preset": "PPR",
-      "player_id": "gsis:00-9800002",
-      "display_name": "PHA WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 90.75,
-      "points_per_game": 12.96,
-      "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9801002",
-      "display_name": "PHB WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 90.75,
-      "points_per_game": 12.96,
-      "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9802002",
-      "display_name": "PHC WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 90.75,
-      "points_per_game": 12.96,
-      "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9804002",
-      "display_name": "PHE WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 90.75,
-      "points_per_game": 12.96,
-      "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9803002",
-      "display_name": "PHD WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 84.75,
-      "points_per_game": 12.11,
-      "season_position_rank": 10
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
-      "player_id": "gsis:00-9805002",
-      "display_name": "PHF WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 84.75,
-      "points_per_game": 12.11,
-      "season_position_rank": 10
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "PPR",
       "player_id": "gsis:00-0000012",
       "display_name": "Yusuf Lindqvist",
       "position": "WR",
       "games_played": 5,
       "points": 62.25,
       "points_per_game": 12.45,
-      "season_position_rank": 12
+      "season_position_rank": 6
     },
     {
       "schema_version": "1.0",
@@ -1432,7 +760,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1446,7 +774,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1460,7 +788,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1474,7 +802,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1488,7 +816,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1502,7 +830,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1516,7 +844,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1530,7 +858,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1544,7 +872,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1558,7 +886,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1572,7 +900,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1586,7 +914,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1600,7 +928,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1614,7 +942,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1628,7 +956,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1642,7 +970,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -1678,97 +1006,13 @@
       "season": 2026,
       "through_week": 8,
       "scoring_preset": "STD",
-      "player_id": "gsis:00-9801000",
-      "display_name": "PHB QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 138.28,
-      "points_per_game": 17.29,
-      "season_position_rank": 2
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9804000",
-      "display_name": "PHE QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 138.28,
-      "points_per_game": 17.29,
-      "season_position_rank": 2
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9802000",
-      "display_name": "PHC QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 137.72,
-      "points_per_game": 17.21,
-      "season_position_rank": 4
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9805000",
-      "display_name": "PHF QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 137.72,
-      "points_per_game": 17.21,
-      "season_position_rank": 4
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
       "player_id": "gsis:00-0000001",
       "display_name": "Marcus Vandelay",
       "position": "QB",
       "games_played": 8,
       "points": 134.88,
       "points_per_game": 16.86,
-      "season_position_rank": 6
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9800000",
-      "display_name": "PHA QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 134.88,
-      "points_per_game": 16.86,
-      "season_position_rank": 6
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9803000",
-      "display_name": "PHD QB",
-      "position": "QB",
-      "games_played": 8,
-      "points": 134.88,
-      "points_per_game": 16.86,
-      "season_position_rank": 6
+      "season_position_rank": 2
     },
     {
       "schema_version": "1.0",
@@ -1782,77 +1026,7 @@
       "games_played": 5,
       "points": 81.02,
       "points_per_game": 16.2,
-      "season_position_rank": 9
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9805001",
-      "display_name": "PHF RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 86.9,
-      "points_per_game": 12.41,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9804001",
-      "display_name": "PHE RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 86.6,
-      "points_per_game": 12.37,
-      "season_position_rank": 2
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9803001",
-      "display_name": "PHD RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 72.9,
-      "points_per_game": 10.41,
       "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9801001",
-      "display_name": "PHB RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 69.8,
-      "points_per_game": 9.97,
-      "season_position_rank": 4
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9802001",
-      "display_name": "PHC RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 66.6,
-      "points_per_game": 9.51,
-      "season_position_rank": 5
     },
     {
       "schema_version": "1.0",
@@ -1866,7 +1040,7 @@
       "games_played": 8,
       "points": 63.6,
       "points_per_game": 7.95,
-      "season_position_rank": 6
+      "season_position_rank": 1
     },
     {
       "schema_version": "1.0",
@@ -1880,7 +1054,7 @@
       "games_played": 7,
       "points": 58.2,
       "points_per_game": 8.31,
-      "season_position_rank": 7
+      "season_position_rank": 2
     },
     {
       "schema_version": "1.0",
@@ -1894,21 +1068,7 @@
       "games_played": 7,
       "points": 58.2,
       "points_per_game": 8.31,
-      "season_position_rank": 7
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9800001",
-      "display_name": "PHA RB",
-      "position": "RB",
-      "games_played": 7,
-      "points": 58.2,
-      "points_per_game": 8.31,
-      "season_position_rank": 7
+      "season_position_rank": 2
     },
     {
       "schema_version": "1.0",
@@ -1922,7 +1082,7 @@
       "games_played": 5,
       "points": 39.0,
       "points_per_game": 7.8,
-      "season_position_rank": 10
+      "season_position_rank": 4
     },
     {
       "schema_version": "1.0",
@@ -1936,7 +1096,7 @@
       "games_played": 1,
       "points": 3.7,
       "points_per_game": 3.7,
-      "season_position_rank": 11
+      "season_position_rank": 5
     },
     {
       "schema_version": "1.0",
@@ -1958,69 +1118,13 @@
       "season": 2026,
       "through_week": 8,
       "scoring_preset": "STD",
-      "player_id": "gsis:00-9800003",
-      "display_name": "PHA TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 33.0,
-      "points_per_game": 4.71,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9801003",
-      "display_name": "PHB TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 33.0,
-      "points_per_game": 4.71,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9802003",
-      "display_name": "PHC TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 33.0,
-      "points_per_game": 4.71,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9804003",
-      "display_name": "PHE TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 33.0,
-      "points_per_game": 4.71,
-      "season_position_rank": 1
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
       "player_id": "gsis:00-0000011",
       "display_name": "Bram Kowalczyk",
       "position": "TE",
       "games_played": 8,
       "points": 27.0,
       "points_per_game": 3.38,
-      "season_position_rank": 5
+      "season_position_rank": 1
     },
     {
       "schema_version": "1.0",
@@ -2034,35 +1138,7 @@
       "games_played": 7,
       "points": 27.0,
       "points_per_game": 3.86,
-      "season_position_rank": 5
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9803003",
-      "display_name": "PHD TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 27.0,
-      "points_per_game": 3.86,
-      "season_position_rank": 5
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9805003",
-      "display_name": "PHF TE",
-      "position": "TE",
-      "games_played": 7,
-      "points": 27.0,
-      "points_per_game": 3.86,
-      "season_position_rank": 5
+      "season_position_rank": 1
     },
     {
       "schema_version": "1.0",
@@ -2076,7 +1152,7 @@
       "games_played": 5,
       "points": 21.0,
       "points_per_game": 4.2,
-      "season_position_rank": 9
+      "season_position_rank": 3
     },
     {
       "schema_version": "1.0",
@@ -2154,97 +1230,13 @@
       "season": 2026,
       "through_week": 8,
       "scoring_preset": "STD",
-      "player_id": "gsis:00-9800002",
-      "display_name": "PHA WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 55.75,
-      "points_per_game": 7.96,
-      "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9801002",
-      "display_name": "PHB WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 55.75,
-      "points_per_game": 7.96,
-      "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9802002",
-      "display_name": "PHC WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 55.75,
-      "points_per_game": 7.96,
-      "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9804002",
-      "display_name": "PHE WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 55.75,
-      "points_per_game": 7.96,
-      "season_position_rank": 3
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9803002",
-      "display_name": "PHD WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 49.75,
-      "points_per_game": 7.11,
-      "season_position_rank": 10
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
-      "player_id": "gsis:00-9805002",
-      "display_name": "PHF WR",
-      "position": "WR",
-      "games_played": 7,
-      "points": 49.75,
-      "points_per_game": 7.11,
-      "season_position_rank": 10
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "scoring_preset": "STD",
       "player_id": "gsis:00-0000012",
       "display_name": "Yusuf Lindqvist",
       "position": "WR",
       "games_played": 5,
       "points": 37.25,
       "points_per_game": 7.45,
-      "season_position_rank": 12
+      "season_position_rank": 6
     },
     {
       "schema_version": "1.0",
@@ -2258,7 +1250,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2272,7 +1264,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2286,7 +1278,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2300,7 +1292,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2314,7 +1306,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2328,7 +1320,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2342,7 +1334,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2356,7 +1348,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2370,7 +1362,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2384,7 +1376,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2398,7 +1390,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2412,7 +1404,7 @@
       "games_played": 8,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2426,7 +1418,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2440,7 +1432,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2454,7 +1446,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",
@@ -2468,7 +1460,7 @@
       "games_played": 7,
       "points": 0.0,
       "points_per_game": 0.0,
-      "season_position_rank": 13
+      "season_position_rank": 7
     },
     {
       "schema_version": "1.0",

@@ -42,12 +42,12 @@ export const RECORD_SCHEMA_VERSIONS = {
   player_usage: "1.2",
   team_matchups: "1.0",
   // 1.1 (ADR-099): additive `explanation`.
-  weekly_projections: "1.1",
-  weekly_context: "1.0",
+  weekly_projections: "1.2",
+  weekly_context: "1.1",
   // ADR-105: season-to-date actuals and positional ranks over the whole population.
   season_actuals: "1.0",
   // ADR-107: the Skill Tree's readings and definitions.
-  player_skill_tree: "1.0",
+  player_skill_tree: "1.1",
   skill_tree_definitions: "1.0",
   // ADR-112: ESPN's public roster and start percentages.
   espn_ownership: "1.0",
@@ -2337,6 +2337,11 @@ export interface PlayerSkillMetricRecord {
   readonly season: number;
   readonly through_week: number;
   readonly player_id: string;
+  /**
+   * 1.1 (ADR-117): his name by `season_actuals`' rule. It feeds the served player dictionary
+   * (last), so the bucket slices do not carry it: a decoded tree reading never has it.
+   */
+  readonly display_name?: string;
   readonly position: Position;
   readonly metric_id: string;
   readonly state: SkillState;
@@ -2357,6 +2362,7 @@ export const PLAYER_SKILL_METRIC_FIELDS = [
   "season",
   "through_week",
   "player_id",
+  "display_name",
   "position",
   "metric_id",
   "state",

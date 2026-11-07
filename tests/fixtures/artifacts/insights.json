@@ -4,7 +4,7 @@
   "record_schema": "insight_story",
   "build_id": "fixture-20260818T120000Z",
   "generated_at_utc": "2026-08-18T12:00:00Z",
-  "record_count": 27,
+  "record_count": 24,
   "records": [
     {
       "schema_version": "1.0",
@@ -15,414 +15,104 @@
       "edition": "2026w08",
       "scoring_preset": "HALF",
       "scoring_dependent": true,
-      "story_id": "streak-00-0000001",
-      "family": "streak_watch",
-      "variant": "breakout",
-      "horizon": "role_watch",
+      "story_id": "pace-00-0000001",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
       "nature": "fact",
-      "lead_rank": 5,
-      "family_rank": 2,
+      "lead_rank": 3,
+      "family_rank": 3,
       "player_id": "gsis:00-0000001",
       "display_name": "Marcus Vandelay",
       "position": "QB",
       "team": "ATL",
-      "headline": "Marcus Vandelay: 3 straight top-12 QB weeks",
-      "dek": "Takeover (breakout_v1): QB1 over W6–W8 after QB6 for the season, with his snap share at 99% in those games.",
+      "headline": "Marcus Vandelay is QB2 in points a game and 31% rostered",
+      "dek": "16.9 points a game over 8 games ranks QB2 of 3 QBs with 3+ games, yet most ESPN leagues leave him unrostered.",
       "facts": [
         {
-          "label": "Points rank, W6–W8 → season",
-          "value": "QB1 → QB6",
+          "label": "Points a game",
+          "value": "16.9 (QB2)",
           "basis": "observed"
         },
         {
-          "label": "Points a game, W6–W8",
-          "value": "17.9",
+          "label": "Games played",
+          "value": "8 of 8",
           "basis": "observed"
         },
         {
-          "label": "Snap share, before → W6–W8",
-          "value": "99% → 99%",
+          "label": "17-game pace (PPG × 17)",
+          "value": "286.6",
           "basis": "observed"
         },
         {
-          "label": "Points from touchdowns, W6–W8",
-          "value": "37%",
-          "basis": "observed"
+          "label": "Rostered on ESPN",
+          "value": "31%",
+          "basis": "market"
         }
       ],
       "counterpoint": null,
-      "caveat": "A descriptive reading from fixed thresholds over three weeks; not a prediction.",
-      "window": {
-        "label": "W6–W8",
-        "first_week": 6,
-        "last_week": 8,
-        "weeks": 3,
-        "baseline_first_week": 1,
-        "baseline_last_week": 5
-      },
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
       "kickoff_utc": null,
-      "espn_rostered": null,
+      "espn_rostered": 31.0,
       "ceiling_ranks": null,
       "injury": null,
       "opponent": null,
       "home_away": null,
       "chart": {
-        "type": "week_strip",
-        "weeks": [
-          {
-            "week": 1,
-            "status": "P",
-            "in_window": false,
-            "points": 13.3,
-            "td_points": 4.0,
-            "opportunity": 0.0,
-            "share": 0.99,
-            "rank": 2
-          },
-          {
-            "week": 2,
-            "status": "P",
-            "in_window": false,
-            "points": 15.86,
-            "td_points": 4.0,
-            "opportunity": 0.0,
-            "share": 0.98,
-            "rank": 2
-          },
-          {
-            "week": 3,
-            "status": "P",
-            "in_window": false,
-            "points": 18.7,
-            "td_points": 8.0,
-            "opportunity": 0.0,
-            "share": 1.0,
-            "rank": 2
-          },
-          {
-            "week": 4,
-            "status": "P",
-            "in_window": false,
-            "points": 19.3,
-            "td_points": 8.0,
-            "opportunity": 0.0,
-            "share": 0.99,
-            "rank": 2
-          },
-          {
-            "week": 5,
-            "status": "P",
-            "in_window": false,
-            "points": 13.86,
-            "td_points": 4.0,
-            "opportunity": 0.0,
-            "share": 0.98,
-            "rank": 2
-          },
-          {
-            "week": 6,
-            "status": "P",
-            "in_window": true,
-            "points": 18.7,
-            "td_points": 8.0,
-            "opportunity": 0.0,
-            "share": 1.0,
-            "rank": 1
-          },
-          {
-            "week": 7,
-            "status": "P",
-            "in_window": true,
-            "points": 15.3,
-            "td_points": 4.0,
-            "opportunity": 0.0,
-            "share": 0.99,
-            "rank": 2
-          },
-          {
-            "week": 8,
-            "status": "P",
-            "in_window": true,
-            "points": 19.86,
-            "td_points": 8.0,
-            "opportunity": 0.0,
-            "share": 0.98,
-            "rank": 2
-          }
-        ],
-        "opportunity_label": "Pass attempts",
-        "share_label": "Snap share",
-        "band": 12
+        "type": "stat_line",
+        "games": 8,
+        "team_games": 8,
+        "points": 134.88,
+        "points_per_game": 16.86,
+        "pace_17": 286.6,
+        "ppg_rank": 2,
+        "total_rank": 2,
+        "cohort_size": 3,
+        "cohort_min_games": 3
       },
       "evidence": {
         "name": "Marcus Vandelay",
         "position": "QB",
         "team": "ATL",
-        "window_label": "W6–W8",
-        "category": "takeover",
-        "reason": "takeover_role",
-        "window_rank": 1,
-        "season_rank": 6,
+        "games": 8,
+        "team_games": 8,
+        "points": 134.88,
+        "points_per_game": 16.86,
+        "pace": 286.6,
+        "pace_games": 17,
+        "ppg_rank": 2,
+        "total_rank": 2,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
         "band": 12,
-        "streak": 3,
-        "window_games": 3,
-        "window_points": 53.86,
-        "window_points_per_game": 17.95,
-        "window_td_points": 20.0,
-        "td_share": 37,
-        "td_led_percent": 50,
-        "measure": "snap_share",
-        "level": 0.99,
-        "baseline": 0.988,
-        "growth": null,
-        "growth_bar": null,
-        "role": [
-          {
-            "metric": "snap_share",
-            "games": 3,
-            "level": 0.99,
-            "baseline": 0.988,
-            "baseline_games": 5,
-            "passed": "substantial"
-          },
-          {
-            "metric": "pass_attempts",
-            "games": 3,
-            "level": 34.0,
-            "baseline": 34.4,
-            "baseline_games": 5,
-            "passed": "substantial"
-          }
-        ]
+        "gap_places": 0,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 31.0,
+        "espn_state": "observed",
+        "ceiling": 50
       },
       "qualification": [
         {
-          "rule": "category",
-          "label": "breakout_v1 over W6–W8",
-          "value": "takeover",
-          "threshold": "takeover or sneaking",
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 8,
+          "threshold": 3,
           "passed": true
         },
         {
-          "rule": "streak",
-          "label": "Consecutive top-12 weeks",
-          "value": 3,
-          "threshold": 2,
-          "passed": true
-        }
-      ],
-      "also_qualifies": [
-        "pace-00-0000001"
-      ],
-      "sources": [
-        "nflverse_player_stats",
-        "nflverse_snap_counts",
-        "nflverse_schedule"
-      ],
-      "source_times": {}
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "target_week": null,
-      "edition": "2026w08",
-      "scoring_preset": "HALF",
-      "scoring_dependent": true,
-      "story_id": "streak-00-0000013",
-      "family": "streak_watch",
-      "variant": "breakout",
-      "horizon": "role_watch",
-      "nature": "fact",
-      "lead_rank": null,
-      "family_rank": 3,
-      "player_id": "gsis:00-0000013",
-      "display_name": "Ade Fontenot",
-      "position": "RB",
-      "team": "MIA",
-      "headline": "Ade Fontenot: 3 straight top-24 RB weeks",
-      "dek": "Takeover (breakout_v1): RB2 over W6–W8 after RB7 for the season, with his carry share at 46% in those games.",
-      "facts": [
-        {
-          "label": "Points rank, W6–W8 → season",
-          "value": "RB2 → RB7",
-          "basis": "observed"
-        },
-        {
-          "label": "Points a game, W6–W8",
-          "value": "9.6",
-          "basis": "observed"
-        },
-        {
-          "label": "Carry share, before → W6–W8",
-          "value": "46% → 46%",
-          "basis": "observed"
-        },
-        {
-          "label": "Points from touchdowns, W6–W8",
-          "value": "21%",
-          "basis": "observed"
-        }
-      ],
-      "counterpoint": null,
-      "caveat": "A descriptive reading from fixed thresholds over three weeks; not a prediction.",
-      "window": {
-        "label": "W6–W8",
-        "first_week": 6,
-        "last_week": 8,
-        "weeks": 3,
-        "baseline_first_week": 1,
-        "baseline_last_week": 5
-      },
-      "kickoff_utc": null,
-      "espn_rostered": null,
-      "ceiling_ranks": null,
-      "injury": null,
-      "opponent": null,
-      "home_away": null,
-      "chart": {
-        "type": "week_strip",
-        "weeks": [
-          {
-            "week": 1,
-            "status": "P",
-            "in_window": false,
-            "points": 7.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 1
-          },
-          {
-            "week": 2,
-            "status": "P",
-            "in_window": false,
-            "points": 7.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 1
-          },
-          {
-            "week": 3,
-            "status": "P",
-            "in_window": false,
-            "points": 13.6,
-            "td_points": 6.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 1
-          },
-          {
-            "week": 4,
-            "status": "P",
-            "in_window": false,
-            "points": 7.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 1
-          },
-          {
-            "week": 5,
-            "status": "B",
-            "in_window": false,
-            "points": null,
-            "td_points": null,
-            "opportunity": null,
-            "share": null,
-            "rank": null
-          },
-          {
-            "week": 6,
-            "status": "P",
-            "in_window": true,
-            "points": 13.6,
-            "td_points": 6.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 2
-          },
-          {
-            "week": 7,
-            "status": "P",
-            "in_window": true,
-            "points": 7.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 2
-          },
-          {
-            "week": 8,
-            "status": "P",
-            "in_window": true,
-            "points": 7.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 2
-          }
-        ],
-        "opportunity_label": "Carries + targets",
-        "share_label": "Carry share",
-        "band": 24
-      },
-      "evidence": {
-        "name": "Ade Fontenot",
-        "position": "RB",
-        "team": "MIA",
-        "window_label": "W6–W8",
-        "category": "takeover",
-        "reason": "takeover_role",
-        "window_rank": 2,
-        "season_rank": 7,
-        "band": 24,
-        "streak": 3,
-        "window_games": 3,
-        "window_points": 28.8,
-        "window_points_per_game": 9.6,
-        "window_td_points": 6.0,
-        "td_share": 21,
-        "td_led_percent": 50,
-        "measure": "carry_share",
-        "level": 0.462,
-        "baseline": 0.462,
-        "growth": null,
-        "growth_bar": null,
-        "role": [
-          {
-            "metric": "snap_share",
-            "games": 3,
-            "level": 0.54,
-            "baseline": 0.54,
-            "baseline_games": 4,
-            "passed": null
-          },
-          {
-            "metric": "carry_share",
-            "games": 3,
-            "level": 0.462,
-            "baseline": 0.462,
-            "baseline_games": 4,
-            "passed": "substantial"
-          }
-        ]
-      },
-      "qualification": [
-        {
-          "rule": "category",
-          "label": "breakout_v1 over W6–W8",
-          "value": "takeover",
-          "threshold": "takeover or sneaking",
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 QBs",
+          "value": 2,
+          "threshold": 12,
           "passed": true
         },
         {
-          "rule": "streak",
-          "label": "Consecutive top-24 weeks",
-          "value": 3,
-          "threshold": 2,
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 31.0,
+          "threshold": 50,
           "passed": true
         }
       ],
@@ -430,9 +120,12 @@
       "sources": [
         "nflverse_player_stats",
         "nflverse_snap_counts",
-        "nflverse_schedule"
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
       ],
-      "source_times": {}
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
     },
     {
       "schema_version": "1.0",
@@ -443,426 +136,238 @@
       "edition": "2026w08",
       "scoring_preset": "HALF",
       "scoring_dependent": true,
-      "story_id": "streak-00-0000011",
-      "family": "streak_watch",
-      "variant": "production_without_role",
-      "horizon": "role_watch",
-      "nature": "thesis",
-      "lead_rank": 3,
-      "family_rank": 1,
-      "player_id": "gsis:00-0000011",
-      "display_name": "Bram Kowalczyk",
-      "position": "TE",
-      "team": "LV",
-      "headline": "Bram Kowalczyk: 3 top-12 TE weeks in a row, but his target share is 7%",
-      "dek": "Production jumped; usage did not reach breakout_v1's role bar. Repeating it rests on efficiency rather than a bigger role.",
-      "facts": [
-        {
-          "label": "Points rank, W6–W8 → season",
-          "value": "TE1 → TE5",
-          "basis": "observed"
-        },
-        {
-          "label": "Points a game, W6–W8",
-          "value": "3.0",
-          "basis": "observed"
-        },
-        {
-          "label": "Target share, before → W6–W8",
-          "value": "15% → 7%",
-          "basis": "observed"
-        },
-        {
-          "label": "Points from touchdowns, W6–W8",
-          "value": "0%",
-          "basis": "observed"
-        }
-      ],
-      "counterpoint": "His role may still be growing: two or three games is a short read on usage.",
-      "caveat": "A descriptive reading from fixed thresholds over three weeks; not a prediction.",
-      "window": {
-        "label": "W6–W8",
-        "first_week": 6,
-        "last_week": 8,
-        "weeks": 3,
-        "baseline_first_week": 1,
-        "baseline_last_week": 5
-      },
-      "kickoff_utc": null,
-      "espn_rostered": null,
-      "ceiling_ranks": null,
-      "injury": null,
-      "opponent": null,
-      "home_away": null,
-      "chart": {
-        "type": "week_strip",
-        "weeks": [
-          {
-            "week": 1,
-            "status": "P",
-            "in_window": false,
-            "points": 4.5,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 2,
-            "status": "P",
-            "in_window": false,
-            "points": 4.5,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 3,
-            "status": "P",
-            "in_window": false,
-            "points": 4.5,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 4,
-            "status": "P",
-            "in_window": false,
-            "points": 10.5,
-            "td_points": 6.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 5,
-            "status": "P",
-            "in_window": false,
-            "points": 4.5,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 6,
-            "status": "P",
-            "in_window": true,
-            "points": 4.5,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 7,
-            "status": "P",
-            "in_window": true,
-            "points": 4.5,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 8,
-            "status": "P",
-            "in_window": true,
-            "points": 0.0,
-            "td_points": 0.0,
-            "opportunity": 0.0,
-            "share": 0.0,
-            "rank": 1
-          }
-        ],
-        "opportunity_label": "Targets",
-        "share_label": "Target share",
-        "band": 12
-      },
-      "evidence": {
-        "name": "Bram Kowalczyk",
-        "position": "TE",
-        "team": "LV",
-        "window_label": "W6–W8",
-        "category": "eyebrow",
-        "reason": "role_not_confirmed",
-        "window_rank": 1,
-        "season_rank": 5,
-        "band": 12,
-        "streak": 3,
-        "window_games": 3,
-        "window_points": 9.0,
-        "window_points_per_game": 3.0,
-        "window_td_points": 0.0,
-        "td_share": 0,
-        "td_led_percent": 50,
-        "measure": "target_share",
-        "level": 0.074,
-        "baseline": 0.147,
-        "growth": null,
-        "growth_bar": null,
-        "role": [
-          {
-            "metric": "target_share",
-            "games": 2,
-            "level": 0.074,
-            "baseline": 0.147,
-            "baseline_games": 5,
-            "passed": null
-          },
-          {
-            "metric": "snap_share",
-            "games": 2,
-            "level": 0.635,
-            "baseline": 0.688,
-            "baseline_games": 5,
-            "passed": null
-          }
-        ]
-      },
-      "qualification": [
-        {
-          "rule": "category",
-          "label": "breakout_v1 over W6–W8",
-          "value": "eyebrow",
-          "threshold": "eyebrow",
-          "passed": true
-        },
-        {
-          "rule": "role_not_confirmed",
-          "label": "Strong weeks without a confirmed role",
-          "value": 3,
-          "threshold": 2,
-          "passed": true
-        }
-      ],
-      "also_qualifies": [
-        "pace-00-0000011"
-      ],
-      "sources": [
-        "nflverse_player_stats",
-        "nflverse_snap_counts",
-        "nflverse_schedule"
-      ],
-      "source_times": {}
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "target_week": null,
-      "edition": "2026w08",
-      "scoring_preset": "HALF",
-      "scoring_dependent": true,
-      "story_id": "streak-00-0000016",
-      "family": "streak_watch",
-      "variant": "production_without_role",
-      "horizon": "role_watch",
-      "nature": "thesis",
+      "story_id": "pace-00-0000016",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
       "lead_rank": null,
-      "family_rank": 2,
+      "family_rank": 6,
       "player_id": "gsis:00-0000016",
       "display_name": "Xavier Nkemdiche",
       "position": "TE",
       "team": "NO",
-      "headline": "Xavier Nkemdiche: 2 top-12 TE weeks in a row, but his target share is 15%",
-      "dek": "Production jumped; usage did not reach breakout_v1's role bar. Repeating it rests on efficiency rather than a bigger role.",
+      "headline": "Xavier Nkemdiche is TE2 in points a game and 40% rostered",
+      "dek": "5.4 points a game over 7 games ranks TE2 of 3 TEs with 3+ games, yet most ESPN leagues leave him unrostered.",
       "facts": [
         {
-          "label": "Points rank, W6–W8 → season",
-          "value": "TE1 → TE5",
+          "label": "Points a game",
+          "value": "5.4 (TE2)",
           "basis": "observed"
         },
         {
-          "label": "Points a game, W6–W8",
-          "value": "4.5",
+          "label": "Games played",
+          "value": "7 of 7",
           "basis": "observed"
         },
         {
-          "label": "Target share, before → W6–W8",
-          "value": "15% → 15%",
+          "label": "17-game pace (PPG × 17)",
+          "value": "91.1",
           "basis": "observed"
         },
         {
-          "label": "Points from touchdowns, W6–W8",
-          "value": "0%",
-          "basis": "observed"
+          "label": "Rostered on ESPN",
+          "value": "40%",
+          "basis": "market"
         }
       ],
-      "counterpoint": "His role may still be growing: two or three games is a short read on usage.",
-      "caveat": "A descriptive reading from fixed thresholds over three weeks; not a prediction.",
-      "window": {
-        "label": "W6–W8",
-        "first_week": 6,
-        "last_week": 8,
-        "weeks": 3,
-        "baseline_first_week": 1,
-        "baseline_last_week": 5
-      },
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
       "kickoff_utc": null,
-      "espn_rostered": null,
+      "espn_rostered": 40.2,
       "ceiling_ranks": null,
       "injury": null,
       "opponent": null,
       "home_away": null,
       "chart": {
-        "type": "week_strip",
-        "weeks": [
-          {
-            "week": 1,
-            "status": "P",
-            "in_window": false,
-            "points": 4.5,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 2,
-            "status": "P",
-            "in_window": false,
-            "points": 4.5,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 3,
-            "status": "P",
-            "in_window": false,
-            "points": 4.5,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 4,
-            "status": "P",
-            "in_window": false,
-            "points": 10.5,
-            "td_points": 6.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 5,
-            "status": "P",
-            "in_window": false,
-            "points": 4.5,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 6,
-            "status": "P",
-            "in_window": true,
-            "points": 4.5,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 7,
-            "status": "P",
-            "in_window": true,
-            "points": 4.5,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 8,
-            "status": "B",
-            "in_window": true,
-            "points": null,
-            "td_points": null,
-            "opportunity": null,
-            "share": null,
-            "rank": null
-          }
-        ],
-        "opportunity_label": "Targets",
-        "share_label": "Target share",
-        "band": 12
+        "type": "stat_line",
+        "games": 7,
+        "team_games": 7,
+        "points": 37.5,
+        "points_per_game": 5.36,
+        "pace_17": 91.1,
+        "ppg_rank": 2,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3
       },
       "evidence": {
         "name": "Xavier Nkemdiche",
         "position": "TE",
         "team": "NO",
-        "window_label": "W6–W8",
-        "category": "eyebrow",
-        "reason": "role_not_confirmed",
-        "window_rank": 1,
-        "season_rank": 5,
+        "games": 7,
+        "team_games": 7,
+        "points": 37.5,
+        "points_per_game": 5.36,
+        "pace": 91.1,
+        "pace_games": 17,
+        "ppg_rank": 2,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
         "band": 12,
-        "streak": 2,
-        "window_games": 2,
-        "window_points": 9.0,
-        "window_points_per_game": 4.5,
-        "window_td_points": 0.0,
-        "td_share": 0,
-        "td_led_percent": 50,
-        "measure": "target_share",
-        "level": 0.147,
-        "baseline": 0.147,
-        "growth": null,
-        "growth_bar": null,
-        "role": [
-          {
-            "metric": "target_share",
-            "games": 2,
-            "level": 0.147,
-            "baseline": 0.147,
-            "baseline_games": 5,
-            "passed": null
-          },
-          {
-            "metric": "snap_share",
-            "games": 2,
-            "level": 0.695,
-            "baseline": 0.688,
-            "baseline_games": 5,
-            "passed": null
-          }
-        ]
+        "gap_places": -1,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 40.2,
+        "espn_state": "observed",
+        "ceiling": 50
       },
       "qualification": [
         {
-          "rule": "category",
-          "label": "breakout_v1 over W6–W8",
-          "value": "eyebrow",
-          "threshold": "eyebrow",
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 7,
+          "threshold": 3,
           "passed": true
         },
         {
-          "rule": "role_not_confirmed",
-          "label": "Strong weeks without a confirmed role",
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 TEs",
           "value": 2,
-          "threshold": 2,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 40.2,
+          "threshold": 50,
           "passed": true
         }
       ],
-      "also_qualifies": [
-        "pace-00-0000016"
-      ],
+      "also_qualifies": [],
       "sources": [
         "nflverse_player_stats",
         "nflverse_snap_counts",
-        "nflverse_schedule"
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
       ],
-      "source_times": {}
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "HALF",
+      "scoring_dependent": true,
+      "story_id": "pace-00-0000011",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
+      "lead_rank": null,
+      "family_rank": 8,
+      "player_id": "gsis:00-0000011",
+      "display_name": "Bram Kowalczyk",
+      "position": "TE",
+      "team": "LV",
+      "headline": "Bram Kowalczyk is TE3 in points a game and 25% rostered",
+      "dek": "4.7 points a game over 8 games ranks TE3 of 3 TEs with 3+ games, yet most ESPN leagues leave him unrostered.",
+      "facts": [
+        {
+          "label": "Points a game",
+          "value": "4.7 (TE3)",
+          "basis": "observed"
+        },
+        {
+          "label": "Games played",
+          "value": "8 of 8",
+          "basis": "observed"
+        },
+        {
+          "label": "17-game pace (PPG × 17)",
+          "value": "79.7",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "25%",
+          "basis": "market"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
+      "kickoff_utc": null,
+      "espn_rostered": 25.0,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "stat_line",
+        "games": 8,
+        "team_games": 8,
+        "points": 37.5,
+        "points_per_game": 4.69,
+        "pace_17": 79.7,
+        "ppg_rank": 3,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3
+      },
+      "evidence": {
+        "name": "Bram Kowalczyk",
+        "position": "TE",
+        "team": "LV",
+        "games": 8,
+        "team_games": 8,
+        "points": 37.5,
+        "points_per_game": 4.69,
+        "pace": 79.7,
+        "pace_games": 17,
+        "ppg_rank": 3,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
+        "band": 12,
+        "gap_places": -2,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 25.0,
+        "espn_state": "observed",
+        "ceiling": 50
+      },
+      "qualification": [
+        {
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 8,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 TEs",
+          "value": 3,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 25.0,
+          "threshold": 50,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
     },
     {
       "schema_version": "1.0",
@@ -1471,8 +976,7 @@
         }
       ],
       "also_qualifies": [
-        "pace-00-0000008",
-        "streak-00-0000008"
+        "pace-00-0000008"
       ],
       "sources": [
         "weekly_startsit_v1",
@@ -1674,8 +1178,7 @@
       ],
       "also_qualifies": [
         "pace-00-0000002",
-        "role-buf-backfield",
-        "streak-00-0000002"
+        "role-buf-backfield"
       ],
       "sources": [
         "weekly_startsit_v1",
@@ -1704,7 +1207,7 @@
       "variant": "ceiling",
       "horizon": "this_week",
       "nature": "thesis",
-      "lead_rank": 6,
+      "lead_rank": 5,
       "family_rank": 2,
       "player_id": "gsis:00-0000015",
       "display_name": "Hollis Amadi",
@@ -1890,414 +1393,104 @@
       "edition": "2026w08",
       "scoring_preset": "PPR",
       "scoring_dependent": true,
-      "story_id": "streak-00-0000001",
-      "family": "streak_watch",
-      "variant": "breakout",
-      "horizon": "role_watch",
+      "story_id": "pace-00-0000001",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
       "nature": "fact",
-      "lead_rank": 5,
-      "family_rank": 2,
+      "lead_rank": 3,
+      "family_rank": 3,
       "player_id": "gsis:00-0000001",
       "display_name": "Marcus Vandelay",
       "position": "QB",
       "team": "ATL",
-      "headline": "Marcus Vandelay: 3 straight top-12 QB weeks",
-      "dek": "Takeover (breakout_v1): QB1 over W6–W8 after QB6 for the season, with his snap share at 99% in those games.",
+      "headline": "Marcus Vandelay is QB2 in points a game and 31% rostered",
+      "dek": "16.9 points a game over 8 games ranks QB2 of 3 QBs with 3+ games, yet most ESPN leagues leave him unrostered.",
       "facts": [
         {
-          "label": "Points rank, W6–W8 → season",
-          "value": "QB1 → QB6",
+          "label": "Points a game",
+          "value": "16.9 (QB2)",
           "basis": "observed"
         },
         {
-          "label": "Points a game, W6–W8",
-          "value": "17.9",
+          "label": "Games played",
+          "value": "8 of 8",
           "basis": "observed"
         },
         {
-          "label": "Snap share, before → W6–W8",
-          "value": "99% → 99%",
+          "label": "17-game pace (PPG × 17)",
+          "value": "286.6",
           "basis": "observed"
         },
         {
-          "label": "Points from touchdowns, W6–W8",
-          "value": "37%",
-          "basis": "observed"
+          "label": "Rostered on ESPN",
+          "value": "31%",
+          "basis": "market"
         }
       ],
       "counterpoint": null,
-      "caveat": "A descriptive reading from fixed thresholds over three weeks; not a prediction.",
-      "window": {
-        "label": "W6–W8",
-        "first_week": 6,
-        "last_week": 8,
-        "weeks": 3,
-        "baseline_first_week": 1,
-        "baseline_last_week": 5
-      },
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
       "kickoff_utc": null,
-      "espn_rostered": null,
+      "espn_rostered": 31.0,
       "ceiling_ranks": null,
       "injury": null,
       "opponent": null,
       "home_away": null,
       "chart": {
-        "type": "week_strip",
-        "weeks": [
-          {
-            "week": 1,
-            "status": "P",
-            "in_window": false,
-            "points": 13.3,
-            "td_points": 4.0,
-            "opportunity": 0.0,
-            "share": 0.99,
-            "rank": 2
-          },
-          {
-            "week": 2,
-            "status": "P",
-            "in_window": false,
-            "points": 15.86,
-            "td_points": 4.0,
-            "opportunity": 0.0,
-            "share": 0.98,
-            "rank": 2
-          },
-          {
-            "week": 3,
-            "status": "P",
-            "in_window": false,
-            "points": 18.7,
-            "td_points": 8.0,
-            "opportunity": 0.0,
-            "share": 1.0,
-            "rank": 2
-          },
-          {
-            "week": 4,
-            "status": "P",
-            "in_window": false,
-            "points": 19.3,
-            "td_points": 8.0,
-            "opportunity": 0.0,
-            "share": 0.99,
-            "rank": 2
-          },
-          {
-            "week": 5,
-            "status": "P",
-            "in_window": false,
-            "points": 13.86,
-            "td_points": 4.0,
-            "opportunity": 0.0,
-            "share": 0.98,
-            "rank": 2
-          },
-          {
-            "week": 6,
-            "status": "P",
-            "in_window": true,
-            "points": 18.7,
-            "td_points": 8.0,
-            "opportunity": 0.0,
-            "share": 1.0,
-            "rank": 1
-          },
-          {
-            "week": 7,
-            "status": "P",
-            "in_window": true,
-            "points": 15.3,
-            "td_points": 4.0,
-            "opportunity": 0.0,
-            "share": 0.99,
-            "rank": 2
-          },
-          {
-            "week": 8,
-            "status": "P",
-            "in_window": true,
-            "points": 19.86,
-            "td_points": 8.0,
-            "opportunity": 0.0,
-            "share": 0.98,
-            "rank": 2
-          }
-        ],
-        "opportunity_label": "Pass attempts",
-        "share_label": "Snap share",
-        "band": 12
+        "type": "stat_line",
+        "games": 8,
+        "team_games": 8,
+        "points": 134.88,
+        "points_per_game": 16.86,
+        "pace_17": 286.6,
+        "ppg_rank": 2,
+        "total_rank": 2,
+        "cohort_size": 3,
+        "cohort_min_games": 3
       },
       "evidence": {
         "name": "Marcus Vandelay",
         "position": "QB",
         "team": "ATL",
-        "window_label": "W6–W8",
-        "category": "takeover",
-        "reason": "takeover_role",
-        "window_rank": 1,
-        "season_rank": 6,
+        "games": 8,
+        "team_games": 8,
+        "points": 134.88,
+        "points_per_game": 16.86,
+        "pace": 286.6,
+        "pace_games": 17,
+        "ppg_rank": 2,
+        "total_rank": 2,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
         "band": 12,
-        "streak": 3,
-        "window_games": 3,
-        "window_points": 53.86,
-        "window_points_per_game": 17.95,
-        "window_td_points": 20.0,
-        "td_share": 37,
-        "td_led_percent": 50,
-        "measure": "snap_share",
-        "level": 0.99,
-        "baseline": 0.988,
-        "growth": null,
-        "growth_bar": null,
-        "role": [
-          {
-            "metric": "snap_share",
-            "games": 3,
-            "level": 0.99,
-            "baseline": 0.988,
-            "baseline_games": 5,
-            "passed": "substantial"
-          },
-          {
-            "metric": "pass_attempts",
-            "games": 3,
-            "level": 34.0,
-            "baseline": 34.4,
-            "baseline_games": 5,
-            "passed": "substantial"
-          }
-        ]
+        "gap_places": 0,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 31.0,
+        "espn_state": "observed",
+        "ceiling": 50
       },
       "qualification": [
         {
-          "rule": "category",
-          "label": "breakout_v1 over W6–W8",
-          "value": "takeover",
-          "threshold": "takeover or sneaking",
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 8,
+          "threshold": 3,
           "passed": true
         },
         {
-          "rule": "streak",
-          "label": "Consecutive top-12 weeks",
-          "value": 3,
-          "threshold": 2,
-          "passed": true
-        }
-      ],
-      "also_qualifies": [
-        "pace-00-0000001"
-      ],
-      "sources": [
-        "nflverse_player_stats",
-        "nflverse_snap_counts",
-        "nflverse_schedule"
-      ],
-      "source_times": {}
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "target_week": null,
-      "edition": "2026w08",
-      "scoring_preset": "PPR",
-      "scoring_dependent": true,
-      "story_id": "streak-00-0000013",
-      "family": "streak_watch",
-      "variant": "breakout",
-      "horizon": "role_watch",
-      "nature": "fact",
-      "lead_rank": null,
-      "family_rank": 3,
-      "player_id": "gsis:00-0000013",
-      "display_name": "Ade Fontenot",
-      "position": "RB",
-      "team": "MIA",
-      "headline": "Ade Fontenot: 3 straight top-24 RB weeks",
-      "dek": "Takeover (breakout_v1): RB2 over W6–W8 after RB7 for the season, with his carry share at 46% in those games.",
-      "facts": [
-        {
-          "label": "Points rank, W6–W8 → season",
-          "value": "RB2 → RB7",
-          "basis": "observed"
-        },
-        {
-          "label": "Points a game, W6–W8",
-          "value": "10.6",
-          "basis": "observed"
-        },
-        {
-          "label": "Carry share, before → W6–W8",
-          "value": "46% → 46%",
-          "basis": "observed"
-        },
-        {
-          "label": "Points from touchdowns, W6–W8",
-          "value": "19%",
-          "basis": "observed"
-        }
-      ],
-      "counterpoint": null,
-      "caveat": "A descriptive reading from fixed thresholds over three weeks; not a prediction.",
-      "window": {
-        "label": "W6–W8",
-        "first_week": 6,
-        "last_week": 8,
-        "weeks": 3,
-        "baseline_first_week": 1,
-        "baseline_last_week": 5
-      },
-      "kickoff_utc": null,
-      "espn_rostered": null,
-      "ceiling_ranks": null,
-      "injury": null,
-      "opponent": null,
-      "home_away": null,
-      "chart": {
-        "type": "week_strip",
-        "weeks": [
-          {
-            "week": 1,
-            "status": "P",
-            "in_window": false,
-            "points": 8.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 1
-          },
-          {
-            "week": 2,
-            "status": "P",
-            "in_window": false,
-            "points": 8.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 1
-          },
-          {
-            "week": 3,
-            "status": "P",
-            "in_window": false,
-            "points": 14.6,
-            "td_points": 6.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 1
-          },
-          {
-            "week": 4,
-            "status": "P",
-            "in_window": false,
-            "points": 8.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 1
-          },
-          {
-            "week": 5,
-            "status": "B",
-            "in_window": false,
-            "points": null,
-            "td_points": null,
-            "opportunity": null,
-            "share": null,
-            "rank": null
-          },
-          {
-            "week": 6,
-            "status": "P",
-            "in_window": true,
-            "points": 14.6,
-            "td_points": 6.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 2
-          },
-          {
-            "week": 7,
-            "status": "P",
-            "in_window": true,
-            "points": 8.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 2
-          },
-          {
-            "week": 8,
-            "status": "P",
-            "in_window": true,
-            "points": 8.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 2
-          }
-        ],
-        "opportunity_label": "Carries + targets",
-        "share_label": "Carry share",
-        "band": 24
-      },
-      "evidence": {
-        "name": "Ade Fontenot",
-        "position": "RB",
-        "team": "MIA",
-        "window_label": "W6–W8",
-        "category": "takeover",
-        "reason": "takeover_role",
-        "window_rank": 2,
-        "season_rank": 7,
-        "band": 24,
-        "streak": 3,
-        "window_games": 3,
-        "window_points": 31.8,
-        "window_points_per_game": 10.6,
-        "window_td_points": 6.0,
-        "td_share": 19,
-        "td_led_percent": 50,
-        "measure": "carry_share",
-        "level": 0.462,
-        "baseline": 0.462,
-        "growth": null,
-        "growth_bar": null,
-        "role": [
-          {
-            "metric": "snap_share",
-            "games": 3,
-            "level": 0.54,
-            "baseline": 0.54,
-            "baseline_games": 4,
-            "passed": null
-          },
-          {
-            "metric": "carry_share",
-            "games": 3,
-            "level": 0.462,
-            "baseline": 0.462,
-            "baseline_games": 4,
-            "passed": "substantial"
-          }
-        ]
-      },
-      "qualification": [
-        {
-          "rule": "category",
-          "label": "breakout_v1 over W6–W8",
-          "value": "takeover",
-          "threshold": "takeover or sneaking",
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 QBs",
+          "value": 2,
+          "threshold": 12,
           "passed": true
         },
         {
-          "rule": "streak",
-          "label": "Consecutive top-24 weeks",
-          "value": 3,
-          "threshold": 2,
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 31.0,
+          "threshold": 50,
           "passed": true
         }
       ],
@@ -2305,9 +1498,12 @@
       "sources": [
         "nflverse_player_stats",
         "nflverse_snap_counts",
-        "nflverse_schedule"
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
       ],
-      "source_times": {}
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
     },
     {
       "schema_version": "1.0",
@@ -2318,426 +1514,238 @@
       "edition": "2026w08",
       "scoring_preset": "PPR",
       "scoring_dependent": true,
-      "story_id": "streak-00-0000011",
-      "family": "streak_watch",
-      "variant": "production_without_role",
-      "horizon": "role_watch",
-      "nature": "thesis",
-      "lead_rank": 3,
-      "family_rank": 1,
-      "player_id": "gsis:00-0000011",
-      "display_name": "Bram Kowalczyk",
-      "position": "TE",
-      "team": "LV",
-      "headline": "Bram Kowalczyk: 3 top-12 TE weeks in a row, but his target share is 7%",
-      "dek": "Production jumped; usage did not reach breakout_v1's role bar. Repeating it rests on efficiency rather than a bigger role.",
-      "facts": [
-        {
-          "label": "Points rank, W6–W8 → season",
-          "value": "TE1 → TE5",
-          "basis": "observed"
-        },
-        {
-          "label": "Points a game, W6–W8",
-          "value": "4.0",
-          "basis": "observed"
-        },
-        {
-          "label": "Target share, before → W6–W8",
-          "value": "15% → 7%",
-          "basis": "observed"
-        },
-        {
-          "label": "Points from touchdowns, W6–W8",
-          "value": "0%",
-          "basis": "observed"
-        }
-      ],
-      "counterpoint": "His role may still be growing: two or three games is a short read on usage.",
-      "caveat": "A descriptive reading from fixed thresholds over three weeks; not a prediction.",
-      "window": {
-        "label": "W6–W8",
-        "first_week": 6,
-        "last_week": 8,
-        "weeks": 3,
-        "baseline_first_week": 1,
-        "baseline_last_week": 5
-      },
-      "kickoff_utc": null,
-      "espn_rostered": null,
-      "ceiling_ranks": null,
-      "injury": null,
-      "opponent": null,
-      "home_away": null,
-      "chart": {
-        "type": "week_strip",
-        "weeks": [
-          {
-            "week": 1,
-            "status": "P",
-            "in_window": false,
-            "points": 6.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 2,
-            "status": "P",
-            "in_window": false,
-            "points": 6.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 3,
-            "status": "P",
-            "in_window": false,
-            "points": 6.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 4,
-            "status": "P",
-            "in_window": false,
-            "points": 12.0,
-            "td_points": 6.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 5,
-            "status": "P",
-            "in_window": false,
-            "points": 6.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 6,
-            "status": "P",
-            "in_window": true,
-            "points": 6.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 7,
-            "status": "P",
-            "in_window": true,
-            "points": 6.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 8,
-            "status": "P",
-            "in_window": true,
-            "points": 0.0,
-            "td_points": 0.0,
-            "opportunity": 0.0,
-            "share": 0.0,
-            "rank": 1
-          }
-        ],
-        "opportunity_label": "Targets",
-        "share_label": "Target share",
-        "band": 12
-      },
-      "evidence": {
-        "name": "Bram Kowalczyk",
-        "position": "TE",
-        "team": "LV",
-        "window_label": "W6–W8",
-        "category": "eyebrow",
-        "reason": "role_not_confirmed",
-        "window_rank": 1,
-        "season_rank": 5,
-        "band": 12,
-        "streak": 3,
-        "window_games": 3,
-        "window_points": 12.0,
-        "window_points_per_game": 4.0,
-        "window_td_points": 0.0,
-        "td_share": 0,
-        "td_led_percent": 50,
-        "measure": "target_share",
-        "level": 0.074,
-        "baseline": 0.147,
-        "growth": null,
-        "growth_bar": null,
-        "role": [
-          {
-            "metric": "target_share",
-            "games": 2,
-            "level": 0.074,
-            "baseline": 0.147,
-            "baseline_games": 5,
-            "passed": null
-          },
-          {
-            "metric": "snap_share",
-            "games": 2,
-            "level": 0.635,
-            "baseline": 0.688,
-            "baseline_games": 5,
-            "passed": null
-          }
-        ]
-      },
-      "qualification": [
-        {
-          "rule": "category",
-          "label": "breakout_v1 over W6–W8",
-          "value": "eyebrow",
-          "threshold": "eyebrow",
-          "passed": true
-        },
-        {
-          "rule": "role_not_confirmed",
-          "label": "Strong weeks without a confirmed role",
-          "value": 3,
-          "threshold": 2,
-          "passed": true
-        }
-      ],
-      "also_qualifies": [
-        "pace-00-0000011"
-      ],
-      "sources": [
-        "nflverse_player_stats",
-        "nflverse_snap_counts",
-        "nflverse_schedule"
-      ],
-      "source_times": {}
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "target_week": null,
-      "edition": "2026w08",
-      "scoring_preset": "PPR",
-      "scoring_dependent": true,
-      "story_id": "streak-00-0000016",
-      "family": "streak_watch",
-      "variant": "production_without_role",
-      "horizon": "role_watch",
-      "nature": "thesis",
+      "story_id": "pace-00-0000016",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
       "lead_rank": null,
-      "family_rank": 2,
+      "family_rank": 6,
       "player_id": "gsis:00-0000016",
       "display_name": "Xavier Nkemdiche",
       "position": "TE",
       "team": "NO",
-      "headline": "Xavier Nkemdiche: 2 top-12 TE weeks in a row, but his target share is 15%",
-      "dek": "Production jumped; usage did not reach breakout_v1's role bar. Repeating it rests on efficiency rather than a bigger role.",
+      "headline": "Xavier Nkemdiche is TE2 in points a game and 40% rostered",
+      "dek": "6.9 points a game over 7 games ranks TE2 of 3 TEs with 3+ games, yet most ESPN leagues leave him unrostered.",
       "facts": [
         {
-          "label": "Points rank, W6–W8 → season",
-          "value": "TE1 → TE5",
+          "label": "Points a game",
+          "value": "6.9 (TE2)",
           "basis": "observed"
         },
         {
-          "label": "Points a game, W6–W8",
-          "value": "6.0",
+          "label": "Games played",
+          "value": "7 of 7",
           "basis": "observed"
         },
         {
-          "label": "Target share, before → W6–W8",
-          "value": "15% → 15%",
+          "label": "17-game pace (PPG × 17)",
+          "value": "116.6",
           "basis": "observed"
         },
         {
-          "label": "Points from touchdowns, W6–W8",
-          "value": "0%",
-          "basis": "observed"
+          "label": "Rostered on ESPN",
+          "value": "40%",
+          "basis": "market"
         }
       ],
-      "counterpoint": "His role may still be growing: two or three games is a short read on usage.",
-      "caveat": "A descriptive reading from fixed thresholds over three weeks; not a prediction.",
-      "window": {
-        "label": "W6–W8",
-        "first_week": 6,
-        "last_week": 8,
-        "weeks": 3,
-        "baseline_first_week": 1,
-        "baseline_last_week": 5
-      },
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
       "kickoff_utc": null,
-      "espn_rostered": null,
+      "espn_rostered": 40.2,
       "ceiling_ranks": null,
       "injury": null,
       "opponent": null,
       "home_away": null,
       "chart": {
-        "type": "week_strip",
-        "weeks": [
-          {
-            "week": 1,
-            "status": "P",
-            "in_window": false,
-            "points": 6.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 2,
-            "status": "P",
-            "in_window": false,
-            "points": 6.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 3,
-            "status": "P",
-            "in_window": false,
-            "points": 6.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 4,
-            "status": "P",
-            "in_window": false,
-            "points": 12.0,
-            "td_points": 6.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 5,
-            "status": "P",
-            "in_window": false,
-            "points": 6.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 6,
-            "status": "P",
-            "in_window": true,
-            "points": 6.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 7,
-            "status": "P",
-            "in_window": true,
-            "points": 6.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 8,
-            "status": "B",
-            "in_window": true,
-            "points": null,
-            "td_points": null,
-            "opportunity": null,
-            "share": null,
-            "rank": null
-          }
-        ],
-        "opportunity_label": "Targets",
-        "share_label": "Target share",
-        "band": 12
+        "type": "stat_line",
+        "games": 7,
+        "team_games": 7,
+        "points": 48.0,
+        "points_per_game": 6.86,
+        "pace_17": 116.6,
+        "ppg_rank": 2,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3
       },
       "evidence": {
         "name": "Xavier Nkemdiche",
         "position": "TE",
         "team": "NO",
-        "window_label": "W6–W8",
-        "category": "eyebrow",
-        "reason": "role_not_confirmed",
-        "window_rank": 1,
-        "season_rank": 5,
+        "games": 7,
+        "team_games": 7,
+        "points": 48.0,
+        "points_per_game": 6.86,
+        "pace": 116.6,
+        "pace_games": 17,
+        "ppg_rank": 2,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
         "band": 12,
-        "streak": 2,
-        "window_games": 2,
-        "window_points": 12.0,
-        "window_points_per_game": 6.0,
-        "window_td_points": 0.0,
-        "td_share": 0,
-        "td_led_percent": 50,
-        "measure": "target_share",
-        "level": 0.147,
-        "baseline": 0.147,
-        "growth": null,
-        "growth_bar": null,
-        "role": [
-          {
-            "metric": "target_share",
-            "games": 2,
-            "level": 0.147,
-            "baseline": 0.147,
-            "baseline_games": 5,
-            "passed": null
-          },
-          {
-            "metric": "snap_share",
-            "games": 2,
-            "level": 0.695,
-            "baseline": 0.688,
-            "baseline_games": 5,
-            "passed": null
-          }
-        ]
+        "gap_places": -1,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 40.2,
+        "espn_state": "observed",
+        "ceiling": 50
       },
       "qualification": [
         {
-          "rule": "category",
-          "label": "breakout_v1 over W6–W8",
-          "value": "eyebrow",
-          "threshold": "eyebrow",
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 7,
+          "threshold": 3,
           "passed": true
         },
         {
-          "rule": "role_not_confirmed",
-          "label": "Strong weeks without a confirmed role",
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 TEs",
           "value": 2,
-          "threshold": 2,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 40.2,
+          "threshold": 50,
           "passed": true
         }
       ],
-      "also_qualifies": [
-        "pace-00-0000016"
-      ],
+      "also_qualifies": [],
       "sources": [
         "nflverse_player_stats",
         "nflverse_snap_counts",
-        "nflverse_schedule"
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
       ],
-      "source_times": {}
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "PPR",
+      "scoring_dependent": true,
+      "story_id": "pace-00-0000011",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
+      "lead_rank": null,
+      "family_rank": 8,
+      "player_id": "gsis:00-0000011",
+      "display_name": "Bram Kowalczyk",
+      "position": "TE",
+      "team": "LV",
+      "headline": "Bram Kowalczyk is TE3 in points a game and 25% rostered",
+      "dek": "6.0 points a game over 8 games ranks TE3 of 3 TEs with 3+ games, yet most ESPN leagues leave him unrostered.",
+      "facts": [
+        {
+          "label": "Points a game",
+          "value": "6.0 (TE3)",
+          "basis": "observed"
+        },
+        {
+          "label": "Games played",
+          "value": "8 of 8",
+          "basis": "observed"
+        },
+        {
+          "label": "17-game pace (PPG × 17)",
+          "value": "102.0",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "25%",
+          "basis": "market"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
+      "kickoff_utc": null,
+      "espn_rostered": 25.0,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "stat_line",
+        "games": 8,
+        "team_games": 8,
+        "points": 48.0,
+        "points_per_game": 6.0,
+        "pace_17": 102.0,
+        "ppg_rank": 3,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3
+      },
+      "evidence": {
+        "name": "Bram Kowalczyk",
+        "position": "TE",
+        "team": "LV",
+        "games": 8,
+        "team_games": 8,
+        "points": 48.0,
+        "points_per_game": 6.0,
+        "pace": 102.0,
+        "pace_games": 17,
+        "ppg_rank": 3,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
+        "band": 12,
+        "gap_places": -2,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 25.0,
+        "espn_state": "observed",
+        "ceiling": 50
+      },
+      "qualification": [
+        {
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 8,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 TEs",
+          "value": 3,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 25.0,
+          "threshold": 50,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
     },
     {
       "schema_version": "1.0",
@@ -3346,8 +2354,7 @@
         }
       ],
       "also_qualifies": [
-        "pace-00-0000008",
-        "streak-00-0000008"
+        "pace-00-0000008"
       ],
       "sources": [
         "weekly_startsit_v1",
@@ -3549,8 +2556,7 @@
       ],
       "also_qualifies": [
         "pace-00-0000002",
-        "role-buf-backfield",
-        "streak-00-0000002"
+        "role-buf-backfield"
       ],
       "sources": [
         "weekly_startsit_v1",
@@ -3579,7 +2585,7 @@
       "variant": "ceiling",
       "horizon": "this_week",
       "nature": "thesis",
-      "lead_rank": 6,
+      "lead_rank": 5,
       "family_rank": 2,
       "player_id": "gsis:00-0000015",
       "display_name": "Hollis Amadi",
@@ -3765,414 +2771,104 @@
       "edition": "2026w08",
       "scoring_preset": "STD",
       "scoring_dependent": true,
-      "story_id": "streak-00-0000001",
-      "family": "streak_watch",
-      "variant": "breakout",
-      "horizon": "role_watch",
+      "story_id": "pace-00-0000001",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
       "nature": "fact",
-      "lead_rank": 5,
-      "family_rank": 2,
+      "lead_rank": 3,
+      "family_rank": 3,
       "player_id": "gsis:00-0000001",
       "display_name": "Marcus Vandelay",
       "position": "QB",
       "team": "ATL",
-      "headline": "Marcus Vandelay: 3 straight top-12 QB weeks",
-      "dek": "Takeover (breakout_v1): QB1 over W6–W8 after QB6 for the season, with his snap share at 99% in those games.",
+      "headline": "Marcus Vandelay is QB2 in points a game and 31% rostered",
+      "dek": "16.9 points a game over 8 games ranks QB2 of 3 QBs with 3+ games, yet most ESPN leagues leave him unrostered.",
       "facts": [
         {
-          "label": "Points rank, W6–W8 → season",
-          "value": "QB1 → QB6",
+          "label": "Points a game",
+          "value": "16.9 (QB2)",
           "basis": "observed"
         },
         {
-          "label": "Points a game, W6–W8",
-          "value": "17.9",
+          "label": "Games played",
+          "value": "8 of 8",
           "basis": "observed"
         },
         {
-          "label": "Snap share, before → W6–W8",
-          "value": "99% → 99%",
+          "label": "17-game pace (PPG × 17)",
+          "value": "286.6",
           "basis": "observed"
         },
         {
-          "label": "Points from touchdowns, W6–W8",
-          "value": "37%",
-          "basis": "observed"
+          "label": "Rostered on ESPN",
+          "value": "31%",
+          "basis": "market"
         }
       ],
       "counterpoint": null,
-      "caveat": "A descriptive reading from fixed thresholds over three weeks; not a prediction.",
-      "window": {
-        "label": "W6–W8",
-        "first_week": 6,
-        "last_week": 8,
-        "weeks": 3,
-        "baseline_first_week": 1,
-        "baseline_last_week": 5
-      },
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
       "kickoff_utc": null,
-      "espn_rostered": null,
+      "espn_rostered": 31.0,
       "ceiling_ranks": null,
       "injury": null,
       "opponent": null,
       "home_away": null,
       "chart": {
-        "type": "week_strip",
-        "weeks": [
-          {
-            "week": 1,
-            "status": "P",
-            "in_window": false,
-            "points": 13.3,
-            "td_points": 4.0,
-            "opportunity": 0.0,
-            "share": 0.99,
-            "rank": 2
-          },
-          {
-            "week": 2,
-            "status": "P",
-            "in_window": false,
-            "points": 15.86,
-            "td_points": 4.0,
-            "opportunity": 0.0,
-            "share": 0.98,
-            "rank": 2
-          },
-          {
-            "week": 3,
-            "status": "P",
-            "in_window": false,
-            "points": 18.7,
-            "td_points": 8.0,
-            "opportunity": 0.0,
-            "share": 1.0,
-            "rank": 2
-          },
-          {
-            "week": 4,
-            "status": "P",
-            "in_window": false,
-            "points": 19.3,
-            "td_points": 8.0,
-            "opportunity": 0.0,
-            "share": 0.99,
-            "rank": 2
-          },
-          {
-            "week": 5,
-            "status": "P",
-            "in_window": false,
-            "points": 13.86,
-            "td_points": 4.0,
-            "opportunity": 0.0,
-            "share": 0.98,
-            "rank": 2
-          },
-          {
-            "week": 6,
-            "status": "P",
-            "in_window": true,
-            "points": 18.7,
-            "td_points": 8.0,
-            "opportunity": 0.0,
-            "share": 1.0,
-            "rank": 1
-          },
-          {
-            "week": 7,
-            "status": "P",
-            "in_window": true,
-            "points": 15.3,
-            "td_points": 4.0,
-            "opportunity": 0.0,
-            "share": 0.99,
-            "rank": 2
-          },
-          {
-            "week": 8,
-            "status": "P",
-            "in_window": true,
-            "points": 19.86,
-            "td_points": 8.0,
-            "opportunity": 0.0,
-            "share": 0.98,
-            "rank": 2
-          }
-        ],
-        "opportunity_label": "Pass attempts",
-        "share_label": "Snap share",
-        "band": 12
+        "type": "stat_line",
+        "games": 8,
+        "team_games": 8,
+        "points": 134.88,
+        "points_per_game": 16.86,
+        "pace_17": 286.6,
+        "ppg_rank": 2,
+        "total_rank": 2,
+        "cohort_size": 3,
+        "cohort_min_games": 3
       },
       "evidence": {
         "name": "Marcus Vandelay",
         "position": "QB",
         "team": "ATL",
-        "window_label": "W6–W8",
-        "category": "takeover",
-        "reason": "takeover_role",
-        "window_rank": 1,
-        "season_rank": 6,
+        "games": 8,
+        "team_games": 8,
+        "points": 134.88,
+        "points_per_game": 16.86,
+        "pace": 286.6,
+        "pace_games": 17,
+        "ppg_rank": 2,
+        "total_rank": 2,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
         "band": 12,
-        "streak": 3,
-        "window_games": 3,
-        "window_points": 53.86,
-        "window_points_per_game": 17.95,
-        "window_td_points": 20.0,
-        "td_share": 37,
-        "td_led_percent": 50,
-        "measure": "snap_share",
-        "level": 0.99,
-        "baseline": 0.988,
-        "growth": null,
-        "growth_bar": null,
-        "role": [
-          {
-            "metric": "snap_share",
-            "games": 3,
-            "level": 0.99,
-            "baseline": 0.988,
-            "baseline_games": 5,
-            "passed": "substantial"
-          },
-          {
-            "metric": "pass_attempts",
-            "games": 3,
-            "level": 34.0,
-            "baseline": 34.4,
-            "baseline_games": 5,
-            "passed": "substantial"
-          }
-        ]
+        "gap_places": 0,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 31.0,
+        "espn_state": "observed",
+        "ceiling": 50
       },
       "qualification": [
         {
-          "rule": "category",
-          "label": "breakout_v1 over W6–W8",
-          "value": "takeover",
-          "threshold": "takeover or sneaking",
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 8,
+          "threshold": 3,
           "passed": true
         },
         {
-          "rule": "streak",
-          "label": "Consecutive top-12 weeks",
-          "value": 3,
-          "threshold": 2,
-          "passed": true
-        }
-      ],
-      "also_qualifies": [
-        "pace-00-0000001"
-      ],
-      "sources": [
-        "nflverse_player_stats",
-        "nflverse_snap_counts",
-        "nflverse_schedule"
-      ],
-      "source_times": {}
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "target_week": null,
-      "edition": "2026w08",
-      "scoring_preset": "STD",
-      "scoring_dependent": true,
-      "story_id": "streak-00-0000013",
-      "family": "streak_watch",
-      "variant": "breakout",
-      "horizon": "role_watch",
-      "nature": "fact",
-      "lead_rank": null,
-      "family_rank": 3,
-      "player_id": "gsis:00-0000013",
-      "display_name": "Ade Fontenot",
-      "position": "RB",
-      "team": "MIA",
-      "headline": "Ade Fontenot: 3 straight top-24 RB weeks",
-      "dek": "Takeover (breakout_v1): RB2 over W6–W8 after RB7 for the season, with his carry share at 46% in those games.",
-      "facts": [
-        {
-          "label": "Points rank, W6–W8 → season",
-          "value": "RB2 → RB7",
-          "basis": "observed"
-        },
-        {
-          "label": "Points a game, W6–W8",
-          "value": "8.6",
-          "basis": "observed"
-        },
-        {
-          "label": "Carry share, before → W6–W8",
-          "value": "46% → 46%",
-          "basis": "observed"
-        },
-        {
-          "label": "Points from touchdowns, W6–W8",
-          "value": "23%",
-          "basis": "observed"
-        }
-      ],
-      "counterpoint": null,
-      "caveat": "A descriptive reading from fixed thresholds over three weeks; not a prediction.",
-      "window": {
-        "label": "W6–W8",
-        "first_week": 6,
-        "last_week": 8,
-        "weeks": 3,
-        "baseline_first_week": 1,
-        "baseline_last_week": 5
-      },
-      "kickoff_utc": null,
-      "espn_rostered": null,
-      "ceiling_ranks": null,
-      "injury": null,
-      "opponent": null,
-      "home_away": null,
-      "chart": {
-        "type": "week_strip",
-        "weeks": [
-          {
-            "week": 1,
-            "status": "P",
-            "in_window": false,
-            "points": 6.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 1
-          },
-          {
-            "week": 2,
-            "status": "P",
-            "in_window": false,
-            "points": 6.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 1
-          },
-          {
-            "week": 3,
-            "status": "P",
-            "in_window": false,
-            "points": 12.6,
-            "td_points": 6.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 1
-          },
-          {
-            "week": 4,
-            "status": "P",
-            "in_window": false,
-            "points": 6.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 1
-          },
-          {
-            "week": 5,
-            "status": "B",
-            "in_window": false,
-            "points": null,
-            "td_points": null,
-            "opportunity": null,
-            "share": null,
-            "rank": null
-          },
-          {
-            "week": 6,
-            "status": "P",
-            "in_window": true,
-            "points": 12.6,
-            "td_points": 6.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 2
-          },
-          {
-            "week": 7,
-            "status": "P",
-            "in_window": true,
-            "points": 6.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 2
-          },
-          {
-            "week": 8,
-            "status": "P",
-            "in_window": true,
-            "points": 6.6,
-            "td_points": 0.0,
-            "opportunity": 14.0,
-            "share": 0.462,
-            "rank": 2
-          }
-        ],
-        "opportunity_label": "Carries + targets",
-        "share_label": "Carry share",
-        "band": 24
-      },
-      "evidence": {
-        "name": "Ade Fontenot",
-        "position": "RB",
-        "team": "MIA",
-        "window_label": "W6–W8",
-        "category": "takeover",
-        "reason": "takeover_role",
-        "window_rank": 2,
-        "season_rank": 7,
-        "band": 24,
-        "streak": 3,
-        "window_games": 3,
-        "window_points": 25.8,
-        "window_points_per_game": 8.6,
-        "window_td_points": 6.0,
-        "td_share": 23,
-        "td_led_percent": 50,
-        "measure": "carry_share",
-        "level": 0.462,
-        "baseline": 0.462,
-        "growth": null,
-        "growth_bar": null,
-        "role": [
-          {
-            "metric": "snap_share",
-            "games": 3,
-            "level": 0.54,
-            "baseline": 0.54,
-            "baseline_games": 4,
-            "passed": null
-          },
-          {
-            "metric": "carry_share",
-            "games": 3,
-            "level": 0.462,
-            "baseline": 0.462,
-            "baseline_games": 4,
-            "passed": "substantial"
-          }
-        ]
-      },
-      "qualification": [
-        {
-          "rule": "category",
-          "label": "breakout_v1 over W6–W8",
-          "value": "takeover",
-          "threshold": "takeover or sneaking",
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 QBs",
+          "value": 2,
+          "threshold": 12,
           "passed": true
         },
         {
-          "rule": "streak",
-          "label": "Consecutive top-24 weeks",
-          "value": 3,
-          "threshold": 2,
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 31.0,
+          "threshold": 50,
           "passed": true
         }
       ],
@@ -4180,9 +2876,12 @@
       "sources": [
         "nflverse_player_stats",
         "nflverse_snap_counts",
-        "nflverse_schedule"
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
       ],
-      "source_times": {}
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
     },
     {
       "schema_version": "1.0",
@@ -4193,426 +2892,238 @@
       "edition": "2026w08",
       "scoring_preset": "STD",
       "scoring_dependent": true,
-      "story_id": "streak-00-0000011",
-      "family": "streak_watch",
-      "variant": "production_without_role",
-      "horizon": "role_watch",
-      "nature": "thesis",
-      "lead_rank": 3,
-      "family_rank": 1,
-      "player_id": "gsis:00-0000011",
-      "display_name": "Bram Kowalczyk",
-      "position": "TE",
-      "team": "LV",
-      "headline": "Bram Kowalczyk: 3 top-12 TE weeks in a row, but his target share is 7%",
-      "dek": "Production jumped; usage did not reach breakout_v1's role bar. Repeating it rests on efficiency rather than a bigger role.",
-      "facts": [
-        {
-          "label": "Points rank, W6–W8 → season",
-          "value": "TE1 → TE5",
-          "basis": "observed"
-        },
-        {
-          "label": "Points a game, W6–W8",
-          "value": "2.0",
-          "basis": "observed"
-        },
-        {
-          "label": "Target share, before → W6–W8",
-          "value": "15% → 7%",
-          "basis": "observed"
-        },
-        {
-          "label": "Points from touchdowns, W6–W8",
-          "value": "0%",
-          "basis": "observed"
-        }
-      ],
-      "counterpoint": "His role may still be growing: two or three games is a short read on usage.",
-      "caveat": "A descriptive reading from fixed thresholds over three weeks; not a prediction.",
-      "window": {
-        "label": "W6–W8",
-        "first_week": 6,
-        "last_week": 8,
-        "weeks": 3,
-        "baseline_first_week": 1,
-        "baseline_last_week": 5
-      },
-      "kickoff_utc": null,
-      "espn_rostered": null,
-      "ceiling_ranks": null,
-      "injury": null,
-      "opponent": null,
-      "home_away": null,
-      "chart": {
-        "type": "week_strip",
-        "weeks": [
-          {
-            "week": 1,
-            "status": "P",
-            "in_window": false,
-            "points": 3.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 2,
-            "status": "P",
-            "in_window": false,
-            "points": 3.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 3,
-            "status": "P",
-            "in_window": false,
-            "points": 3.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 4,
-            "status": "P",
-            "in_window": false,
-            "points": 9.0,
-            "td_points": 6.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 5,
-            "status": "P",
-            "in_window": false,
-            "points": 3.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 6,
-            "status": "P",
-            "in_window": true,
-            "points": 3.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 7,
-            "status": "P",
-            "in_window": true,
-            "points": 3.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 8,
-            "status": "P",
-            "in_window": true,
-            "points": 0.0,
-            "td_points": 0.0,
-            "opportunity": 0.0,
-            "share": 0.0,
-            "rank": 1
-          }
-        ],
-        "opportunity_label": "Targets",
-        "share_label": "Target share",
-        "band": 12
-      },
-      "evidence": {
-        "name": "Bram Kowalczyk",
-        "position": "TE",
-        "team": "LV",
-        "window_label": "W6–W8",
-        "category": "eyebrow",
-        "reason": "role_not_confirmed",
-        "window_rank": 1,
-        "season_rank": 5,
-        "band": 12,
-        "streak": 3,
-        "window_games": 3,
-        "window_points": 6.0,
-        "window_points_per_game": 2.0,
-        "window_td_points": 0.0,
-        "td_share": 0,
-        "td_led_percent": 50,
-        "measure": "target_share",
-        "level": 0.074,
-        "baseline": 0.147,
-        "growth": null,
-        "growth_bar": null,
-        "role": [
-          {
-            "metric": "target_share",
-            "games": 2,
-            "level": 0.074,
-            "baseline": 0.147,
-            "baseline_games": 5,
-            "passed": null
-          },
-          {
-            "metric": "snap_share",
-            "games": 2,
-            "level": 0.635,
-            "baseline": 0.688,
-            "baseline_games": 5,
-            "passed": null
-          }
-        ]
-      },
-      "qualification": [
-        {
-          "rule": "category",
-          "label": "breakout_v1 over W6–W8",
-          "value": "eyebrow",
-          "threshold": "eyebrow",
-          "passed": true
-        },
-        {
-          "rule": "role_not_confirmed",
-          "label": "Strong weeks without a confirmed role",
-          "value": 3,
-          "threshold": 2,
-          "passed": true
-        }
-      ],
-      "also_qualifies": [
-        "pace-00-0000011"
-      ],
-      "sources": [
-        "nflverse_player_stats",
-        "nflverse_snap_counts",
-        "nflverse_schedule"
-      ],
-      "source_times": {}
-    },
-    {
-      "schema_version": "1.0",
-      "build_id": "fixture-20260818T120000Z",
-      "season": 2026,
-      "through_week": 8,
-      "target_week": null,
-      "edition": "2026w08",
-      "scoring_preset": "STD",
-      "scoring_dependent": true,
-      "story_id": "streak-00-0000016",
-      "family": "streak_watch",
-      "variant": "production_without_role",
-      "horizon": "role_watch",
-      "nature": "thesis",
+      "story_id": "pace-00-0000016",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
       "lead_rank": null,
-      "family_rank": 2,
+      "family_rank": 6,
       "player_id": "gsis:00-0000016",
       "display_name": "Xavier Nkemdiche",
       "position": "TE",
       "team": "NO",
-      "headline": "Xavier Nkemdiche: 2 top-12 TE weeks in a row, but his target share is 15%",
-      "dek": "Production jumped; usage did not reach breakout_v1's role bar. Repeating it rests on efficiency rather than a bigger role.",
+      "headline": "Xavier Nkemdiche is TE2 in points a game and 40% rostered",
+      "dek": "3.9 points a game over 7 games ranks TE2 of 3 TEs with 3+ games, yet most ESPN leagues leave him unrostered.",
       "facts": [
         {
-          "label": "Points rank, W6–W8 → season",
-          "value": "TE1 → TE5",
+          "label": "Points a game",
+          "value": "3.9 (TE2)",
           "basis": "observed"
         },
         {
-          "label": "Points a game, W6–W8",
-          "value": "3.0",
+          "label": "Games played",
+          "value": "7 of 7",
           "basis": "observed"
         },
         {
-          "label": "Target share, before → W6–W8",
-          "value": "15% → 15%",
+          "label": "17-game pace (PPG × 17)",
+          "value": "65.6",
           "basis": "observed"
         },
         {
-          "label": "Points from touchdowns, W6–W8",
-          "value": "0%",
-          "basis": "observed"
+          "label": "Rostered on ESPN",
+          "value": "40%",
+          "basis": "market"
         }
       ],
-      "counterpoint": "His role may still be growing: two or three games is a short read on usage.",
-      "caveat": "A descriptive reading from fixed thresholds over three weeks; not a prediction.",
-      "window": {
-        "label": "W6–W8",
-        "first_week": 6,
-        "last_week": 8,
-        "weeks": 3,
-        "baseline_first_week": 1,
-        "baseline_last_week": 5
-      },
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
       "kickoff_utc": null,
-      "espn_rostered": null,
+      "espn_rostered": 40.2,
       "ceiling_ranks": null,
       "injury": null,
       "opponent": null,
       "home_away": null,
       "chart": {
-        "type": "week_strip",
-        "weeks": [
-          {
-            "week": 1,
-            "status": "P",
-            "in_window": false,
-            "points": 3.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 2,
-            "status": "P",
-            "in_window": false,
-            "points": 3.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 3,
-            "status": "P",
-            "in_window": false,
-            "points": 3.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 4,
-            "status": "P",
-            "in_window": false,
-            "points": 9.0,
-            "td_points": 6.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 5,
-            "status": "P",
-            "in_window": false,
-            "points": 3.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 6,
-            "status": "P",
-            "in_window": true,
-            "points": 3.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 7,
-            "status": "P",
-            "in_window": true,
-            "points": 3.0,
-            "td_points": 0.0,
-            "opportunity": 5.0,
-            "share": 0.147,
-            "rank": 1
-          },
-          {
-            "week": 8,
-            "status": "B",
-            "in_window": true,
-            "points": null,
-            "td_points": null,
-            "opportunity": null,
-            "share": null,
-            "rank": null
-          }
-        ],
-        "opportunity_label": "Targets",
-        "share_label": "Target share",
-        "band": 12
+        "type": "stat_line",
+        "games": 7,
+        "team_games": 7,
+        "points": 27.0,
+        "points_per_game": 3.86,
+        "pace_17": 65.6,
+        "ppg_rank": 2,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3
       },
       "evidence": {
         "name": "Xavier Nkemdiche",
         "position": "TE",
         "team": "NO",
-        "window_label": "W6–W8",
-        "category": "eyebrow",
-        "reason": "role_not_confirmed",
-        "window_rank": 1,
-        "season_rank": 5,
+        "games": 7,
+        "team_games": 7,
+        "points": 27.0,
+        "points_per_game": 3.86,
+        "pace": 65.6,
+        "pace_games": 17,
+        "ppg_rank": 2,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
         "band": 12,
-        "streak": 2,
-        "window_games": 2,
-        "window_points": 6.0,
-        "window_points_per_game": 3.0,
-        "window_td_points": 0.0,
-        "td_share": 0,
-        "td_led_percent": 50,
-        "measure": "target_share",
-        "level": 0.147,
-        "baseline": 0.147,
-        "growth": null,
-        "growth_bar": null,
-        "role": [
-          {
-            "metric": "target_share",
-            "games": 2,
-            "level": 0.147,
-            "baseline": 0.147,
-            "baseline_games": 5,
-            "passed": null
-          },
-          {
-            "metric": "snap_share",
-            "games": 2,
-            "level": 0.695,
-            "baseline": 0.688,
-            "baseline_games": 5,
-            "passed": null
-          }
-        ]
+        "gap_places": -1,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 40.2,
+        "espn_state": "observed",
+        "ceiling": 50
       },
       "qualification": [
         {
-          "rule": "category",
-          "label": "breakout_v1 over W6–W8",
-          "value": "eyebrow",
-          "threshold": "eyebrow",
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 7,
+          "threshold": 3,
           "passed": true
         },
         {
-          "rule": "role_not_confirmed",
-          "label": "Strong weeks without a confirmed role",
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 TEs",
           "value": 2,
-          "threshold": 2,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 40.2,
+          "threshold": 50,
           "passed": true
         }
       ],
-      "also_qualifies": [
-        "pace-00-0000016"
-      ],
+      "also_qualifies": [],
       "sources": [
         "nflverse_player_stats",
         "nflverse_snap_counts",
-        "nflverse_schedule"
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
       ],
-      "source_times": {}
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "season": 2026,
+      "through_week": 8,
+      "target_week": null,
+      "edition": "2026w08",
+      "scoring_preset": "STD",
+      "scoring_dependent": true,
+      "story_id": "pace-00-0000011",
+      "family": "pace_perspective",
+      "variant": "overlooked",
+      "horizon": "season_view",
+      "nature": "fact",
+      "lead_rank": null,
+      "family_rank": 8,
+      "player_id": "gsis:00-0000011",
+      "display_name": "Bram Kowalczyk",
+      "position": "TE",
+      "team": "LV",
+      "headline": "Bram Kowalczyk is TE3 in points a game and 25% rostered",
+      "dek": "3.4 points a game over 8 games ranks TE3 of 3 TEs with 3+ games, yet most ESPN leagues leave him unrostered.",
+      "facts": [
+        {
+          "label": "Points a game",
+          "value": "3.4 (TE3)",
+          "basis": "observed"
+        },
+        {
+          "label": "Games played",
+          "value": "8 of 8",
+          "basis": "observed"
+        },
+        {
+          "label": "17-game pace (PPG × 17)",
+          "value": "57.4",
+          "basis": "observed"
+        },
+        {
+          "label": "Rostered on ESPN",
+          "value": "25%",
+          "basis": "market"
+        }
+      ],
+      "counterpoint": null,
+      "caveat": "Pace is arithmetic (points a game × 17), not a projection; it assumes games he may not play.",
+      "window": null,
+      "kickoff_utc": null,
+      "espn_rostered": 25.0,
+      "ceiling_ranks": null,
+      "injury": null,
+      "opponent": null,
+      "home_away": null,
+      "chart": {
+        "type": "stat_line",
+        "games": 8,
+        "team_games": 8,
+        "points": 27.0,
+        "points_per_game": 3.38,
+        "pace_17": 57.4,
+        "ppg_rank": 3,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3
+      },
+      "evidence": {
+        "name": "Bram Kowalczyk",
+        "position": "TE",
+        "team": "LV",
+        "games": 8,
+        "team_games": 8,
+        "points": 27.0,
+        "points_per_game": 3.38,
+        "pace": 57.4,
+        "pace_games": 17,
+        "ppg_rank": 3,
+        "total_rank": 1,
+        "cohort_size": 3,
+        "cohort_min_games": 3,
+        "band": 12,
+        "gap_places": -2,
+        "missed_games": 0,
+        "required_gap_places": 8,
+        "espn_rostered": 25.0,
+        "espn_state": "observed",
+        "ceiling": 50
+      },
+      "qualification": [
+        {
+          "rule": "games",
+          "label": "Games played, at least",
+          "value": 8,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "rule": "ppg_rank",
+          "label": "Points-a-game rank among 3 TEs",
+          "value": 3,
+          "threshold": 12,
+          "passed": true
+        },
+        {
+          "rule": "espn_below",
+          "label": "ESPN rostered %, below",
+          "value": 25.0,
+          "threshold": 50,
+          "passed": true
+        }
+      ],
+      "also_qualifies": [],
+      "sources": [
+        "nflverse_player_stats",
+        "nflverse_snap_counts",
+        "nflverse_schedule",
+        "espn_fantasy_ownership"
+      ],
+      "source_times": {
+        "espn_observed_at_utc": "2026-08-18T11:00:00Z"
+      }
     },
     {
       "schema_version": "1.0",
@@ -5221,8 +3732,7 @@
         }
       ],
       "also_qualifies": [
-        "pace-00-0000008",
-        "streak-00-0000008"
+        "pace-00-0000008"
       ],
       "sources": [
         "weekly_startsit_v1",
@@ -5424,8 +3934,7 @@
       ],
       "also_qualifies": [
         "pace-00-0000002",
-        "role-buf-backfield",
-        "streak-00-0000002"
+        "role-buf-backfield"
       ],
       "sources": [
         "weekly_startsit_v1",
@@ -5454,7 +3963,7 @@
       "variant": "ceiling",
       "horizon": "this_week",
       "nature": "thesis",
-      "lead_rank": 6,
+      "lead_rank": 5,
       "family_rank": 2,
       "player_id": "gsis:00-0000015",
       "display_name": "Hollis Amadi",

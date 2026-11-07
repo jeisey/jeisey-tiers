@@ -132,7 +132,7 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "weekly_projection": "1.2",
     "weekly_game_context": "1.1",
     "season_actuals_record": "1.0",
-    "player_skill_metric": "1.0",
+    "player_skill_metric": "1.1",
     "skill_tree_definition": "1.0",
     "espn_ownership_record": "1.0",
     "espn_ownership_series": "1.0",

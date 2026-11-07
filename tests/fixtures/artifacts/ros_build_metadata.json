@@ -828,98 +828,68 @@
     "categories": {
       "HALF": {
         "1": {
-          "eyebrow": 18,
-          "insufficient": 11,
-          "none": 6
+          "none": 24,
+          "insufficient": 11
         },
         "2": {
-          "sneaking": 15,
-          "insufficient": 7,
-          "none": 6,
-          "eyebrow": 7
+          "none": 28,
+          "insufficient": 7
         },
         "3": {
-          "takeover": 13,
-          "insufficient": 7,
-          "none": 6,
-          "sneaking": 7,
-          "eyebrow": 2
+          "none": 28,
+          "insufficient": 7
         },
         "4": {
-          "takeover": 20,
-          "insufficient": 3,
-          "none": 10,
-          "eyebrow": 2
+          "none": 32,
+          "insufficient": 3
         },
         "6": {
-          "takeover": 20,
-          "insufficient": 3,
-          "none": 10,
-          "eyebrow": 2
+          "none": 32,
+          "insufficient": 3
         }
       },
       "PPR": {
         "1": {
-          "eyebrow": 18,
-          "insufficient": 11,
-          "none": 6
+          "none": 24,
+          "insufficient": 11
         },
         "2": {
-          "sneaking": 15,
-          "insufficient": 7,
-          "none": 6,
-          "eyebrow": 7
+          "none": 28,
+          "insufficient": 7
         },
         "3": {
-          "takeover": 13,
-          "insufficient": 7,
-          "none": 6,
-          "sneaking": 7,
-          "eyebrow": 2
+          "none": 28,
+          "insufficient": 7
         },
         "4": {
-          "takeover": 20,
-          "insufficient": 3,
-          "none": 10,
-          "eyebrow": 2
+          "none": 32,
+          "insufficient": 3
         },
         "6": {
-          "takeover": 20,
-          "insufficient": 3,
-          "none": 10,
-          "eyebrow": 2
+          "none": 32,
+          "insufficient": 3
         }
       },
       "STD": {
         "1": {
-          "eyebrow": 18,
-          "insufficient": 11,
-          "none": 6
+          "none": 24,
+          "insufficient": 11
         },
         "2": {
-          "sneaking": 15,
-          "insufficient": 7,
-          "none": 6,
-          "eyebrow": 7
+          "none": 28,
+          "insufficient": 7
         },
         "3": {
-          "takeover": 13,
-          "insufficient": 7,
-          "none": 6,
-          "sneaking": 7,
-          "eyebrow": 2
+          "none": 28,
+          "insufficient": 7
         },
         "4": {
-          "takeover": 20,
-          "insufficient": 3,
-          "none": 10,
-          "eyebrow": 2
+          "none": 32,
+          "insufficient": 3
         },
         "6": {
-          "takeover": 20,
-          "insufficient": 3,
-          "none": 10,
-          "eyebrow": 2
+          "none": 32,
+          "insufficient": 3
         }
       }
     }
@@ -1088,21 +1058,15 @@
         "suppressed": {}
       },
       "streak_watch": {
-        "status": "published",
-        "reason": null,
+        "status": "empty",
+        "reason": "no player met this family's rule in this build",
         "qualified": {
-          "HALF": 6,
-          "PPR": 6,
-          "STD": 6
+          "HALF": 0,
+          "PPR": 0,
+          "STD": 0
         },
-        "published": {
-          "HALF": 4,
-          "PPR": 4,
-          "STD": 4
-        },
-        "suppressed": {
-          "duplicate_player": 6
-        }
+        "published": {},
+        "suppressed": {}
       },
       "role_battle": {
         "status": "empty",
@@ -1118,16 +1082,20 @@
         }
       },
       "pace_perspective": {
-        "status": "empty",
-        "reason": "every qualifying player already leads a story in a higher-priority family",
+        "status": "published",
+        "reason": null,
         "qualified": {
           "HALF": 10,
           "PPR": 10,
           "STD": 10
         },
-        "published": {},
+        "published": {
+          "HALF": 3,
+          "PPR": 3,
+          "STD": 3
+        },
         "suppressed": {
-          "duplicate_player": 24,
+          "duplicate_player": 15,
           "variant_cap": 6
         }
       }
@@ -1164,16 +1132,16 @@
     },
     "counts": {
       "HALF": {
-        "stories": 9,
-        "lead": 6
+        "stories": 8,
+        "lead": 5
       },
       "PPR": {
-        "stories": 9,
-        "lead": 6
+        "stories": 8,
+        "lead": 5
       },
       "STD": {
-        "stories": 9,
-        "lead": 6
+        "stories": 8,
+        "lead": 5
       }
     },
     "definitions": {
@@ -1256,12 +1224,12 @@
     },
     "status": "published",
     "withheld_reason": null,
-    "records": 177,
+    "records": 105,
     "population": {
-      "QB": 9,
-      "RB": 11,
-      "WR": 28,
-      "TE": 9
+      "QB": 3,
+      "RB": 5,
+      "WR": 22,
+      "TE": 3
     },
     "coverage": {
       "weeks_checked": 8,

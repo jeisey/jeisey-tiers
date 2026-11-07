@@ -212,7 +212,9 @@ FAMILIES: tuple[Family, ...] = (
     # the card shard. Readings are scoring- and league-independent, so they are served once,
     # split by the card's player bucket; definitions are split by position, the one a card
     # needs.
-    Family("skill_tree", "player_skill_tree", "bucket"),
+    # ADR-117: the readings' `display_name` serves the dictionary, not the tree, which names
+    # its player from the card.
+    Family("skill_tree", "player_skill_tree", "bucket", exclude=("display_name",)),
     Family("skill_tree_definitions", "skill_tree_definitions", "position"),
     # ADR-117: one metric's whole positional cohort — every reading with a value, ranked or
     # not — fetched only when a reader opens that metric's comparison. A file per position and
@@ -332,9 +334,9 @@ CARD_SECTIONS: tuple[tuple[str, Partition], ...] = (
 )
 
 #: Artifacts whose rows name a player, in the order the dictionary takes a name from.
-#: ``season_actuals`` is last (ADR-117): it names every player with a regular-season
-#: appearance from the canonical registry, which is exactly the Skill Tree's population, so a
-#: cohort member no board publishes still has a verified name, and no board's name changes.
+#: ``player_skill_tree`` is last (ADR-117): each reading carries its player's name by
+#: ``season_actuals``' rule (boards, then the identity registry), so a Skill Tree cohort member
+#: no board publishes still has a name, and no board's name changes.
 _NAMED_ARTIFACTS = (
     "ros_tiers",
     "inseason_opportunity",
@@ -344,7 +346,7 @@ _NAMED_ARTIFACTS = (
     "arbitrage",
     "projections",
     "player_status",
-    "season_actuals",
+    "player_skill_tree",
 )
 
 #: Record fields that carry the build's identity rather than content. They are restored from

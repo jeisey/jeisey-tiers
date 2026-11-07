@@ -739,6 +739,7 @@ def build_skill_tree(
     metric_schema_version: str,
     definition_schema_version: str,
     ngs_published: bool = NGS_PUBLISHED,
+    names: Mapping[str, str] | None = None,
 ) -> SkillTreeResult:
     """Every appearing QB/RB/WR/TE's tree, plus a presence record for each board player.
 
@@ -746,6 +747,9 @@ def build_skill_tree(
     (snap counts bridged to ``gsis_id``); ``pbp`` is the raw play-by-play frame loaded once per
     build (None with ``pbp_error`` when it could not be read); ``nextgen`` maps a stat type to
     its normalized frame. ``positions`` is the board's position for each canonical id.
+    ``names`` (ADR-117) is the boards' and the identity registry's name for each id — the map
+    ``season_actuals`` names its population from — so every reading carries the name a
+    comparison prints for a player no board publishes.
     """
     checks: list[QualityCheck] = []
     through_week = int(through_week)
@@ -991,6 +995,16 @@ def build_skill_tree(
             },
         )
 
+    records = _named(
+        records,
+        _display_names(
+            weekly,
+            snap_counts,
+            season=season,
+            through_week=through_week,
+            names=names or {},
+        ),
+    )
     definitions = skill_tree_definitions(
         season=season,
         through_week=through_week,
@@ -1160,6 +1174,59 @@ def _publish_side(value: float | None, metric: Metric, side: str) -> float | int
     if float(value).is_integer():
         return int(value)
     return round(float(value), 3)
+
+
+def _display_names(
+    weekly: pl.DataFrame,
+    snap_counts: pl.DataFrame,
+    *,
+    season: int,
+    through_week: int,
+    names: Mapping[str, str],
+) -> dict[str, str]:
+    """``player_id -> display name`` by ``season_actuals``' rule (ADR-105, ADR-117).
+
+    The boards' and the registry's name first; then the name on his latest box-score row
+    through the cutoff, then on his latest snap row. The same order the season actuals use, so
+    the tree and the actuals name one player alike.
+    """
+    out: dict[str, str] = {}
+    for frame, id_column, name_column in (
+        (snap_counts, "gsis_id", "player_name"),
+        (weekly, "gsis_id", "display_name"),
+    ):
+        if frame.is_empty() or not {id_column, name_column, "season", "week"} <= set(frame.columns):
+            continue
+        rows = (
+            frame.filter((pl.col("season") == season) & (pl.col("week") <= through_week))
+            .filter(pl.col(id_column).is_not_null() & pl.col(name_column).is_not_null())
+            .sort("week")
+            .select(id_column, name_column)
+        )
+        for gsis, name in rows.iter_rows():
+            try:
+                player_id = make_player_id(IdNamespace.GSIS, str(gsis))
+            except ValueError:
+                continue
+            if str(name).strip():
+                out[player_id] = str(name).strip()  # the latest week wins; box score over snaps
+    for player_id, name in names.items():
+        if name:
+            out[player_id] = str(name)
+    return out
+
+
+def _named(records: list[dict[str, Any]], names: Mapping[str, str]) -> list[dict[str, Any]]:
+    """Each record with ``display_name`` after ``player_id`` (the id when nothing names him)."""
+    named: list[dict[str, Any]] = []
+    for record in records:
+        row: dict[str, Any] = {}
+        for key, value in record.items():
+            row[key] = value
+            if key == "player_id":
+                row["display_name"] = names.get(str(value)) or str(value)
+        named.append(row)
+    return named
 
 
 def _combine_record(

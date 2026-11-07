@@ -344,8 +344,13 @@ def skilltree_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Q
             ),
         )
 
-    # Agreement with the season actuals (games, position) and board coverage.
+    # Agreement with the season actuals (games, position, name) and board coverage.
     disagreements: list[str] = []
+    tree_names = {
+        str(record["player_id"]): str(record["display_name"])
+        for record in records
+        if record.get("display_name")
+    }
     actuals = envelopes.get("season_actuals")
     if actuals is not None:
         for row in actuals.get("records", ()):
@@ -360,6 +365,12 @@ def skilltree_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Q
             if str(row.get("position")) != positions[player]:
                 disagreements.append(
                     f"{player}: position {positions[player]} vs actuals {row.get('position')}",
+                )
+            # ADR-117: one rule names a player in both artifacts (1.1 readings carry a name).
+            name = tree_names.get(player)
+            if name is not None and row.get("display_name") and name != row.get("display_name"):
+                disagreements.append(
+                    f"{player}: name {name!r} vs actuals {row.get('display_name')!r}",
                 )
     usage = envelopes.get("player_usage")
     usage_mismatch: list[str] = []

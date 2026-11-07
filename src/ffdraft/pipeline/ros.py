@@ -1860,7 +1860,7 @@ def _skill_tree(
         except Exception:  # noqa: BLE001 - an optional source; reported as unavailable
             combine_testers = None
     try:
-        positions, _, include = season_actuals_inputs(
+        positions, names, include = season_actuals_inputs(
             records,
             snapshot_frame=snapshot_frame,
             catalog=_catalog(registry),
@@ -1885,6 +1885,7 @@ def _skill_tree(
             build_id=build_id,
             metric_schema_version=record_schema_version("player_skill_metric"),
             definition_schema_version=record_schema_version("skill_tree_definition"),
+            names=names,
         )
     except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
         reason = f"{type(exc).__name__}: {exc}"
