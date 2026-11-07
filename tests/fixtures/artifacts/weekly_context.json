@@ -7,7 +7,7 @@
   "record_count": 14,
   "records": [
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -108,11 +108,13 @@
         "team_points": 22.75,
         "is_home": 0.0,
         "rest_advantage": -7.0,
-        "indoors": 0.0
+        "indoors": 0.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -185,11 +187,13 @@
         "team_points": 25.0,
         "is_home": 1.0,
         "rest_advantage": 0.0,
-        "indoors": 0.0
+        "indoors": 0.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -262,11 +266,13 @@
         "team_points": 21.5,
         "is_home": 0.0,
         "rest_advantage": 0.0,
-        "indoors": 0.0
+        "indoors": 0.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -324,11 +330,13 @@
         "team_points": 27.25,
         "is_home": 1.0,
         "rest_advantage": 0.0,
-        "indoors": 1.0
+        "indoors": 1.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -386,11 +394,13 @@
         "team_points": 20.25,
         "is_home": 0.0,
         "rest_advantage": 0.0,
-        "indoors": 1.0
+        "indoors": 1.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -448,11 +458,13 @@
         "team_points": 20.75,
         "is_home": 1.0,
         "rest_advantage": -7.0,
-        "indoors": 0.0
+        "indoors": 0.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -510,11 +522,13 @@
         "team_points": 27.75,
         "is_home": 0.0,
         "rest_advantage": 7.0,
-        "indoors": 0.0
+        "indoors": 0.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -572,11 +586,13 @@
         "team_points": null,
         "is_home": 1.0,
         "rest_advantage": 0.0,
-        "indoors": 0.0
+        "indoors": 0.0,
+        "line_source": null,
+        "lines_observed_at_utc": null
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -634,11 +650,13 @@
         "team_points": null,
         "is_home": 0.0,
         "rest_advantage": 0.0,
-        "indoors": 0.0
+        "indoors": 0.0,
+        "line_source": null,
+        "lines_observed_at_utc": null
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -696,11 +714,13 @@
         "team_points": 18.25,
         "is_home": 1.0,
         "rest_advantage": 0.0,
-        "indoors": 0.0
+        "indoors": 0.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -758,11 +778,13 @@
         "team_points": 25.25,
         "is_home": 0.0,
         "rest_advantage": 0.0,
-        "indoors": 0.0
+        "indoors": 0.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -820,11 +842,13 @@
         "team_points": 20.5,
         "is_home": 1.0,
         "rest_advantage": 0.0,
-        "indoors": 0.0
+        "indoors": 0.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -882,11 +906,13 @@
         "team_points": 24.0,
         "is_home": 0.0,
         "rest_advantage": 0.0,
-        "indoors": 0.0
+        "indoors": 0.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       }
     },
     {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "build_id": "fixture-20260818T120000Z",
       "season": 2026,
       "through_week": 8,
@@ -944,7 +970,9 @@
         "team_points": 22.75,
         "is_home": 0.0,
         "rest_advantage": 7.0,
-        "indoors": 0.0
+        "indoors": 0.0,
+        "line_source": "schedule",
+        "lines_observed_at_utc": "2026-11-03T12:00:00Z"
       }
     }
   ]

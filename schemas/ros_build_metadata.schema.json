@@ -11,6 +11,15 @@
         "status": {"enum": ["published", "unavailable"]},
         "reason": {"type": ["string", "null"]}
       }
+    },
+    "portrait_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["players", "resolved"],
+      "properties": {
+        "players": {"type": "integer", "minimum": 0},
+        "resolved": {"type": "integer", "minimum": 0}
+      }
     }
   },
   "type": "object",
@@ -250,6 +259,36 @@
         "kicked_off": {"type": "integer", "minimum": 0},
         "bye": {"type": "integer", "minimum": 0},
         "lines_pending": {"type": "integer", "minimum": 0, "description": "Players whose game has no posted total or spread yet: published without a distribution."},
+        "unmodelled": {"type": "integer", "minimum": 0, "description": "ADR-117: players whose game had lines but for whom the model returned no finite quantile; published as `unmodelled`, without a distribution."},
+        "lines": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["rule_version", "max_age_hours", "schedule_retrieved_at_utc", "target_games", "from_schedule", "from_retained", "unlined", "unlined_game_ids", "retained", "captures_read"],
+          "description": "ADR-117: where the target week's lines came from. `from_schedule` games had both lines in the schedule the build read; `from_retained` reused the newest retained pregame observation of the same game (`pregame_line_reuse_v1`); `unlined` games had neither, and their players are `lines_pending`. `captures_read` are the retained `schedule_lines` snapshot keys within the reuse window.",
+          "properties": {
+            "rule_version": {"const": "pregame_line_reuse_v1"},
+            "max_age_hours": {"type": "integer", "minimum": 1},
+            "schedule_retrieved_at_utc": {"type": "string", "format": "date-time"},
+            "target_games": {"type": "integer", "minimum": 0},
+            "from_schedule": {"type": "integer", "minimum": 0},
+            "from_retained": {"type": "integer", "minimum": 0},
+            "unlined": {"type": "integer", "minimum": 0},
+            "unlined_game_ids": {"type": "array", "items": {"type": "string"}},
+            "retained": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["game_id", "observed_at_utc"],
+                "properties": {
+                  "game_id": {"type": "string"},
+                  "observed_at_utc": {"type": ["string", "null"], "format": "date-time"}
+                }
+              }
+            },
+            "captures_read": {"type": "array", "items": {"type": "string"}}
+          }
+        },
         "quantile_levels": {"type": "array", "items": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}, "minItems": 3},
         "distribution_rule": {
           "type": "object",
@@ -347,6 +386,62 @@
         "diagnostics": {"type": "object"},
         "reasons": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
         "statement": {"type": "string", "minLength": 1}
+      }
+    },
+    "player_headshots": {
+      "type": ["object", "null"],
+      "description": "The portrait set THIS build wrote (ADR-087, portrait_population_v1): player_headshots.json rewritten over every card surface the published directory holds - the draft boards read beside this bundle plus the in-season ones. When present it describes the published artifact, which then carries this bundle's build id, and build_metadata.player_headshots describes the superseded draft-time set. Null (or absent, before 2026-11-06) when this build left the draft build's set in place. Decoration only: nothing here moves any value. `coverage` is a crosswalk coverage, NOT a count of images that load: the pipeline never contacts the provider.",
+      "additionalProperties": false,
+      "required": [
+        "provider", "host", "source_ids", "population", "published_players", "resolved",
+        "coverage", "by_surface", "by_position", "unresolved_reasons", "bridges"
+      ],
+      "properties": {
+        "provider": {"enum": ["espn"]},
+        "host": {"const": "a.espncdn.com"},
+        "source_ids": {"type": "array", "items": {"type": "string"}},
+        "population": {
+          "type": "object",
+          "description": "The coverage denominator: the distinct players of every card surface in `surfaces_read`.",
+          "additionalProperties": false,
+          "required": ["rule_version", "surfaces_read", "players"],
+          "properties": {
+            "rule_version": {"const": "portrait_population_v1"},
+            "surfaces_read": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {"enum": ["tiers", "arbitrage", "ros_tiers", "inseason_opportunity", "weekly_projections", "season_actuals", "insights"]}
+            },
+            "players": {"type": "integer", "minimum": 0}
+          }
+        },
+        "published_players": {"type": "integer", "minimum": 0, "description": "Equal to population.players."},
+        "resolved": {"type": "integer", "minimum": 0, "description": "Players with a portrait row: the artifact's record count."},
+        "coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "by_surface": {"type": "object", "additionalProperties": {"$ref": "#/$defs/portrait_counts"}},
+        "by_position": {"type": "object", "additionalProperties": {"$ref": "#/$defs/portrait_counts"}},
+        "unresolved_reasons": {
+          "type": "object",
+          "description": "Population players with no portrait row, by reason, kept separate.",
+          "additionalProperties": false,
+          "required": ["not_in_identity_registry", "no_espn_id", "invalid_espn_id", "ambiguous_espn_id"],
+          "properties": {
+            "not_in_identity_registry": {"type": "integer", "minimum": 0},
+            "no_espn_id": {"type": "integer", "minimum": 0},
+            "invalid_espn_id": {"type": "integer", "minimum": 0},
+            "ambiguous_espn_id": {"type": "integer", "minimum": 0}
+          }
+        },
+        "bridges": {
+          "type": "object",
+          "description": "Published rows by the nflverse bridge that supplied the id.",
+          "additionalProperties": false,
+          "required": ["nflverse_roster", "nflverse_player_master"],
+          "properties": {
+            "nflverse_roster": {"type": "integer", "minimum": 0},
+            "nflverse_player_master": {"type": "integer", "minimum": 0}
+          }
+        }
       }
     },
     "espn_ownership": {

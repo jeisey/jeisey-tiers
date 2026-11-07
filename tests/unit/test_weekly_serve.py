@@ -264,3 +264,96 @@ def test_a_week_report_keeps_practice_notes_without_inventing_a_designation() ->
     assert reports["a"]["designation"] == "Doubtful"
     assert reports["e"]["designation"] is None
     assert reports["e"]["practice_status"].startswith("Limited")
+
+
+# ------------------------------------------------- ADR-117: line provenance and unmodelled
+
+
+def test_every_game_says_where_its_lines_came_from(weekly) -> None:
+    """Without retained observations, a lined game's lines are the schedule's, read at the build."""
+    for row in weekly:
+        game = row["game"]
+        if game is None:
+            continue
+        if game["total_line"] is None:
+            assert game["line_source"] is None and game["lines_observed_at_utc"] is None
+        else:
+            assert game["line_source"] == "schedule"
+            assert game["lines_observed_at_utc"] == FIXTURE_INSEASON_AS_OF
+
+
+def test_retained_lines_turn_a_pending_game_into_a_projection(serve, pipeline_result, app_config):
+    """The reported failure in miniature: the schedule has no line for a target-week game, a
+    retained pregame observation of the same game does, and its players are projected from it
+    with the observation's provenance on every record."""
+    from ffdraft.weekly.lines import LineObservation, apply_retained_lines
+
+    season = _fixture_season(pipeline_result.records["tiers"], app_config)
+    as_of = parse_utc(FIXTURE_INSEASON_AS_OF)
+    pending = season.schedule.filter(
+        (pl.col("week") == 9) & pl.col("total_line").is_null() & pl.col("gametime").is_not_null(),
+    ).row(0, named=True)
+    from ffdraft.season.state import scheduled_kickoff_utc
+
+    kickoff = scheduled_kickoff_utc(pending["gameday"], pending["gametime"])
+    assert kickoff is not None and kickoff > as_of
+    observed = as_of - timedelta(hours=10)
+    observation = LineObservation(
+        game_id=str(pending["game_id"]),
+        season=2026,
+        week=9,
+        home_team=str(pending["home_team"]),
+        away_team=str(pending["away_team"]),
+        kickoff_utc=kickoff,
+        spread_line=-2.5,
+        total_line=44.5,
+        observed_at_utc=observed,
+    )
+    schedule, provenance = apply_retained_lines(
+        season.schedule,
+        [observation],
+        season=2026,
+        week=9,
+        as_of=as_of,
+        schedule_observed_at=as_of,
+    )
+    result = serve(schedule=schedule, line_provenance=provenance)
+    game = [
+        row
+        for row in result.records
+        if row["game"] is not None and row["game"]["game_id"] == pending["game_id"]
+    ]
+    assert game
+    for row in game:
+        assert row["game_state"] == "upcoming"
+        assert row["quantiles"] is not None
+        assert row["game"]["total_line"] == 44.5
+        assert row["game"]["line_source"] == "retained"
+        assert row["game"]["lines_observed_at_utc"] == observed.isoformat().replace("+00:00", "Z")
+    assert result.summary["lines_pending"] < serve().summary["lines_pending"]
+
+
+def test_a_non_finite_prediction_is_published_as_unmodelled(serve, monkeypatch) -> None:
+    import numpy as np
+
+    from ffdraft.weekly.model import WeeklyModel as Model
+
+    original = Model.predict
+
+    def broken(self, frame):  # one row's quantiles come back non-finite
+        values = np.array(original(self, frame), dtype=float)
+        values[0, :] = np.nan
+        return values
+
+    monkeypatch.setattr(Model, "predict", broken)
+    result = serve()
+    unmodelled = [row for row in result.records if row["game_state"] == "unmodelled"]
+    assert len(unmodelled) == 1 and result.summary["unmodelled"] == 1
+    row = unmodelled[0]
+    assert row["game"] is not None and row["opponent"] is not None
+    assert row["game"]["total_line"] is not None and row["game"]["line_source"] == "schedule"
+    assert row["quantiles"] is None and row["drivers"] is None and row["explanation"] is None
+    from ffdraft.artifacts.validate import _weekly_checks
+    from ffdraft.contracts.quality import critical_failures
+
+    assert not critical_failures(_weekly_checks(result.records, "test"))

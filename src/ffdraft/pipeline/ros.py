@@ -47,11 +47,18 @@ from ffdraft.anchors import build_season_anchors
 from ffdraft.artifacts import ARTIFACT_SCHEMA_VERSION, write_artifact
 from ffdraft.artifacts.csv_flatten import actuals_index
 from ffdraft.artifacts.serialize import write_json_artifact
+from ffdraft.artifacts.spec import ARTIFACT_SPECS
 from ffdraft.config import AppConfig, LeaguePreset, ScoringPreset, load_app_config
 from ffdraft.contracts import QualityCheck
 from ffdraft.contracts.enums import Severity
 from ffdraft.features.build import build_feature_table
 from ffdraft.features.sources import load_historical_sources
+from ffdraft.headshots import (
+    HeadshotResult,
+    build_player_headshot_records,
+    crosswalk_from_registry,
+    portrait_population,
+)
 from ffdraft.market.surface import SURFACE_RULE_VERSION, TIER_DEPTH_RULE
 from ffdraft.pipeline.current import current_cutoff
 from ffdraft.quality import QualityGate
@@ -582,6 +589,23 @@ def run_ros_build(
     if insight_records:
         records["insights"] = insight_records
 
+    # Portraits over every card surface (ADR-087, `portrait_population_v1`). After every
+    # surface above, because the population is all of them plus the draft boards this bundle
+    # is published beside; it reads no value and nothing reads it. The draft build wrote a
+    # portrait set over its own board; this one replaces it, so a card opened from the ROS
+    # board, the Opportunity Board, Start/Sit, My Leagues or Insights for a player the draft
+    # board never named gets the picture the crosswalk has (the 2026-11-06 Cousins trace).
+    portraits = _portraits(
+        records=records,
+        out_dir=out_dir,
+        registry=identity,
+        player_master=loaded.sources.player_master,
+        build_id=resolved_build_id,
+        gate=gate,
+    )
+    if portraits is not None:
+        records["player_headshots"] = portraits.records
+
     metadata = _ros_metadata(
         settings,
         loaded=loaded,
@@ -608,6 +632,7 @@ def run_ros_build(
         skill_tree=tree_summary,
         espn_ownership=ownership.metadata,
         insights=insight_summary,
+        player_headshots=None if portraits is None else portraits.summary(),
     )
 
     written: list[Path] = []
@@ -987,6 +1012,75 @@ def _identity_and_employment(
     )
     gate.add(employment.check(stage="ros_build"))
     return registry, employment
+
+
+#: The draft bundle's card surfaces, read from the directory this bundle is published into.
+_DRAFT_PORTRAIT_SURFACES = ("tiers", "arbitrage")
+
+
+def _portraits(
+    *,
+    records: Mapping[str, Sequence[Mapping[str, Any]]],
+    out_dir: Path,
+    registry: Any,
+    player_master: pl.DataFrame | None,
+    build_id: str,
+    gate: QualityGate,
+) -> HeadshotResult | None:
+    """The portrait artifact over every card surface the published site will hold (ADR-087).
+
+    The draft boards are read from ``out_dir`` - the directory this bundle is published into
+    and where the draft build wrote them - because the population is defined by the site a
+    reader opens, and the validator recomputes it from exactly those files. Only ``player_id``
+    and ``position`` are read from them.
+
+    Returns None, leaving the draft build's set in place, when this build has no identity
+    registry: a portrait set built from nothing would replace a good one with an empty one.
+    """
+    if registry is None or not len(registry):
+        gate.add(
+            QualityCheck.ok(
+                "ros.portraits_left_to_draft_build",
+                stage="ros_build",
+                message=(
+                    "no identity registry, so no portrait set is written; the draft build's "
+                    "stays in place and its metadata describes it (ADR-087)"
+                ),
+                observed="0 registry players",
+            ),
+        )
+        return None
+    surfaces: dict[str, Sequence[Mapping[str, Any]]] = {}
+    for artifact in _DRAFT_PORTRAIT_SURFACES:
+        path = out_dir / ARTIFACT_SPECS[artifact].json_filename
+        if not path.is_file():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            surfaces[artifact] = [
+                {"player_id": row.get("player_id"), "position": row.get("position")}
+                for row in payload.get("records", ())
+            ]
+        except (OSError, ValueError, AttributeError) as exc:
+            gate.add(
+                QualityCheck.fail(
+                    "ros.portrait_draft_surface_unreadable",
+                    stage="ros_build",
+                    message=(
+                        f"{path.name} could not be read, so its players are not in this "
+                        "build's portrait population; every board is unaffected"
+                    ),
+                    observed=str(exc),
+                    expected="a readable draft artifact",
+                    severity=Severity.WARNING,
+                ),
+            )
+    return build_player_headshot_records(
+        crosswalk=crosswalk_from_registry(registry, player_master=player_master),
+        population=portrait_population({**surfaces, **records}),
+        build_id=build_id,
+        gate=gate,
+    )
 
 
 def _catalog(registry: Any) -> dict[str, dict[str, Any]]:
@@ -1860,7 +1954,7 @@ def _skill_tree(
         except Exception:  # noqa: BLE001 - an optional source; reported as unavailable
             combine_testers = None
     try:
-        positions, _, include = season_actuals_inputs(
+        positions, names, include = season_actuals_inputs(
             records,
             snapshot_frame=snapshot_frame,
             catalog=_catalog(registry),
@@ -1885,6 +1979,7 @@ def _skill_tree(
             build_id=build_id,
             metric_schema_version=record_schema_version("player_skill_metric"),
             definition_schema_version=record_schema_version("skill_tree_definition"),
+            names=names,
         )
     except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
         reason = f"{type(exc).__name__}: {exc}"
@@ -1970,6 +2065,16 @@ def _weekly_layer(
             }
             for record in opportunity_records
         }
+        # ADR-117: the target week's lines — the schedule's, or a game's newest retained pregame
+        # observation when the schedule the build read has none (pregame_line_reuse_v1).
+        schedule, line_provenance, lines = _target_week_lines(
+            loaded.sources.schedule,
+            season=season,
+            week=cutoff.through_week + 1,
+            as_of=as_of,
+            store=store,
+            gate=gate,
+        )
         reports, reports_at, report_frame = _injury_reports(
             injuries,
             season=season,
@@ -1989,7 +2094,7 @@ def _weekly_layer(
                 sleeper_signings=False,
             ),
             weekly=loaded.sources.weekly_stats,
-            schedule=loaded.sources.schedule,
+            schedule=schedule,
             scoring=settings.league.scoring,
             season=season,
             through_week=cutoff.through_week,
@@ -1998,6 +2103,7 @@ def _weekly_layer(
             schema_version=record_schema_version("weekly_projection"),
             injury_reports=reports,
             venues=load_venue_registry(),
+            line_provenance=line_provenance,
         )
     except Exception as exc:  # noqa: BLE001 - an enrichment; its failure must not cost a board
         gate.add(
@@ -2059,6 +2165,8 @@ def _weekly_layer(
         report_frame=report_frame,
         store=store,
         forecast_rows=forecast_rows,
+        schedule=schedule,
+        line_provenance=line_provenance,
     )
     shadow_summary = _weekly_shadow(
         result=result,
@@ -2085,7 +2193,8 @@ def _weekly_layer(
             observed=(
                 f"{summary['records']} record(s): {summary['upcoming']} upcoming, "
                 f"{summary['kicked_off']} kicked off, {summary['bye']} on bye, "
-                f"{summary.get('lines_pending', 0)} awaiting a posted line; "
+                f"{summary.get('lines_pending', 0)} awaiting a posted line, "
+                f"{summary.get('unmodelled', 0)} unmodelled; "
                 f"{summary['injury_reports_matched']} with an injury report"
             ),
         ),
@@ -2096,6 +2205,7 @@ def _weekly_layer(
         through_week=cutoff.through_week,
         injuries_retrieved_at=reports_at,
         context=context_summary,
+        lines=lines,
     )
     metadata["_context_records"] = context_records
     metadata["shadow"] = shadow_summary
@@ -2235,8 +2345,14 @@ def _weekly_context_layer(
     report_frame: pl.DataFrame | None,
     store: Path | None,
     forecast_rows: Sequence[Mapping[str, Any]] | None,
+    schedule: pl.DataFrame | None = None,
+    line_provenance: Mapping[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
-    """``weekly_context`` (ADR-099): published facts beside the projections, or nothing."""
+    """``weekly_context`` (ADR-099): published facts beside the projections, or nothing.
+
+    ``schedule`` and ``line_provenance`` are the ones the projections read (ADR-117), so the
+    context prints the same lines and says where they came from in the same words.
+    """
     from ffdraft.artifacts.schemas import record_schema_version
     from ffdraft.artifacts.validate import weekly_context_checks
     from ffdraft.contracts.quality import critical_failures
@@ -2253,7 +2369,8 @@ def _weekly_context_layer(
             gate=gate,
         )
         records, summary = build_weekly_context_records(
-            schedule=loaded.sources.schedule,
+            schedule=schedule if schedule is not None else loaded.sources.schedule,
+            line_provenance=line_provenance,
             season=season,
             through_week=cutoff.through_week,
             as_of=as_of,
@@ -2360,6 +2477,74 @@ def _forecast_readings(
     return {str(row["game_id"]): dict(row) for row in rows}, meta
 
 
+def _target_week_lines(
+    schedule: pl.DataFrame,
+    *,
+    season: int,
+    week: int,
+    as_of: datetime,
+    store: Path | None,
+    gate: QualityGate,
+) -> tuple[pl.DataFrame, dict[str, Any], dict[str, Any]]:
+    """ADR-117: the schedule with ``pregame_line_reuse_v1`` applied, per-game provenance, and the
+    ``weekly.lines`` metadata block. Two warnings make an upstream line problem visible in the
+    build log and summary: games the build lined from a retained observation, and games it
+    could not line at all.
+    """
+    from ffdraft.weekly.lines import apply_retained_lines, lines_summary, retained_observations
+
+    observations: list[Any] = []
+    keys: list[str] = []
+    if store is not None:
+        observations, keys = retained_observations(store, season=season, as_of=as_of)
+    patched, provenance = apply_retained_lines(
+        schedule,
+        observations,
+        season=season,
+        week=week,
+        as_of=as_of,
+        schedule_observed_at=as_of,
+    )
+    summary = {
+        **lines_summary(provenance, schedule_observed_at=as_of),
+        "captures_read": keys,
+    }
+    if summary["from_retained"]:
+        gate.add(
+            QualityCheck.fail(
+                "ros.weekly_lines_retained",
+                stage="ros_build",
+                message=(
+                    "the schedule the build read had no total or spread for some week-"
+                    f"{week} games; their newest retained pregame lines were used "
+                    "(pregame_line_reuse_v1) and every such game says so"
+                ),
+                observed="; ".join(
+                    f"{item['game_id']} @ {item['observed_at_utc']}" for item in summary["retained"]
+                ),
+                expected="every target-week game lined in the schedule itself",
+                severity=Severity.WARNING,
+            ),
+        )
+    if summary["unlined"]:
+        gate.add(
+            QualityCheck.fail(
+                "ros.weekly_lines_unavailable",
+                stage="ros_build",
+                message=(
+                    f"week-{week} games with no posted total or spread in the schedule and no "
+                    "retained pregame observation within the reuse window: their players are "
+                    "published lines_pending, without a distribution"
+                ),
+                observed=f"{summary['unlined']} of {summary['target_games']} game(s): "
+                + ", ".join(summary["unlined_game_ids"][:16]),
+                expected="lines for every target-week game",
+                severity=Severity.WARNING,
+            ),
+        )
+    return patched, dict(provenance), summary
+
+
 def weekly_metadata(
     model: Any,
     summary: Mapping[str, Any],
@@ -2367,6 +2552,7 @@ def weekly_metadata(
     through_week: int,
     injuries_retrieved_at: datetime | None,
     context: Mapping[str, Any] | None = None,
+    lines: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """``ros_build_metadata.weekly``: one definition for the build and the fixture (ADR-096)."""
     from ffdraft.weekly.frozen import (
@@ -2391,6 +2577,8 @@ def weekly_metadata(
         "kicked_off": summary["kicked_off"],
         "bye": summary["bye"],
         "lines_pending": summary.get("lines_pending", 0),
+        "unmodelled": summary.get("unmodelled", 0),
+        "lines": dict(lines) if lines is not None else None,
         "quantile_levels": list(WEEKLY_QUANTILE_LEVELS),
         "distribution_rule": {
             "version": WEEKLY_DISTRIBUTION_RULE_VERSION,
@@ -2853,6 +3041,7 @@ def _ros_metadata(
     espn_ownership: Mapping[str, Any] | None = None,
     recent_form: Mapping[str, Any] | None = None,
     insights: Mapping[str, Any] | None = None,
+    player_headshots: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     from ffdraft.pipeline.current import _source_metadata
 
@@ -2921,6 +3110,9 @@ def _ros_metadata(
         "insights": None if insights is None else dict(insights),
         "skill_tree": None if skill_tree is None else dict(skill_tree),
         "espn_ownership": None if espn_ownership is None else dict(espn_ownership),
+        # ADR-087 / `portrait_population_v1`: the portrait set this build wrote, over every card
+        # surface. Null when it left the draft build's set in place.
+        "player_headshots": None if player_headshots is None else dict(player_headshots),
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

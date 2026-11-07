@@ -25,6 +25,15 @@ points low for a typical receiver, with nothing on the page to say so. Such a ga
 published as ``lines_pending`` instead: the game and the opponent reading, no distribution,
 no drivers. Imputing a line would be inventing a market number, and a projection the model
 was never validated on is not one to publish.
+
+**Where the lines came from (ADR-117).** The schedule the build read, or — when it had none for
+a target-week game — the newest retained pregame observation of the same game
+(``weekly.lines.pregame_line_reuse_v1``). Every game block publishes ``line_source`` and
+``lines_observed_at_utc``; a game neither could line stays ``lines_pending``.
+
+**Unmodelled.** A row the model returns no finite quantile for is published as ``unmodelled``
+— the game and the opponent, no distribution — rather than dropped, so a page can say "the
+model produced nothing for him" instead of "no record of him".
 """
 
 from __future__ import annotations
@@ -53,6 +62,7 @@ from ffdraft.weekly.frozen import (
     WEEKLY_POSITIONS,
     WEEKLY_QUANTILE_LEVELS,
 )
+from ffdraft.weekly.lines import LineProvenance
 from ffdraft.weekly.model import WeeklyModel, quantile_columns
 from ffdraft.weekly.venues import VenueRegistry
 
@@ -101,7 +111,15 @@ def build_weekly_projection_records(
     schema_version: str,
     injury_reports: Mapping[str, Mapping[str, Any]] | None = None,
     venues: VenueRegistry | None = None,
+    line_provenance: Mapping[str, LineProvenance] | None = None,
 ) -> WeeklyServeResult:
+    """One record per player and preset for the week after the cutoff.
+
+    ``schedule`` is the schedule as the build will project from — with
+    ``weekly.lines.apply_retained_lines`` already applied when the caller has retained
+    observations — and ``line_provenance`` says, per game, where its lines came from. Without
+    it, a game with lines is taken to have them from the schedule, read at ``as_of``.
+    """
     target_week = through_week + 1
     horizon = fantasy_horizon(season)
     if not horizon.contains(target_week):
@@ -185,10 +203,38 @@ def build_weekly_projection_records(
     records: list[dict[str, Any]] = []
     counts = {"upcoming": 0, "kicked_off": 0, "bye": 0, "lines_pending": 0, "unmodelled": 0}
 
+    def game_of(row: Mapping[str, Any]) -> dict[str, Any]:
+        provenance = (line_provenance or {}).get(str(row["game_id"]))
+        if provenance is None:
+            lined = _maybe(row.get("game_total_line")) is not None
+            provenance = LineProvenance(
+                str(row["game_id"]),
+                "schedule" if lined else None,
+                as_of if lined else None,
+            )
+        return _game(row, provenance)
+
     for index, row in enumerate(playing.iter_rows(named=True)):
         values = quantiles[index]
-        if np.any(np.isnan(values)):
+        if np.any(~np.isfinite(values)):
             counts["unmodelled"] += 1
+            records.append(
+                _record(
+                    row,
+                    players=players,
+                    state="unmodelled",
+                    game=game_of(row),
+                    quantiles=None,
+                    drivers=None,
+                    opponent=_opponent(row),
+                    injury=reports.get(str(row["gsis_id"]) if row.get("gsis_id") else ""),
+                    build_id=build_id,
+                    schema_version=schema_version,
+                    season=season,
+                    through_week=through_week,
+                    target_week=target_week,
+                ),
+            )
             continue
         kickoff = row.get("kickoff_utc")
         state = "upcoming" if kickoff is None or kickoff > as_of else "kicked_off"
@@ -200,7 +246,7 @@ def build_weekly_projection_records(
                 row,
                 players=players,
                 state=state,
-                game=_game(row),
+                game=game_of(row),
                 quantiles=published,
                 drivers=_drivers(drivers[index], rounded[WEEKLY_QUANTILE_LEVELS.index(0.5)]),
                 explanation=published_explanation(explanations[index], published),
@@ -220,7 +266,7 @@ def build_weekly_projection_records(
                 row,
                 players=players,
                 state="lines_pending",
-                game=_game(row),
+                game=game_of(row),
                 quantiles=None,
                 drivers=None,
                 opponent=_opponent(row),
@@ -267,8 +313,14 @@ def build_weekly_projection_records(
     )
 
 
-def _game(row: Mapping[str, Any]) -> dict[str, Any]:
+def _game(row: Mapping[str, Any], provenance: LineProvenance) -> dict[str, Any]:
     kickoff = row.get("kickoff_utc")
+    total = _maybe(row.get("game_total_line"))
+    lines = (
+        provenance.public()
+        if total is not None
+        else {"line_source": None, "lines_observed_at_utc": None}
+    )
     return {
         "game_id": str(row["game_id"]),
         "opponent": str(row["opponent"]),
@@ -279,6 +331,7 @@ def _game(row: Mapping[str, Any]) -> dict[str, Any]:
         "total_line": _maybe(row.get("game_total_line")),
         "team_margin": _maybe(row.get("game_team_margin")),
         "team_points": _maybe(row.get("game_team_points"), 2),
+        **lines,
     }
 
 

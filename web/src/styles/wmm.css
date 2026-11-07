@@ -215,6 +215,18 @@
   font-weight: 600;
 }
 
+/* Starters the build could not project: the data's problem, set apart from the reader's decisions. */
+.wmm-data {
+  display: grid;
+  gap: var(--space-1);
+  padding-left: var(--space-2);
+  border-left: 2px solid var(--line-strong);
+}
+
+.wmm-data p {
+  margin: 0;
+}
+
 /* ------------------------------------------------------------------------ the result */
 
 .wmm-result {

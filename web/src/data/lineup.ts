@@ -17,7 +17,11 @@
  * | `candidate` | an upcoming game, a published distribution for the target week, kickoff known and in the future, and the policy allows a start (available, questionable, uncertain — the last two "if active") | may start him in any slot his position fits, or bench him |
  * | `sidelined` | a bye, or out, doubtful, on a reserve list, released, unsigned, out for the season | never starts him; may bench him |
  * | `locked` | his game kicked off at build time or by the reader's clock | leaves him exactly where he is |
- * | `pinned` | no weekly record, a record for another week, no line posted (no distribution), an unknown kickoff, or an id this build cannot resolve | leaves him exactly where he is: unknown schedule data never becomes a confident move |
+ * | `pinned` | no weekly record, a record for another week or build, no line in the build or no prediction from the model (no distribution), an unknown kickoff, or an id this build cannot resolve | leaves him exactly where he is: unknown schedule data never becomes a confident move |
+ *
+ * Every reading carries a `cause` code beside its words. The *data* causes (`DATA_CAUSES`) say
+ * the build did not publish a usable projection — nothing a reader can decide — and are kept
+ * apart from the reader's own decisions wherever a page counts what blocks it.
  *
  * IR occupants are not read at all: they stay in IR until the reader moves them.
  *
@@ -65,11 +69,64 @@ export const MODE_LABELS: Readonly<Record<LineupMode, string>> = {
 
 export type WeekKind = "candidate" | "sidelined" | "locked" | "pinned";
 
+/**
+ * Why the build gave no usable projection for him: a data problem, never a reader's decision.
+ * `unresolved` — this build cannot identify him; `no_record` — no weekly record (outside the
+ * players it projects); `other_week` / `other_build` — a record for another week or from another
+ * build (stale); `lines_pending` — the build had no sportsbook line for his game; `unmodelled` —
+ * the model returned no prediction; `kickoff_unknown` — no published kickoff.
+ */
+export const DATA_CAUSES = [
+  "lines_pending",
+  "unmodelled",
+  "no_record",
+  "other_week",
+  "other_build",
+  "kickoff_unknown",
+  "unresolved",
+] as const;
+export type DataCause = (typeof DATA_CAUSES)[number];
+
+/** A week's cause: a data cause, or `bye`, `absent` (out, doubtful, reserve…), `kicked_off`, `if_active`. */
+export type WeekCause = DataCause | "bye" | "absent" | "kicked_off" | "if_active";
+
+export function isDataCause(cause: string | null | undefined): cause is DataCause {
+  return (DATA_CAUSES as readonly (string | null | undefined)[]).includes(cause);
+}
+
+/** Each data cause as a label (a row, a group's heading) and an explanation said once per group. */
+export const DATA_CAUSE_TEXT: Readonly<Record<DataCause, readonly [string, string]>> = {
+  lines_pending: [
+    "No sportsbook line in this build",
+    "The weekly model needs each game's total and spread; this build had neither for these games, so it published no projection for them. A missing line is never filled in.",
+  ],
+  unmodelled: [
+    "No prediction from the model",
+    "These games have lines, but the model returned no valid prediction for these players in this build, so no projection was published.",
+  ],
+  no_record: ["No weekly record in this build", "This build projects a set population of players, and these are outside it."],
+  other_week: ["A record for another week", "Their records are for another week than the one this build projects."],
+  other_build: ["A record from another build", "Their records come from another build than the one this page read."],
+  kickoff_unknown: ["Kickoff not published", "Without a published kickoff it is not known whether these games have started."],
+  unresolved: ["Not in this build", "This build has no record of these players."],
+};
+
+/** Why his game has no published distribution, when it is a data cause; null when it has one. */
+export function distributionGap(record: WeeklyProjectionRecord): DataCause | null {
+  const state = record.game_state;
+  if (state === "unmodelled" || state === "lines_pending") return state;
+  if (record.quantiles !== null) return null;
+  // A state that does not say (an older build's kicked-off game): the lines are the evidence.
+  return record.game?.total_line == null || record.game.team_margin == null ? "lines_pending" : "unmodelled";
+}
+
 export interface PlayerWeek {
   readonly id: string;
   readonly kind: WeekKind;
   /** Why he is not a plain candidate, in a sentence; null for an unremarkable candidate. */
   readonly reason: string | null;
+  /** The same as a code; null for an unremarkable candidate. */
+  readonly cause: WeekCause | null;
   /** A candidate who starts only "if active": questionable, or status unknown. */
   readonly conditional: boolean;
   readonly record: WeeklyProjectionRecord | null;
@@ -86,50 +143,47 @@ export interface WeekContext {
   readonly targetWeek: number | null;
   /** The reader's clock, in milliseconds. */
   readonly now: number;
+  /** The build the page read; a weekly record from any other is stale. Unchecked when absent. */
+  readonly buildId?: string | null;
 }
+
+const LEFT = " Left where you put him.";
 
 /** One player's week, decided once. Pure in its inputs. */
 export function readWeek(playerId: string, context: WeekContext): PlayerWeek {
   const position = context.positionOf(playerId);
   const base = { id: playerId, position, conditional: false };
-  if (position === null) {
-    return {
-      ...base,
-      kind: "pinned",
-      reason: "This build has no record of him, so his week is unknown. Left where you put him.",
-      record: null,
-      availability: null,
-    };
-  }
+  const pinned = (cause: DataCause, reason: string, record: WeeklyProjectionRecord | null, availability: Availability | null): PlayerWeek => ({
+    ...base,
+    kind: "pinned",
+    cause,
+    reason: reason + LEFT,
+    record,
+    availability,
+  });
+  if (position === null) return pinned("unresolved", "This build has no record of him, so his week is unknown.", null, null);
   const record = context.weeklyFor(playerId);
   const availability = context.availabilityFor(playerId);
   if (record === null) {
-    return {
-      ...base,
-      kind: "pinned",
-      reason: "No weekly projection is published for him, so his game and kickoff are unknown. Left where you put him.",
-      record: null,
-      availability,
-    };
+    return pinned("no_record", "No weekly projection is published for him, so his game and kickoff are unknown.", null, availability);
   }
   if (context.targetWeek !== null && record.target_week !== context.targetWeek) {
-    return {
-      ...base,
-      kind: "pinned",
-      reason: `His projection is for week ${String(record.target_week)}, not week ${String(context.targetWeek)}. Left where you put him.`,
-      record,
-      availability,
-    };
+    return pinned("other_week", `His projection is for week ${String(record.target_week)}, not week ${String(context.targetWeek)}.`, record, availability);
+  }
+  if (context.buildId != null && record.build_id !== context.buildId) {
+    return pinned("other_build", "His projection comes from another build than the one this page read.", record, availability);
   }
   if (record.game_state === "bye" || record.game === null) {
-    return { ...base, kind: "sidelined", reason: `Bye in week ${String(record.target_week)}.`, record, availability };
+    return { ...base, kind: "sidelined", cause: "bye", reason: `Bye in week ${String(record.target_week)}.`, record, availability };
   }
   const kickoff = record.game.kickoff_utc;
+  // Kicked off is not finished: a locked game is never read as complete here.
   const kicked = record.game_state === "kicked_off" || (kickoff !== null && Date.parse(kickoff) <= context.now);
   if (kicked) {
     return {
       ...base,
       kind: "locked",
+      cause: "kicked_off",
       reason:
         kickoff === null
           ? "His game had kicked off when this build ran. Locked."
@@ -139,25 +193,21 @@ export function readWeek(playerId: string, context: WeekContext): PlayerWeek {
     };
   }
   if (availability !== null && !startEligible(availability)) {
-    return { ...base, kind: "sidelined", reason: sidelinedReason(availability), record, availability };
+    return { ...base, kind: "sidelined", cause: "absent", reason: sidelinedReason(availability), record, availability };
   }
-  if (record.game_state === "lines_pending" || record.quantiles === null) {
-    return {
-      ...base,
-      kind: "pinned",
-      reason: "No line is posted for his game yet, so no projection is published. Left where you put him.",
+  const gap = distributionGap(record);
+  if (gap !== null) {
+    return pinned(
+      gap,
+      gap === "unmodelled"
+        ? "No projection: the model returned none for him in this build, though his game has lines."
+        : "No projection: this build had no sportsbook line for his game.",
       record,
       availability,
-    };
+    );
   }
   if (kickoff === null) {
-    return {
-      ...base,
-      kind: "pinned",
-      reason: "His kickoff time is not published, so it is not known whether his game has started. Left where you put him.",
-      record,
-      availability,
-    };
+    return pinned("kickoff_unknown", "His kickoff time is not published, so it is not known whether his game has started.", record, availability);
   }
   const conditional =
     availability === null || availability.week === "questionable" || availability.week === "uncertain";
@@ -165,6 +215,7 @@ export function readWeek(playerId: string, context: WeekContext): PlayerWeek {
     ...base,
     kind: "candidate",
     conditional,
+    cause: conditional ? "if_active" : null,
     reason: conditional
       ? availability === null || availability.week === "uncertain"
         ? "If active: his status is uncertain."
@@ -405,6 +456,8 @@ export interface LineupGap {
    */
   readonly kind: "gap" | "unscored";
   readonly reason: string;
+  /** The occupant's data cause when the build gave him no projection; null otherwise. */
+  readonly cause: DataCause | null;
 }
 
 export interface LineupProposal {
@@ -555,19 +608,25 @@ export function optimizeLineup(
       starters.push({ slot, id, week, score: counted ? (scoreOf(week, mode) ?? 0) / 100 : null });
       if (counted) continue;
       if (week === null) {
-        gaps.push({ slot, kind: "gap", reason: emptyReason(group, weeks) });
+        gaps.push({ slot, kind: "gap", reason: emptyReason(group, weeks), cause: null });
       } else if (week.kind === "sidelined") {
         gaps.push({
           slot,
           kind: "gap",
           reason: `${week.reason ?? "Not playing."} No eligible replacement on your roster.`,
+          cause: null,
         });
       } else if (week.kind === "pinned") {
-        gaps.push({ slot, kind: "unscored", reason: week.reason ?? "His week is unknown." });
+        gaps.push({ slot, kind: "unscored", reason: week.reason ?? "His week is unknown.", cause: isDataCause(week.cause) ? week.cause : null });
       } else if (week.kind === "locked") {
-        gaps.push({ slot, kind: "unscored", reason: "His game has started and no distribution was published for it." });
+        gaps.push({
+          slot,
+          kind: "unscored",
+          reason: "His game has started and no distribution was published for it.",
+          cause: week.record === null ? null : distributionGap(week.record),
+        });
       } else {
-        gaps.push({ slot, kind: "gap", reason: "His position cannot fill this slot." });
+        gaps.push({ slot, kind: "gap", reason: "His position cannot fill this slot.", cause: null });
       }
     }
   }

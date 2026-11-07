@@ -63,7 +63,11 @@ from ffdraft.contracts import (
     SurfaceReason,
 )
 from ffdraft.contracts.enums import MarketSignalType
-from ffdraft.headshots import build_player_headshot_records, crosswalk_from_registry
+from ffdraft.headshots import (
+    build_player_headshot_records,
+    crosswalk_from_registry,
+    portrait_population,
+)
 from ffdraft.identity import (
     CanonicalRegistry,
     build_registry,
@@ -522,12 +526,15 @@ def run_fixture_pipeline(
     )
     # The fixture registry deliberately holds a player the crosswalk cannot bridge, so the
     # artifact ships with a hole in it and the card's no-portrait path is exercised by the
-    # default fixture rather than only by a unit test (ADR-087).
-    headshots = build_player_headshot_records(
-        crosswalk=crosswalk_from_registry(registry),
-        published=published_players,
+    # default fixture rather than only by a unit test (ADR-087). The crosswalk is production's:
+    # the annotation-side identity registry (this season's roster plus last season's, ADR-102).
+    # This is the set the draft build writes over its own board; production's in-season build
+    # rewrites it over every card surface, which the fixture does below once they all exist.
+    portrait_crosswalk = crosswalk_from_registry(identity)
+    draft_headshots = build_player_headshot_records(
+        crosswalk=portrait_crosswalk,
+        population=portrait_population({"tiers": tiers}),
         build_id=build_id,
-        gate=gate,
     )
 
     # The in-season half reads one synthetic season of weekly rows (ADR-091): the signal
@@ -562,7 +569,6 @@ def run_fixture_pipeline(
         "market_trend_series": trend_series,
         "market_snapshot": market_records,
         "player_status": status.records,
-        "player_headshots": headshots.records,
         "ros_tiers": ros_tiers,
         "inseason_opportunity": opportunity,
         "behavior_trend_series": behavior_series,
@@ -605,6 +611,16 @@ def run_fixture_pipeline(
     gate.extend(insights.checks)
     if insights.records:
         records["insights"] = insights.records
+    # Portraits over every card surface (`portrait_population_v1`), as the in-season build
+    # writes them: the off-roster players the Opportunity Board and the season actuals name
+    # (last season's roster identifies them) get the picture the tier board never asked for.
+    headshots = build_player_headshot_records(
+        crosswalk=portrait_crosswalk,
+        population=portrait_population(records),
+        build_id=build_id,
+        gate=gate,
+    )
+    records["player_headshots"] = headshots.records
     gate.extend(_published_identity_checks(records, market_outcomes))
 
     metadata = _build_metadata(
@@ -616,7 +632,9 @@ def run_fixture_pipeline(
         git_sha=git_sha or _git_sha(),
         presets=_LAUNCH_PRESETS,
         status=status,
-        headshots=headshots,
+        # The draft-time set, as production's draft build describes it; the in-season block in
+        # `ros_build_metadata` describes the file this build publishes.
+        headshots=draft_headshots,
         market={
             "source_id": market_batch.source_id,
             "snapshot_key": snapshot_key(now),
@@ -658,6 +676,7 @@ def run_fixture_pipeline(
             skill_tree=skill_tree.metadata,
             espn_ownership=espn.metadata,
             insights=insights.metadata,
+            player_headshots=headshots.summary(),
             build_id=build_id,
             generated_at=now,
             git_sha=git_sha or _git_sha(),
@@ -1673,7 +1692,7 @@ def _skill_tree(
         player_id: {"display_name": player.display_name, "position": str(player.position)}
         for player_id, player in (identity.players.items() if identity is not None else ())
     }
-    positions, _, include = season_actuals_inputs(
+    positions, names, include = season_actuals_inputs(
         records,
         snapshot_frame=pl.DataFrame(),
         catalog=catalog,
@@ -1702,6 +1721,7 @@ def _skill_tree(
         build_id=build_id,
         metric_schema_version=record_schema_version("player_skill_metric"),
         definition_schema_version=record_schema_version("skill_tree_definition"),
+        names=names,
     )
 
 
@@ -1809,13 +1829,26 @@ def _weekly_records(
     model = WeeklyModel.load(model_dir)
     snapshot, players, reports = weekly_serve_inputs(opportunity, usage, app=app)
     as_of = parse_utc(FIXTURE_INSEASON_AS_OF)
+    # ADR-117: the production line rule with no retained capture — the fixture's unlined game
+    # stays lines_pending, and every game says where its lines came from.
+    from ffdraft.weekly.lines import apply_retained_lines, lines_summary
+
+    schedule, line_provenance = apply_retained_lines(
+        season.schedule,
+        [],
+        season=FIXTURE_SEASON,
+        week=FIXTURE_THROUGH_WEEK + 1,
+        as_of=as_of,
+        schedule_observed_at=as_of,
+    )
+    lines = {**lines_summary(line_provenance, schedule_observed_at=as_of), "captures_read": []}
     result = build_weekly_projection_records(
         model=model,
         snapshot=snapshot,
         players=players,
         current_teams={},
         weekly=season.weekly,
-        schedule=season.schedule,
+        schedule=schedule,
         scoring=app.league.scoring,
         season=FIXTURE_SEASON,
         through_week=FIXTURE_THROUGH_WEEK,
@@ -1824,6 +1857,7 @@ def _weekly_records(
         schema_version=record_schema_version("weekly_projection"),
         injury_reports=reports,
         venues=load_venue_registry(),
+        line_provenance=line_provenance,
     )
     if not result.records:
         return [], None, []
@@ -1842,6 +1876,7 @@ def _weekly_records(
             through_week=FIXTURE_THROUGH_WEEK,
             injuries_retrieved_at=as_of,
             context=context_summary,
+            lines=lines,
         ),
         context,
     )
@@ -2120,6 +2155,7 @@ def _ros_build_metadata(
     espn_ownership: Mapping[str, Any] | None = None,
     recent_form: Mapping[str, Any] | None = None,
     insights: Mapping[str, Any] | None = None,
+    player_headshots: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """The in-season bundle's metadata, carrying the disclosures the UI renders from."""
     from ffdraft.pipeline.ros import (
@@ -2217,6 +2253,7 @@ def _ros_build_metadata(
         "insights": None if insights is None else dict(insights),
         "skill_tree": None if skill_tree is None else dict(skill_tree),
         "espn_ownership": None if espn_ownership is None else dict(espn_ownership),
+        "player_headshots": None if player_headshots is None else dict(player_headshots),
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

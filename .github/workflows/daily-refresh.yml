@@ -76,7 +76,8 @@ on:
     # The news-reactive slots (ADR-099, docs/OPERATIONS.md 16.8). Injury designations move on
     # Thursday and Friday afternoons (Friday's report carries the final game statuses for
     # Sunday) and a Sunday-morning forecast is the one nearest a 1 pm kickoff. These runs are
-    # `refresh_kind=news`: they capture ONLY the kickoff forecasts and the injury report —
+    # `refresh_kind=news`: they capture ONLY the kickoff forecasts, the schedule's posted
+    # lines (ADR-117) and the injury report —
     # MFL's player database is asked for at most once a day (ADR-017) and Sleeper's status
     # map is captured once a day — and re-infer the weekly layer offline from the committed
     # models. Nothing is ever retrained in a workflow.
@@ -132,6 +133,7 @@ jobs:
       kind: ${{ steps.plan.outputs.kind }}
       forecast_capture: ${{ steps.forecasts.outcome }}
       injury_capture: ${{ steps.injuries.outcome }}
+      lines_capture: ${{ steps.lines.outcome }}
       mode: ${{ steps.season.outputs.mode }}
       season_state: ${{ steps.season.outputs.state }}
       snapshot_week: ${{ steps.season.outputs.snapshot_week }}
@@ -335,6 +337,24 @@ jobs:
             --store market-data \
             --git-sha "${GITHUB_SHA::7}" | tee forecasts.log
 
+      # ADR-117: the schedule's posted total and spread for every game kicking off within 15
+      # days, read fresh — never through the build's day-keyed nflverse cache — and retained.
+      # A build whose schedule copy has no line for a target-week game may reuse that game's
+      # newest pregame observation (pregame_line_reuse_v1, at most 48 h old). On 2026-11-06 an
+      # upstream update blanked every unplayed week-9 line for ten minutes and the refresh
+      # read that state; this capture is what lets the next build recover. Context and
+      # evidence, never a gate.
+      - name: Capture the schedule's posted lines
+        id: lines
+        if: ${{ inputs.skip_capture != true && steps.season.outputs.mode == 'in_season' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          uv run ffdraft capture-schedule-lines \
+            --season "${{ steps.plan.outputs.season }}" \
+            --store market-data \
+            --git-sha "${GITHUB_SHA::7}" | tee lines.log
+
       - name: Capture the injury report
         id: injuries
         if: ${{ inputs.skip_capture != true && steps.season.outputs.mode == 'in_season' }}
@@ -392,6 +412,7 @@ jobs:
             echo "| Refresh kind | \`${{ steps.plan.outputs.kind }}\` |"
             echo "| Forecast capture | \`${{ steps.forecasts.outcome || 'not run' }}\` |"
             echo "| Injury-report capture | \`${{ steps.injuries.outcome || 'not run' }}\` |"
+            echo "| Schedule-lines capture | \`${{ steps.lines.outcome || 'not run' }}\` |"
             echo "| MFL capture outcome | \`${{ steps.market.outcome || 'not run' }}\` |"
             echo "| ESPN ownership capture | \`${{ steps.espn.outcome || 'not run' }}\` |"
             echo "| Store | \`${{ steps.store.outputs.repository }}@${{ steps.store.outputs.branch }}\` |"
@@ -399,7 +420,7 @@ jobs:
             echo "| Store head after | \`${{ steps.persist.outputs.commit || 'unchanged' }}\` |"
             echo "| Appended | \`${{ steps.persist.outputs.appended || 'no' }}\` |"
             echo
-            for log in snapshot.log ffc.log status.log behavior.log espn.log forecasts.log injuries.log; do
+            for log in snapshot.log ffc.log status.log behavior.log espn.log forecasts.log lines.log injuries.log; do
               if [ -f "${log}" ]; then
                 echo "<details><summary>${log}</summary>"
                 echo
@@ -673,9 +694,20 @@ jobs:
           print(f"arbitrage_rows={count('arbitrage.json')}")
           # Portrait coverage, so the first real build says how many cards get a picture
           # rather than leaving it to be noticed. Decoration, so it gates nothing (ADR-087).
-          headshots = meta.get("player_headshots") or {}
-          print(f"headshot_coverage={headshots.get('resolved', 0)}/{headshots.get('published_players', 0)}")
+          # ADR-117: in season build-ros rewrites the portrait set over every card surface and
+          # describes it in its own metadata; the draft block then describes a superseded set.
           ros_meta = data / "ros_build_metadata.json"
+          ros_block = (
+              json.loads(ros_meta.read_text(encoding="utf-8")).get("player_headshots")
+              if ros_meta.is_file()
+              else None
+          )
+          headshots = ros_block or meta.get("player_headshots") or {}
+          surfaces = ",".join((headshots.get("population") or {}).get("surfaces_read") or ["tiers"])
+          print(
+              f"headshot_coverage={headshots.get('resolved', 0)}/"
+              f"{headshots.get('published_players', 0)} over {surfaces}"
+          )
           if ros_meta.is_file():
               ros = json.loads(ros_meta.read_text(encoding="utf-8"))
               print(f"ros_rows={count('ros_tiers.json')}")
@@ -1020,6 +1052,7 @@ jobs:
             --fact "refresh_kind=${{ needs.capture.outputs.kind }}" \
             --fact "forecast_capture=${{ needs.capture.outputs.forecast_capture || 'not run' }}" \
             --fact "injury_capture=${{ needs.capture.outputs.injury_capture || 'not run' }}" \
+            --fact "lines_capture=${{ needs.capture.outputs.lines_capture || 'not run' }}" \
             --fact "weekly_context_rows=${{ needs.build.outputs.weekly_context_rows || '0' }}" \
             --fact "weekly_explained=${{ needs.build.outputs.weekly_explained || '0' }}" \
             --fact "shadow_status=${{ needs.build.outputs.shadow_status || 'absent' }}" \

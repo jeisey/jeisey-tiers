@@ -15,6 +15,8 @@ import { AvailabilityBadge, PositionTag } from "../../components/primitives";
 import type { Availability } from "../../data/availability";
 import { STARTER_GROUPS, rosterIds, slotAccepts, type SavedLeague, type StarterGroup } from "../../data/leagueContract";
 import type { PlayerUniverse } from "../../data/leagueUniverse";
+import { retainedLinesNote } from "../../data/format";
+import { isDataCause } from "../../data/lineup";
 import type { MatchupSetup, Scenario, SlotReading } from "../../data/matchupSetup";
 import { slotLongName, slotName, type SlotRef } from "../../data/roster";
 import {
@@ -203,6 +205,8 @@ function MatchupSlot({
   const side = line.side;
   const record = line.week?.record ?? null;
   const quantiles = line.kind === "modelled" ? (record?.quantiles ?? null) : null;
+  // Where the projection is shown, lines the build reused from an earlier reading say so.
+  const lines = quantiles === null ? null : retainedLinesNote(record?.game);
   const player = id === null ? null : readers.universe.get(id);
   const sideWord = side === "mine" ? "your" : "the opponent's";
   return (
@@ -245,13 +249,18 @@ function MatchupSlot({
               {points(quantiles.q90)}
             </span>
           )}
-          {line.kind !== "modelled" && <span className="wmm-kind" data-kind={line.kind}>{line.kind === "final" ? `Final ${points(line.fixed, 2)}` : KIND_TEXT[line.kind]}</span>}
+          {line.kind !== "modelled" && (
+            <span className="wmm-kind" data-kind={line.kind} data-data={isDataCause(line.cause) || undefined}>
+              {line.kind === "final" ? `Final ${points(line.fixed, 2)}` : isDataCause(line.cause) ? "No projection" : KIND_TEXT[line.kind]}
+            </span>
+          )}
         </span>
         {line.note !== null && (
           <span className="lg-slot-status" data-kind={line.kind === "blocking" ? "sidelined" : line.locked ? "locked" : "note"}>
             {line.note}
           </span>
         )}
+        {lines !== null && <span className="lg-slot-status">{lines}</span>}
       </span>
       <span className="lg-slot-actions">
         {onOpen !== null && (
@@ -292,7 +301,7 @@ function MatchupSlot({
             Remove from opponent
           </button>
         )}
-        {side === "mine" && line.kind === "blocking" && (line.fix === "replace" || line.fix === "fill") && (
+        {side === "mine" && (line.cause === "position" || line.cause === "empty") && (
           <button type="button" className="button" onClick={onEditLineup}>
             Edit lineup
           </button>

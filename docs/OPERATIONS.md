@@ -1171,9 +1171,25 @@ or `Injury-report capture`.
   skipped.
 - `ffdraft capture-injury-report` retains the season's nflverse report with per-week and
   per-row content digests.
+- `ffdraft capture-schedule-lines` (ADR-117) retains the total and spread nflverse's schedule
+  posts for every REG game kicking off within 15 days, blanks included, from a fresh download
+  that bypasses the build's day cache. Summary row: `Schedule-lines capture`.
 
 `validate-market-history` re-hashes the `gameday/` prefix along with `market/`, `status/` and
 `behavior/`, before anything is pushed.
+
+**When a week has no lines (ADR-117).** `build-ros` applies `pregame_line_reuse_v1` to the target
+week: a game the schedule left without a total or spread takes its newest retained pregame
+observation (at most 48 h old). The summary's **Start/Sit lines** table shows how many games came
+from the schedule, from a retained capture, or had none; `ros.weekly_lines_retained` and
+`ros.weekly_lines_unavailable` are the build-log warnings. Unlined games publish their players as
+`lines_pending`, and Start/Sit and Win My Matchup say the source has no line rather than asking the
+reader to decide anything. To recover: check the upstream file
+(`https://github.com/nflverse/nfldata/commits/master/data/games.csv` — an automated update can
+blank and then restore lines), then re-run `daily-refresh` (`workflow_dispatch`) once it has lines
+again. A news-reactive run uses an hourly cache key; any run's capture step reads fresh, so a re-run
+recovers even when the day's cached schedule is the blank one. Nothing here may be fixed by hand:
+no line is ever typed in, imputed or carried from another week.
 
 **What the build adds.** `build-ros` publishes `weekly_context.json`: the venue, the roof,
 the forecast with its status, the lagged starters listed on either team's report, and the
@@ -1197,7 +1213,8 @@ leaves that game out of the holdout; nothing is backfilled.
 | Friday 17:47 | after Friday's report, which carries the final game statuses for Sunday |
 | Sunday 10:23 | the freshest forecast before the 1 pm kickoffs |
 
-These runs are `refresh_kind=news`. They capture only forecasts and the injury report. MFL's
+These runs are `refresh_kind=news`. They capture only forecasts, the schedule's lines (ADR-117)
+and the injury report. MFL's
 player database is asked for at most once a day (ADR-017), and Sleeper's status map and
 trending feeds once a day, so the news runs skip all of those. The build rebuilds from the
 retained store and the committed models: inference only, never a fit. Its nflverse cache key
@@ -1526,6 +1543,8 @@ revalidates at once), bytes counted at the server:
 | showing the Skill Tree on an open card (ADR-107) adds | ≤ 25 kB |
 | then hiding and showing it, or reopening that player's tree | 0 B |
 | then another player's tree, at another position | ≤ 10 kB |
+| opening a ranked KPI's cohort comparison (ADR-117) adds | ≤ 15 kB |
+| then hiding and reopening that comparison | 0 B |
 | opening Win My Matchup inside a saved league (ADR-110) adds | ≤ 30 kB |
 | then the first *Simulate* (the worker) adds | ≤ 7 kB |
 | then simulating again | 0 B |
@@ -1601,6 +1620,16 @@ and that a redeploy which renames a player is shown at once to a reader holding 
   ADR-106 records the measurements. Re-run it when the optimiser, Improve or Rising Stars
   changes.
 
+* **ADR-117 added the comparison's budgets** and changed no existing one. Measured on the size
+  model (2026-11-07, `main` → this change): opening a ranked node's comparison 9.7 kB (6.7 kB
+  code, 1.7 kB style, a 0.5 kB position index and a 0.7 kB QB slice); the largest real slice (a WR
+  metric, Nov 6 build) is 3.3 kB, so the worst case is about 12.3 kB and the budget 15 kB.
+  Reopening costs 0 B. The scenario also fails if showing a tree or opening a node's detail
+  fetches any cohort file. Existing paths moved within their budgets: first visit +985 B (entry
+  code +621, manifest +365), card +134 B, showing the tree +1.7 kB (18.2 of 25 kB), WMM cold +2.9
+  kB (447.3 of 450 kB). The size model now ranks each cloned Skill Tree cohort as the builder
+  does, so its slices are consistent and the comparison, which refuses an inconsistent cohort,
+  draws.
 * **ADR-107 added the Skill Tree's budgets** and changed no existing one. Opening a card
   fetches none of it; the tree's code, stylesheet, the position's definitions and the player's
   bucket shard load only on *Show skill tree* (or the phone's tab). Measured on the size model

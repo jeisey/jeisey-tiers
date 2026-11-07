@@ -41,7 +41,7 @@ import hashlib
 import json
 import os
 import shutil
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -83,8 +83,19 @@ CARD_BUCKETS = 64
 HASH_DIGITS = 16
 
 #: ``bucket`` (ADR-107) splits a player-keyed artifact by the card's FNV-1a bucket, so the
-#: browser finds one player's file with no lookup; ``position`` splits by the record's position.
-Partition = Literal["block", "scoring", "all", "bucket", "position"]
+#: browser finds one player's file with no lookup; ``position`` splits by the record's position;
+#: ``position_metric`` (ADR-117) by position and ``metric_id`` — one Skill Tree cohort per file.
+Partition = Literal["block", "scoring", "all", "bucket", "position", "position_metric"]
+
+#: Every partition :func:`build_serving_layout` groups an artifact's records by.
+_PARTITIONS: tuple[Partition, ...] = (
+    "block",
+    "scoring",
+    "all",
+    "bucket",
+    "position",
+    "position_metric",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,6 +111,31 @@ class Family:
     exclude: tuple[str, ...] = ()
     #: A family of the same partition whose rows may supply fields this one duplicates.
     join: str | None = None
+    #: When set, only the records this predicate accepts are served (ADR-117). The coverage
+    #: check then expects exactly those records, not the whole artifact.
+    where: Callable[[Mapping[str, Any]], bool] | None = None
+    #: When set (ADR-117), this family's files are NOT named in the manifest: each is named, by
+    #: hash, in a small index file ``<index>/<prefix>`` that the manifest names, where
+    #: ``<prefix>`` is the partition key up to its first dot. A family with dozens of small,
+    #: rarely read files then costs every visit's manifest one entry per prefix.
+    index: str | None = None
+
+
+#: The Skill Tree reading states that carry a value (ADR-107): a ranked reading, and the two
+#: unranked ones a reader may still compare against — below the minimum sample, or in a
+#: cohort too small to rank. The other states have no value to place on an axis.
+SKILL_COHORT_STATES: frozenset[str] = frozenset({"ranked", "below_minimum", "small_cohort"})
+
+
+def skill_cohort_row(record: Mapping[str, Any]) -> bool:
+    """A reading that belongs to its metric's *current* positional cohort (ADR-117).
+
+    It carries a value, and it is not an archive reading: a combine time (``source_season``
+    set) is ranked among that position's historical combine testers, a cohort this artifact
+    does not publish, so today's players with a time on file are not its cohort and are never
+    served as one.
+    """
+    return record.get("state") in SKILL_COHORT_STATES and record.get("source_season") is None
 
 
 #: Every slice family the site loads, and why each is shaped the way it is (the dependency
@@ -176,8 +212,38 @@ FAMILIES: tuple[Family, ...] = (
     # the card shard. Readings are scoring- and league-independent, so they are served once,
     # split by the card's player bucket; definitions are split by position, the one a card
     # needs.
-    Family("skill_tree", "player_skill_tree", "bucket"),
+    # ADR-117: the readings' `display_name` serves the dictionary, not the tree, which names
+    # its player from the card.
+    Family("skill_tree", "player_skill_tree", "bucket", exclude=("display_name",)),
     Family("skill_tree_definitions", "skill_tree_definitions", "position"),
+    # ADR-117: one metric's whole positional cohort — every reading with a value, ranked or
+    # not — fetched only when a reader opens that metric's comparison. A file per position and
+    # metric (0.4-3.3 kB compressed on the 2026 week-8 build) instead of a file per position
+    # (8-24 kB): a reader comparing one statistic downloads one statistic. Its files are named
+    # in a per-position index rather than in the manifest, which every visit downloads.
+    Family(
+        "skill_cohort",
+        "player_skill_tree",
+        "position_metric",
+        only=(
+            "build_id",
+            "season",
+            "through_week",
+            "player_id",
+            "position",
+            "metric_id",
+            "state",
+            "value",
+            "numerator",
+            "denominator",
+            "rank",
+            "percentile",
+            "cohort_size",
+            "games",
+        ),
+        where=skill_cohort_row,
+        index="skill_cohort_index",
+    ),
     # ADR-112: ESPN's latest roster/start readings, one record per board player and preset-
     # independent, so one slice serves every block. The Opportunity Board reads all of it; a
     # card reads its own record from the card shard.
@@ -268,6 +334,9 @@ CARD_SECTIONS: tuple[tuple[str, Partition], ...] = (
 )
 
 #: Artifacts whose rows name a player, in the order the dictionary takes a name from.
+#: ``player_skill_tree`` is last (ADR-117): each reading carries its player's name by
+#: ``season_actuals``' rule (boards, then the identity registry), so a Skill Tree cohort member
+#: no board publishes still has a name, and no board's name changes.
 _NAMED_ARTIFACTS = (
     "ros_tiers",
     "inseason_opportunity",
@@ -277,6 +346,7 @@ _NAMED_ARTIFACTS = (
     "arbitrage",
     "projections",
     "player_status",
+    "player_skill_tree",
 )
 
 #: Record fields that carry the build's identity rather than content. They are restored from
@@ -351,7 +421,14 @@ def _partition_key(
         return f"{bucket_of(str(record['player_id']), buckets):02d}"
     if partition == "position":
         return str(record["position"])
+    if partition == "position_metric":
+        return f"{record['position']}.{record['metric_id']}"
     return "all"
+
+
+def _index_prefix(key: str) -> str:
+    """The index file an indexed slice is named in: its partition key up to the first dot."""
+    return key.split(".", 1)[0]
 
 
 def _select_fields(fields: Sequence[str], family: Family) -> list[str]:
@@ -700,9 +777,11 @@ def build_serving_layout(
 
     # Rows of every block-partitioned family, keyed for the join and the card shards.
     partitioned: dict[str, dict[str, list[Mapping[str, Any]]]] = {}
+    #: index family -> prefix -> indexed slice key -> digest (ADR-117)
+    indexes: dict[str, dict[str, dict[str, str]]] = {}
     for artifact in served:
         records = list(envelopes[artifact].get("records", ()))
-        for partition in ("block", "scoring", "all", "bucket", "position"):
+        for partition in _PARTITIONS:
             groups: dict[str, list[Mapping[str, Any]]] = {}
             try:
                 for record in records:
@@ -726,9 +805,13 @@ def build_serving_layout(
         # because the slice carries the account (`meta`).
         if family.name == "insights" and (insights_meta or {}).get("status") == "published":
             keys.update((insights_meta or {}).get("counts") or {})
+        if family.where is not None:
+            keys = {key for key in keys if any(family.where(row) for row in groups.get(key, ()))}
         for key in sorted(keys):
             rows = [
-                {name: row[name] for name in fields if name in row} for row in groups.get(key, ())
+                {name: row[name] for name in fields if name in row}
+                for row in groups.get(key, ())
+                if family.where is None or family.where(row)
             ]
             join = None
             if family.join is not None:
@@ -756,7 +839,34 @@ def build_serving_layout(
             }
             if family.name == "insights" and insights_meta is not None:
                 payload["meta"] = insights_meta
+            if family.index is not None:
+                data = _encode_file(payload)
+                digest = _digest(data)
+                path = f"{SERVE_DIRNAME}/{family.name}/{key}.{digest}.json"
+                layout.files[path] = data
+                layout.provenance[path] = (family.name, key, rows)
+                indexes.setdefault(family.index, {}).setdefault(_index_prefix(key), {})[key] = (
+                    digest
+                )
+                continue
             add(f"{family.name}/{key}", payload, (family.name, key, rows))
+
+    # ADR-117: the index files that name the indexed families' files, one per prefix.
+    for index_name, prefixes in sorted(indexes.items()):
+        indexed = next(family for family in FAMILIES if family.index == index_name)
+        for prefix, named in sorted(prefixes.items()):
+            ordered = dict(sorted(named.items()))
+            add(
+                f"{index_name}/{prefix}",
+                {
+                    "format": SERVING_FORMAT,
+                    "family": index_name,
+                    "indexes": indexed.name,
+                    "partition": prefix,
+                    "files": ordered,
+                },
+                ("index", prefix, ordered),
+            )
 
     # Card shards: one per block and bucket that holds anyone.
     blocks = sorted(
@@ -873,6 +983,21 @@ def _decode_served(
     artifacts = layout.manifest["artifacts"]
     kind, partition, expected = layout.provenance[path]
     if kind == "players":
+        return kind, problems
+    if kind == "index":
+        # ADR-117: an index names its family's files by hash, and nothing else.
+        if payload.get("files") != expected:
+            problems.append(f"{path}: index entries differ from the files it stands for")
+        indexed = str(payload.get("indexes", ""))
+        for key, digest in (payload.get("files") or {}).items():
+            target = f"{SERVE_DIRNAME}/{indexed}/{key}.{digest}.json"
+            data_for = layout.files.get(target)
+            if data_for is None:
+                problems.append(f"{path}: names {target}, which is not served")
+            elif _digest(data_for) != digest:
+                problems.append(f"{path}: {target} does not match its hash")
+            elif _index_prefix(key) != partition:
+                problems.append(f"{path}: {key} is not in partition {partition}")
         return kind, problems
     if kind == "card":
         for artifact, rows in expected.items():
@@ -1018,7 +1143,7 @@ def validate_serving_layout(
         try:
             kind, found = _decode_served(layout, path, layout.files[path], decoded_families)
             problems.extend(found)
-            if kind not in ("players", "card"):
+            if kind not in ("players", "card", "index"):
                 payload = json.loads(layout.files[path].decode("utf-8"))
                 if payload.get("join") is None:
                     decoded_families[f"{kind}/{payload['partition']}"] = decode_table(
@@ -1030,6 +1155,7 @@ def validate_serving_layout(
             problems.append(f"{path}: does not decode ({type(exc).__name__}: {exc})")
     problems.extend(_coverage_problems(layout, envelopes))
     problems.extend(_schema_problems(layout))
+    problems.extend(_skill_cohort_problems(layout, envelopes, metadata))
     if problems:
         checks.append(
             _fail(
@@ -1068,9 +1194,98 @@ def _coverage_problems(
             for provenance in layout.provenance.values()
             if provenance[0] == family.name
         )
-        total = len(envelope.get("records", ()))
+        records = envelope.get("records", ())
+        total = (
+            len(records)
+            if family.where is None
+            else sum(1 for record in records if family.where(record))
+        )
         if served != total:
             problems.append(f"{family.name}: {served} of {total} records served")
+    return problems
+
+
+def _skill_cohort_problems(
+    layout: ServingLayout,
+    envelopes: Mapping[str, Mapping[str, Any]],
+    metadata: Mapping[str, Mapping[str, Any]],
+) -> list[str]:
+    """Each Skill Tree cohort slice is exactly its metric's positional cohort (ADR-117).
+
+    The decode comparison above already proves each row equal to its source record; these are
+    the cohort's own properties, re-read from the served bytes against the tree they come from:
+    membership (exactly the tree's readings with a value for that position and metric, archive
+    readings excluded), unique players, one position and metric per file, the ranked count
+    equal to every ranked row's ``cohort_size``, ranks and percentiles re-derived from the
+    served values, one build and cutoff — the tree's — and a dictionary name for every member,
+    so a comparison can name a player no board publishes.
+    """
+    tree = envelopes.get("player_skill_tree")
+    if tree is None:
+        return []
+    # The validator's own re-derivation, never the builder's (skilltree_checks, ADR-117).
+    from ffdraft.artifacts.skilltree_checks import percentile_agrees, rederive_ranks
+
+    problems: list[str] = []
+    names = json.loads(layout.files[_players_path(layout)].decode("utf-8"))["names"]
+    header = layout.manifest["artifacts"].get("player_skill_tree", {})
+    tree_meta = (metadata.get("ros_build_metadata") or {}).get("skill_tree") or {}
+    definitions = {
+        (str(row.get("position")), str(row.get("metric_id"))): row
+        for row in (envelopes.get("skill_tree_definitions") or {}).get("records", ())
+    }
+    expected: dict[str, set[str]] = {}
+    for record in tree.get("records", ()):
+        if skill_cohort_row(record):
+            key = f"{record['position']}.{record['metric_id']}"
+            expected.setdefault(key, set()).add(str(record["player_id"]))
+    seen: set[str] = set()
+    for path, (kind, key, _) in layout.provenance.items():
+        if kind != "skill_cohort":
+            continue
+        seen.add(key)
+        payload = json.loads(layout.files[path].decode("utf-8"))
+        rows = decode_table(payload, envelope=header, names=names)
+        ids = [str(row["player_id"]) for row in rows]
+        if len(ids) != len(set(ids)):
+            problems.append(f"{path}: a player appears twice")
+        if set(ids) != expected.get(key, set()):
+            problems.append(f"{path}: members differ from the tree's cohort for {key}")
+        position, _, metric = key.partition(".")
+        if any(row["position"] != position or row["metric_id"] != metric for row in rows):
+            problems.append(f"{path}: a row of another position or metric")
+        if any(row["build_id"] != tree.get("build_id") for row in rows):
+            problems.append(f"{path}: a row of another build")
+        cutoff = tree_meta.get("through_week")
+        if any(row["through_week"] != cutoff for row in rows) and cutoff is not None:
+            problems.append(f"{path}: a row of another cutoff than the tree's ({cutoff})")
+        missing_names = [player for player in ids if not names.get(player)]
+        if missing_names:
+            problems.append(f"{path}: no dictionary name for {', '.join(missing_names[:3])}")
+        ranked = [row for row in rows if row["state"] == "ranked"]
+        if any(row["cohort_size"] != len(ranked) for row in ranked):
+            problems.append(f"{path}: cohort_size differs from the {len(ranked)} ranked rows")
+        definition = definitions.get((position, metric))
+        if ranked and definition is not None:
+            derived = rederive_ranks(
+                {str(row["player_id"]): float(row["value"]) for row in ranked},
+                direction=str(definition.get("direction")),
+                min_cohort=0,
+            )
+            for row in ranked:
+                mine = derived.get(str(row["player_id"]))
+                if (
+                    mine is None
+                    or mine[0] != row["rank"]
+                    or not percentile_agrees(row["percentile"], mine[1])
+                ):
+                    problems.append(
+                        f"{path}: {row['player_id']} rank/percentile "
+                        f"{row['rank']}/{row['percentile']} do not re-derive from the values"
+                    )
+                    break
+    for key in sorted(set(expected) - seen):
+        problems.append(f"skill_cohort/{key}: the tree has a cohort and no slice serves it")
     return problems
 
 

@@ -6,12 +6,12 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version", "build_id", "season", "through_week", "player_id", "position",
+    "schema_version", "build_id", "season", "through_week", "player_id", "display_name", "position",
     "metric_id", "state", "value", "numerator", "denominator", "rank", "percentile",
     "cohort_size", "games", "source_season", "reason"
   ],
   "properties": {
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"const": "1.1"},
     "build_id": {"type": "string", "minLength": 1},
     "season": {"type": "integer", "minimum": 2000},
     "through_week": {
@@ -20,6 +20,7 @@
       "description": "The board's cutoff: only regular-season weeks 1..through_week are counted."
     },
     "player_id": {"type": "string", "pattern": "^gsis:"},
+    "display_name": {"type": "string", "minLength": 1, "description": "1.1 (ADR-117): the name a Skill Tree comparison prints for him, by season_actuals' rule — the boards' and the identity registry's name, else his latest box-score or snap row's. The served player dictionary takes it last, so it names only players no board artifact names; the bucket slices do not carry it."},
     "position": {
       "enum": ["QB", "RB", "WR", "TE"],
       "description": "The position the site shows for him; his tree and every peer cohort are this position's."

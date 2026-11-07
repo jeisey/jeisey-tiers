@@ -262,3 +262,47 @@ def test_a_context_from_another_build_or_week_or_alone_fails(weekly, context) ->
     assert "cross_artifact.weekly_context_mismatch" in _failed(
         _weekly_context_cross_checks({"weekly_context": {"build_id": "b1", "records": context}})
     )
+
+
+# ----------------------------------------------- ADR-117: unmodelled and line provenance
+
+
+def test_an_unmodelled_record_carries_the_game_and_no_distribution(weekly) -> None:
+    playing = next(row for row in weekly if row["game_state"] == "upcoming")
+    playing.update(game_state="unmodelled", quantiles=None, drivers=None, explanation=None)
+    assert _failed(_weekly_checks(weekly, "test")) == set()
+    assert not failures(validate_records("weekly_projection", weekly))
+    playing["game"] = {**playing["game"], "total_line": None, "team_margin": None}
+    playing["game"].update(line_source=None, lines_observed_at_utc=None)
+    assert "weekly.record_shape" in _failed(_weekly_checks(weekly, "test"))
+
+
+def test_line_provenance_must_agree_with_the_lines(weekly) -> None:
+    playing = next(row for row in weekly if row["game_state"] == "upcoming")
+    playing["game"] = {**playing["game"], "line_source": None}
+    assert "weekly.record_shape" in _failed(_weekly_checks(weekly, "test"))
+
+
+def test_a_retained_line_observed_after_kickoff_fails(weekly) -> None:
+    playing = next(row for row in weekly if row["game_state"] == "upcoming")
+    playing["game"] = {
+        **playing["game"],
+        "line_source": "retained",
+        "lines_observed_at_utc": playing["game"]["kickoff_utc"],
+    }
+    assert "weekly.record_shape" in _failed(_weekly_checks(weekly, "test"))
+
+
+def test_the_context_must_print_the_lines_the_projection_read(pipeline_result, weekly) -> None:
+    context = copy.deepcopy(pipeline_result.records["weekly_context"])
+    envelopes = {
+        "weekly_projections": {"records": weekly, "build_id": "b"},
+        "weekly_context": {"records": context, "build_id": "b"},
+    }
+    assert _failed(_weekly_context_cross_checks(envelopes)) == set()
+    playing = next(row for row in weekly if row["game_state"] == "upcoming")
+    side = next(row for row in context if row["team"] == playing["team"])
+    side["this_week"] = {**side["this_week"], "line_source": "retained"}
+    assert "cross_artifact.weekly_context_mismatch" in _failed(
+        _weekly_context_cross_checks(envelopes),
+    )

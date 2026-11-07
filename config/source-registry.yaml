@@ -330,6 +330,16 @@ sources:
           row had them (2017-2025 closing lines), so a game whose line is not posted is
           published as `lines_pending` with no projection rather than projected with a
           missing line the model reads as zero. No board reads that model.
+          ADR-117 (2026-11-06): the schedule's lines are not monotone in time. nfldata
+          commit 63cbbc1 (2026-11-06T11:45:17Z) blanked the odds block of every unplayed
+          week-9 game and 13d8e46 (11:55:20Z) restored it; a refresh that read the release
+          built in between published every upcoming player lines_pending. The capture job
+          now retains, from a fresh (uncached) download, the spread and total of every REG
+          game kicking off within 15 days (gameday/schedule_lines, private, blanks kept),
+          and pregame_line_reuse_v1 lets the serving build reuse a game's newest retained
+          pregame observation (same game, both lines, before kickoff, at most 48 h old)
+          when the schedule it read has none, published with line_source=retained and the
+          observation time. Same source, same attribution, spread and total only.
       - id: ff_playerids_unlicensed_mirror
         detail: >-
           load_ff_playerids is served from the dynastyprocess mirror, which publishes no

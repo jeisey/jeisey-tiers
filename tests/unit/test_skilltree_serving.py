@@ -85,7 +85,13 @@ def test_every_served_skill_tree_table_decodes_to_its_records():
     def key(row: dict) -> str:
         return json.dumps(row, sort_keys=True)
 
-    assert sorted(map(key, decoded)) == sorted(map(key, envelopes["player_skill_tree"]["records"]))
+    # ADR-117: the bucket slices leave out `display_name`, which feeds the player dictionary.
+    expected = [
+        {name: value for name, value in row.items() if name != "display_name"}
+        for row in envelopes["player_skill_tree"]["records"]
+    ]
+    assert all(row.get("display_name") for row in envelopes["player_skill_tree"]["records"])
+    assert sorted(map(key, decoded)) == sorted(map(key, expected))
     assert sorted(map(key, definitions)) == sorted(
         map(key, envelopes["skill_tree_definitions"]["records"])
     )

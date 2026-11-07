@@ -193,6 +193,16 @@ from a board row. Those bounds are asserted by tests, not intended. Adding a sec
 provider is a decision for this section, not a configuration change, which is why the record
 schema's `provider` is an enum of one.
 
+**Population and mapping (ADR-117, 2026-11-06).** Portraits are published for every player a card
+can be opened for (`portrait_population_v1`: the draft and in-season boards, Start/Sit, My Leagues
+and Win My Matchup, Insights), not only the draft tier board. The player-to-picture mapping is
+nflverse's `espn_id`, from the roster or — only when the roster omits it — from nflverse's player
+master by the same GSIS id, refused if two players would share an id. Nothing about the request
+changed: one host, only when a card opens, no referrer, never from a board row, no retry after a
+failure, and a missing athlete (a plain 404) draws the monogram. The coverage audit's image probe
+(`docs/source-probes/2026-11-06/headshots/`) was a one-off at most 4 requests a second with a
+generic User-Agent; the pipeline never calls ESPN.
+
 ### ESPN roster and start percentages (ADR-112)
 
 **Captured by the pipeline and published, on the owner's decision rather than on a licence.**

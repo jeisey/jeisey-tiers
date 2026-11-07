@@ -31,6 +31,7 @@ from ffdraft.timeutil import isoformat_utc
 from ffdraft.weekly.context import team_game_context
 from ffdraft.weekly.explain import team_line_reference
 from ffdraft.weekly.forecast import ForecastStatus
+from ffdraft.weekly.lines import LineProvenance
 from ffdraft.weekly.lineup import (
     absence_lists,
     designations_for_week,
@@ -51,6 +52,18 @@ def _round(value: Any, digits: int = 2) -> float | None:
     return None if number != number else round(number, digits)
 
 
+def _line_source(
+    row: Mapping[str, Any],
+    game_id: str,
+    provenance: Mapping[str, LineProvenance] | None,
+    as_of: datetime,
+) -> dict[str, Any]:
+    if _round(row.get("game_total_line"), 1) is None:
+        return {"line_source": None, "lines_observed_at_utc": None}
+    known = (provenance or {}).get(game_id)
+    return (known or LineProvenance(game_id, "schedule", as_of)).public()
+
+
 def build_weekly_context_records(
     *,
     schedule: pl.DataFrame,
@@ -64,8 +77,14 @@ def build_weekly_context_records(
     injuries: pl.DataFrame | None,
     snaps: pl.DataFrame | None,
     weekly: pl.DataFrame,
+    line_provenance: Mapping[str, LineProvenance] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """One record per team playing in the week after the cutoff, and a summary."""
+    """One record per team playing in the week after the cutoff, and a summary.
+
+    ``schedule`` is the one the projections read (retained lines already applied, ADR-117), and
+    ``line_provenance`` says where each game's lines came from; without it, a lined game's lines
+    are the schedule's, read at ``as_of``.
+    """
     target_week = through_week + 1
     season_context = team_game_context(schedule, [season], venues=registry)
     games = season_context.filter(pl.col("week") == target_week)
@@ -173,6 +192,7 @@ def build_weekly_context_records(
                     "is_home": _round(row.get("game_is_home"), 0),
                     "rest_advantage": _round(row.get("game_rest_advantage"), 0),
                     "indoors": _round(row.get("game_indoors"), 0),
+                    **_line_source(row, game_id, line_provenance, as_of),
                 },
             },
         )

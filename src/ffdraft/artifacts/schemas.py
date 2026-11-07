@@ -129,10 +129,10 @@ RECORD_SCHEMA_VERSIONS: Mapping[str, str] = {
     "player_usage": "1.2",
     "team_matchup": "1.0",
     # 1.1 (ADR-099): additive `explanation`, the typical-week account of P10, P50 and P90.
-    "weekly_projection": "1.1",
-    "weekly_game_context": "1.0",
+    "weekly_projection": "1.2",
+    "weekly_game_context": "1.1",
     "season_actuals_record": "1.0",
-    "player_skill_metric": "1.0",
+    "player_skill_metric": "1.1",
     "skill_tree_definition": "1.0",
     "espn_ownership_record": "1.0",
     "espn_ownership_series": "1.0",

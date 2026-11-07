@@ -31,7 +31,7 @@ import { updateLeague } from "../../data/leagueOps";
 import { publishYoloFiles } from "../../data/leagueSignal";
 import type { LeagueStore } from "../../data/leagueStore";
 import type { PlayerUniverse } from "../../data/leagueUniverse";
-import type { WeekContext } from "../../data/lineup";
+import { DATA_CAUSES, DATA_CAUSE_TEXT, readWeek, type WeekContext } from "../../data/lineup";
 import { MATCHUP_DRAWS, MATCHUP_ENGINE_VERSION, type SimResult, type VariantResult } from "../../data/matchup";
 import { CancelledError, MatchupRunner } from "../../data/matchupClient";
 import {
@@ -44,6 +44,7 @@ import {
   type Proposal,
   type Scenario,
   type SetupInput,
+  type SlotReading,
 } from "../../data/matchupSetup";
 import type { InSeasonBundle } from "../../data/ros";
 import { checkRoster, slotLongName } from "../../data/roster";
@@ -70,7 +71,7 @@ interface Running {
 }
 
 interface ChangesRun {
-  /** The baseline the changes were evaluated against: stale once that changes. */
+  /** The baseline the changes were evaluated against, and who could move: stale once either changes. */
   readonly baseFingerprint: string;
   readonly built: BuiltInput;
   readonly proposals: readonly Proposal[];
@@ -270,19 +271,23 @@ export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
 
   // A run for inputs that have since changed is cancelled rather than left to finish.
   const baseFingerprint = baseline?.fingerprint ?? null;
+  // Lineup changes also depend on who may move: a bench player whose game kicked off since they
+  // were evaluated is locked now, so those changes are no longer current.
+  const weekKey = useMemo(() => rosterIds(league.roster).map((id) => `${id}:${readWeek(id, context).kind}`).join(), [league.roster, context]);
+  const changeKey = baseFingerprint === null ? null : `${baseFingerprint}#${weekKey}`;
   useEffect(() => {
     if (running === null) return;
     const stillCurrent =
       (running.kind === "simulate" && running.fingerprint === baseFingerprint) ||
-      (running.kind === "changes" && changes?.baseFingerprint === baseFingerprint && changes.built.fingerprint === running.fingerprint) ||
-      (running.kind === "preview" && preview?.baseFingerprint === baseFingerprint && preview.built.fingerprint === running.fingerprint);
+      (running.kind === "changes" && changes?.baseFingerprint === changeKey && changes.built.fingerprint === running.fingerprint) ||
+      (running.kind === "preview" && preview?.baseFingerprint === changeKey && preview.built.fingerprint === running.fingerprint);
     if (!stillCurrent) running.cancel();
-  }, [running, baseFingerprint, changes, preview]);
+  }, [running, baseFingerprint, changeKey, changes, preview]);
 
   const baseResult = baseline === null ? undefined : results.get(baseline.fingerprint);
-  const changesCurrent = changes !== null && changes.baseFingerprint === baseFingerprint ? changes : null;
+  const changesCurrent = changes !== null && changes.baseFingerprint === changeKey ? changes : null;
   const changesResult = changesCurrent === null ? undefined : results.get(changesCurrent.built.fingerprint);
-  const previewCurrent = preview !== null && preview.baseFingerprint === baseFingerprint ? preview : null;
+  const previewCurrent = preview !== null && preview.baseFingerprint === changeKey ? preview : null;
   const previewResult = previewCurrent === null ? undefined : results.get(previewCurrent.built.fingerprint);
 
   const simulate = (): void => {
@@ -298,7 +303,8 @@ export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
   }, [prefs.yolo, yoloBundle, leaguePreset, scoring, context, setup.mine, owned, marks]);
 
   const findChanges = async (): Promise<void> => {
-    if (baseline === null || preparing) return;
+    if (baseline === null || changeKey === null || preparing) return;
+    const key = changeKey;
     setPreparing(true);
     const begun = performance.now();
     await yieldToBrowser();
@@ -318,17 +324,17 @@ export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
     const built = buildSimInput(setup, [...proposals, ...yolo], rule, correlation, identity);
     measure("wmm-prepare", begun);
     setPreparing(false);
-    setChanges({ baseFingerprint: baseline.fingerprint, built, proposals, yolo });
+    setChanges({ baseFingerprint: key, built, proposals, yolo });
     start("changes", built);
   };
 
   const showPreview = (proposal: Proposal | null, label: string): void => {
-    if (proposal === null || baseline === null) {
+    if (proposal === null || changeKey === null) {
       setPreview(null);
       return;
     }
     const built = buildSimInput(setup, [proposal], rule, correlation, identity, { detailFor: [proposal.id] });
-    setPreview({ baseFingerprint: baseline.fingerprint, proposal, label, built });
+    setPreview({ baseFingerprint: changeKey, proposal, label, built });
     start("preview", built);
   };
 
@@ -465,7 +471,7 @@ export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
             onChange={setScenario}
           />
         )}
-        <Readiness setup={setup} name={name} league={league} conditional={conditional} lockedPregame={lockedPregame} />
+        <Readiness setup={setup} name={name} league={league} conditional={conditional} lockedPregame={lockedPregame} weekly={weekly} generated={bundle.metadata.generated_at_utc} now={context.now} />
         <div className="wmm-run-actions">
           {running !== null && running.kind === "simulate" ? (
             <>
@@ -505,7 +511,7 @@ export function WinMyMatchup(props: WinMyMatchupProps): React.JSX.Element {
       )}
 
       {baseline !== null && baseResult === undefined && results.size > 0 && running === null && (
-        <p className="lg-help" role="status">Your lineups changed since the last simulation. Simulate again to see the picture for these lineups.</p>
+        <p className="lg-help" role="status">The inputs changed since the last simulation (a lineup, a final, the scenario, a kickoff or the data). Simulate again to see the picture for them.</p>
       )}
 
       {baseResult !== undefined && (
@@ -641,18 +647,30 @@ function required(result: SimResult): VariantResult {
   return first;
 }
 
+/**
+ * What Simulate is waiting for. The reader's decisions are listed and counted; starters the build
+ * published no usable projection for are a data problem, not decisions: each cause is explained
+ * once, with the build's freshness and line provenance, and the only recovery offered is reading
+ * a newer build. They still block: nothing stands in for a missing projection.
+ */
 function Readiness({
   setup,
   name,
   league,
   conditional,
   lockedPregame,
+  weekly,
+  generated,
+  now,
 }: {
   readonly setup: ReturnType<typeof readSetup>;
   readonly name: (id: string) => string;
   readonly league: SavedLeague;
   readonly conditional: number;
   readonly lockedPregame: number;
+  readonly weekly: RosWeeklyMetadata;
+  readonly generated: string;
+  readonly now: number;
 }): React.JSX.Element {
   if (setup.complete) {
     const zeros = setup.mine.concat(setup.theirs).filter((line) => line.kind === "bye" || line.kind === "zero" || line.kind === "empty").length;
@@ -661,20 +679,57 @@ function Readiness({
         {`Ready: ${String(setup.mine.length)} starters a side.`}
         {zeros > 0 && ` ${String(zeros)} count${zeros === 1 ? "s" : ""} as a known 0.`}
         {conditional > 0 && ` ${String(conditional)} "if active".`}
-        {lockedPregame > 0 && ` ${String(lockedPregame)} kicked off (pregame projection).`}
+        {lockedPregame > 0 && ` ${String(lockedPregame)} kicked off${setup.scenario === "finals" ? " with no final entered" : ""} (pregame projection).`}
       </p>
     );
   }
-  const issues = setup.blocking.map((line) => `${line.side === "mine" ? "Your" : "Their"} ${slotLongName(line.slot, league.slots)}${line.id === null ? "" : ` (${name(line.id)})`}: ${line.note ?? "needs a decision"}`);
+  const label = (line: SlotReading): string =>
+    `${line.side === "mine" ? "Your" : "Their"} ${slotLongName(line.slot, league.slots)}${line.id === null ? "" : ` (${name(line.id)})`}`;
+  const issues = setup.decisions.map((line) => `${label(line)}: ${line.note ?? "needs a decision"}`);
   if (setup.overflow.length > 0) issues.push("Some of their starters no longer fit this league's slots.");
+  const gaps = setup.dataGaps.length;
+  const groups = DATA_CAUSES.map((cause) => [cause, setup.dataGaps.filter((line) => line.cause === cause)] as const).filter(([, lines]) => lines.length > 0);
+  const lines = weekly.lines;
   return (
     <div className="wmm-ready" data-ready="false">
-      <p className="wmm-ready-title">{`Simulate needs ${String(issues.length)} decision${issues.length === 1 ? "" : "s"}:`}</p>
-      <ul className="lg-gaps">
-        {issues.map((issue) => (
-          <li key={issue}>{issue}</li>
-        ))}
-      </ul>
+      {issues.length > 0 && (
+        <>
+          <p className="wmm-ready-title">{`Simulate needs ${String(issues.length)} decision${issues.length === 1 ? "" : "s"}:`}</p>
+          <ul className="lg-gaps">
+            {issues.map((issue) => (
+              <li key={issue}>{issue}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      {gaps > 0 && (
+        <div className="wmm-data">
+          <p className="wmm-ready-title">
+            {`${String(gaps)} starter${gaps === 1 ? " has" : "s have"} no projection in this build${issues.length === 0 ? ": nothing here is yours to decide, and Simulate stays off until a build publishes " + (gaps === 1 ? "it." : "them.") : "."}`}
+          </p>
+          <ul className="lg-gaps" data-kind="unscored">
+            {groups.map(([cause, group]) => (
+              <li key={cause}>
+                <strong>{`${DATA_CAUSE_TEXT[cause][0]} (${String(group.length)}):`}</strong>
+                {` ${group.map(label).join("; ")}. ${DATA_CAUSE_TEXT[cause][1]}`}
+              </li>
+            ))}
+          </ul>
+          <p className="lg-help">
+            {`This build: ${formatEastern(generated)} (${formatAge(Math.max(0, hoursSince(generated, now)))}), through week ${String(weekly.through_week)}, projecting week ${String(weekly.target_week)}.`}
+            {groups.some(([cause]) => cause === "lines_pending") &&
+              (lines == null
+                ? " It published no record of where its lines came from."
+                : ` Its lines: ${String(lines.from_schedule)} of ${String(lines.target_games)} games from the schedule it read ${formatEastern(lines.schedule_retrieved_at_utc)}, ${String(lines.from_retained)} retained from an earlier pregame reading (at most ${String(lines.max_age_hours)} hours old), ${String(lines.unlined)} with none.`)}
+          </p>
+          <p className="wmm-run-actions">
+            <span className="lg-help">Reload to read the newest published build. This page cannot tell whether one has these projections: a newer build has them only if its sources do.</span>
+            <button type="button" className="button" onClick={() => { window.location.reload(); }}>
+              Reload
+            </button>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

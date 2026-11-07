@@ -94,6 +94,19 @@ export function formatEastern(iso: string | null | undefined): string {
   return `${get("month")} ${get("day")} · ${get("hour")}:${get("minute")} ${get("dayPeriod")} ET`;
 }
 
+/**
+ * A weekly projection's lines when the build reused a pregame reading (`line_source:
+ * "retained"`, weekly contract 1.2): "Lines as of Nov 5 · 5:53 PM ET (retained; the schedule had
+ * none at this build)". Null for schedule lines, no lines, or an older build that does not say.
+ */
+export function retainedLinesNote(
+  game: { readonly line_source?: string | null; readonly lines_observed_at_utc?: string | null } | null | undefined,
+): string | null {
+  if (game?.line_source !== "retained") return null;
+  const at = formatEastern(game.lines_observed_at_utc);
+  return `Lines ${at === EM_DASH ? "from an earlier reading" : `as of ${at}`} (retained; the schedule had none at this build)`;
+}
+
 const ET_DAY = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York",
   month: "short",

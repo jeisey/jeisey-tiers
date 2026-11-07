@@ -100,6 +100,18 @@ def register(subparsers: Any, *, repo_root: Any) -> None:
     forecasts.add_argument("--git-sha", default=None)
     forecasts.set_defaults(handler=lambda args: _capture_forecasts(args))
 
+    lines = subparsers.add_parser(
+        "capture-schedule-lines",
+        help=(
+            "retain the total and spread nflverse's schedule posts for every regular-season "
+            "game kicking off within 15 days, posted or not (ADR-117; fresh download, network)"
+        ),
+    )
+    lines.add_argument("--season", type=int, required=True)
+    lines.add_argument("--store", type=Path, required=True, help="retained store checkout")
+    lines.add_argument("--git-sha", default=None)
+    lines.set_defaults(handler=lambda args: _capture_lines(args))
+
     injury = subparsers.add_parser(
         "capture-injury-report",
         help="retain the season's nflverse injury report with per-week row digests (network)",
@@ -407,6 +419,45 @@ def _capture_forecasts(args: argparse.Namespace) -> int:
         print(f"wrote {path}")
     print(json.dumps({"games": len(rows), **capture.details}, indent=2))
     # A forecast is context and a shadow input, never a gate: a failed provider is reported.
+    return 0
+
+
+def _capture_lines(args: argparse.Namespace) -> int:
+    """ADR-117: retain the schedule's posted lines, read fresh — never through a day cache.
+
+    The build reads the schedule through the day-keyed nflverse cache; this capture deliberately
+    does not, so a blank the build's copy caught can be recovered from a capture that did not.
+    """
+    import os
+    from datetime import UTC, datetime
+
+    from ffdraft.retention import SnapshotStore
+    from ffdraft.sources.nflverse_history import NflverseScheduleAdapter
+    from ffdraft.sources.nflverse_http import nflverse_loaders
+    from ffdraft.weekly.capture import LINES_SOURCE_ID, GamedayCapture, write_gameday_capture
+    from ffdraft.weekly.lines import line_capture_rows
+
+    os.environ.pop("NFLREADPY_CACHE", None)
+    now = datetime.now(UTC).replace(microsecond=0)
+    schedule = NflverseScheduleAdapter().normalize(nflverse_loaders().load_schedules()).frame
+    rows, details = line_capture_rows(schedule, season=args.season, now=now)
+    capture = GamedayCapture(
+        source_id=LINES_SOURCE_ID,
+        season=args.season,
+        observed_at_utc=now,
+        rows=rows,
+        details={**details, "source": "nflverse schedules (nflreadpy load_schedules)"},
+        git_sha=args.git_sha,
+    )
+    for path in write_gameday_capture(capture, store=SnapshotStore(root=args.store, prefix="")):
+        print(f"wrote {path}")
+    print(json.dumps(details, indent=2))
+    if details["games"] and details["unlined"]:
+        # Context, never a gate: the build decides what it can reuse and says so.
+        print(
+            f"::warning::{details['unlined']} of {details['games']} upcoming game(s) have no "
+            "posted total or spread in nflverse's schedule at this capture",
+        )
     return 0
 
 

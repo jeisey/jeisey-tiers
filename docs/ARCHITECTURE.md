@@ -780,6 +780,7 @@ dictionary every slice resolves `display_name` through — comes with the first 
 | in-season | player card, cohorts | from an in-season board: `inseason_opportunity_cohort/<block>`, `player_usage_cohort/all`, `team_matchups/all`, `weekly_context/all` (the ROS block is already loaded); from a draft board in season: `ros_tiers/<block>`, `inseason_opportunity_cohort/<block>`; always in season, `season_actuals/<scoring>` (ADR-105: the card's rank pair, production readouts and the rate cohort) | the block's share and transaction fields and the position's touchdown share and pass EPA, which the cohort strips place one player among; the next game; his team's and the opponent's game-day context for the "This week" explanation |
 | in-season | player card, ESPN history (ADR-112) | nothing when the card opens (its latest ESPN record rides in `card/<block>/<bucket>`); on **Show ESPN trend** (or the phone's *In-season usage* tab) the lazy `EspnOwnershipChart` chunk and `espn_ownership_series/<bucket>` — never part of `requiredKeys`, a quiet family whose arrival re-renders nothing else | the player's retained reads inside 28 days: read times, ESPN's stamps and reported periods, rostered and started shares |
 | in-season | player card, Skill Tree (ADR-107) | nothing when the card opens; on **Show skill tree** (or the phone's *Skill tree* tab) the lazy `SkillTree` chunk and stylesheet, `skill_tree_definitions/<position>` and `skill_tree/<bucket>` (the card's bucket) — never part of `requiredKeys`, and their arrival re-renders nothing else on the page | every reading of the player's tree and every word about each metric (definitions); the build's per-source status and reason sentences from the manifest's `ros_build_metadata.skill_tree` |
+| in-season | player card, Skill Tree comparison (ADR-117) | nothing when the tree or a node's detail opens; on **Compare with all N ranked** the lazy `SkillCompare` chunk and stylesheet, `skill_cohort_index/<position>` (named by the manifest) and the one `skill_cohort/<position>.<metric>` its index names — never part of `requiredKeys`, quiet families, and reopening re-uses all four | every reading of that position and metric with a value (the exact cohort the published rank was computed over, plus unranked readings to pin), named through the player dictionary |
 | both | search, filters, sort | nothing new | the open view's rows |
 | both | CSV export | nothing new | the view export writes the loaded rows; "Download full CSV" is a static link to the full artifact's CSV |
 | both | mode or block switch | the new mode's or block's files | as the view |
@@ -802,7 +803,9 @@ league on a not-yet-loaded preset adds 85.1 kB, and switching back among loaded 
 opening a card costs what it did (23.9 kB); showing the Skill Tree adds 16.5 kB (7.5 kB code,
 2.5 kB style, 4.2 kB definitions, 2.2 kB shard), another player at another position 6.6 kB, and
 a repeat 0 B. The manifest grew by the two families' file entries and the tree's metadata block.
-ADR-110, on the size model: opening Win My Matchup adds 26.3 kB (its code and stylesheet; no
+ADR-117, on the size model: opening a ranked KPI's comparison adds 9.7 kB (8.4 kB lazy code and
+style, a 0.5 kB index and a 0.7 kB slice), reopening it 0 B; the manifest gains four index entries
+(about 100 B), not one per metric. ADR-110, on the size model: opening Win My Matchup adds 26.3 kB (its code and stylesheet; no
 data), the first simulation 5.4 kB (the worker), a repeat 0 B, and YOLO 112.5 kB. A cold first
 visit that opens it is 425.6 kB, 122.0 kB of it data. ADR-112, on the size model: the first visit
 339.9 kB (+8.7, mostly the Opportunity Board's ESPN code in the entry bundle and the manifest's

@@ -62,7 +62,7 @@ export interface Contender {
   /** His game had kicked off when the build ran, or has by the reader's clock. */
   readonly locked: boolean;
   readonly bye: boolean;
-  /** His game has no posted line yet, so the build published no distribution for it. */
+  /** His game is published with no distribution: no line in the build (`lines_pending`) or no prediction from the model (`unmodelled`). */
   readonly pending: boolean;
   /** Designated out for this game (official report or Sleeper). */
   readonly out: boolean;
@@ -140,7 +140,7 @@ function contenderFor(
     record.position,
   );
   const bye = record.game_state === "bye";
-  const pending = record.game_state === "lines_pending";
+  const pending = record.game_state === "lines_pending" || record.game_state === "unmodelled";
   const out = availability.week === "out";
   const exclusion = startExclusion(availability);
   return {

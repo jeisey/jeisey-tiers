@@ -422,7 +422,7 @@ describe("who may be started", () => {
     expect(proposal.roster.RB).toEqual(["benchRb"]);
     expect(proposal.roster.WR).toEqual(["outWr"]);
     expect(proposal.gaps).toEqual([
-      { slot: { group: "WR", index: 0 }, kind: "gap", reason: "Out this week. No eligible replacement on your roster." },
+      { slot: { group: "WR", index: 0 }, kind: "gap", reason: "Out this week. No eligible replacement on your roster.", cause: null },
     ]);
     expect(proposal.filled).toBe(2);
     expect(proposal.total).toBeCloseTo(25, 6);

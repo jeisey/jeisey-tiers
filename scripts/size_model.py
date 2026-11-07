@@ -381,6 +381,35 @@ def _identity(record: dict[str, Any], player: Mapping[str, str]) -> dict[str, An
     return out
 
 
+def _rank_skill_cohorts(
+    readings: list[dict[str, Any]],
+    definitions: list[dict[str, Any]],
+) -> None:
+    """Competition ranks and percentiles over each position x metric's ranked readings."""
+    from ffdraft.signals.skilltree import percentile_ranks
+
+    meta = {(row["position"], row["metric_id"]): row for row in definitions}
+    cohorts: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for row in readings:
+        if row["state"] == "ranked" and row.get("source_season") is None:
+            cohorts.setdefault((row["position"], row["metric_id"]), []).append(row)
+    for key, rows in cohorts.items():
+        definition = meta.get(key) or {}
+        direction = str(definition.get("direction") or "higher")
+        decimals = int(definition.get("decimals") or 0)
+        for row in rows:
+            row["value"] = round(float(row["value"]), decimals)
+        ranks = percentile_ranks(
+            {f"{row['player_id']}|{index}": row["value"] for index, row in enumerate(rows)},
+            direction=direction,
+            decimals=decimals,
+            min_cohort=0,
+        )
+        for index, row in enumerate(rows):
+            row["rank"], row["percentile"] = ranks[f"{row['player_id']}|{index}"]
+            row["cohort_size"] = len(rows)
+
+
 def _insights(
     records: dict[str, list[dict[str, Any]]],
     templates: Mapping[str, list[dict[str, Any]]],
@@ -748,6 +777,10 @@ def build(out: Path, seed: int = 20260930) -> None:
             row["games"], row["source_season"] = games, template["source_season"]
             records["player_skill_tree"].append(row)
     records["skill_tree_definitions"] = list(templates["skill_tree_definitions"])
+    # ADR-117: rank every cloned cohort the way the builder does, so a cohort slice is what a
+    # real one is — `cohort_size` the ranked count, ranks and percentiles from the values — and
+    # the comparison, which refuses an inconsistent cohort, draws.
+    _rank_skill_cohorts(records["player_skill_tree"], records["skill_tree_definitions"])
 
     records["team_matchups"] = [
         {**template, "team": TEAMS[index]}

@@ -58,7 +58,11 @@ from ffdraft.contracts.enums import Severity
 from ffdraft.features.build import build_feature_table
 from ffdraft.features.dictionary import feature_schema_hash
 from ffdraft.features.sources import load_historical_sources
-from ffdraft.headshots import build_player_headshot_records, crosswalk_from_registry
+from ffdraft.headshots import (
+    build_player_headshot_records,
+    crosswalk_from_registry,
+    portrait_population,
+)
 from ffdraft.modeling.build_config import CurrentBuildConfig
 from ffdraft.modeling.features import core_feature_selection
 from ffdraft.modeling.production import ProductionModel
@@ -393,10 +397,11 @@ def run_current_build(
     published_players = [str(row["player_id"]) for row in records.get("tiers", ())]
     # ADR-101: after the draft anchor the in-season views (Start/Sit, Trade, the ROS and
     # Opportunity boards) name players the draft board never did, and their availability needs
-    # the same evidence, so every rostered player at a core position gets a *status* row. Only
-    # the status artifact widens: portraits stay the board's players, which is what
-    # `cross_artifact.headshot_player_not_in_tiers` requires (the 2026-10-02 refresh failed on
-    # exactly this when the two shared one list).
+    # the same evidence, so every rostered player at a core position gets a *status* row. The
+    # status population is not the portrait population: portraits are published for the card
+    # surfaces only (`portrait_population_v1`), and a portrait for a player no surface names
+    # fails `cross_artifact.headshot_player_outside_card_surfaces` (the 2026-10-02 refresh
+    # failed on the earlier form of that check when the two shared one list).
     # ADR-102: identity from the current roster *and* the previous season's, so a player the
     # current file omits — unsigned, or signed after it was cut — can still be identified;
     # employment from one evidence-precedence rule, never from a previous club.
@@ -433,12 +438,17 @@ def run_current_build(
     records["player_status"] = status.records
 
     # The portraits ride the same registry for the same reason: it is the annotation-side
-    # object, it never touches the model path, and its `espn_id` has already survived the
-    # crosswalk cross-check that ADR-019 requires. A player it cannot bridge gets no row and
-    # the card draws a monogram (ADR-087).
+    # object and it never touches the model path. A player no verified bridge reaches gets no
+    # row and the card draws a monogram (ADR-087). The population is every card surface this
+    # build publishes (`portrait_population_v1`) — here, the tier board; the arbitrage board
+    # is built after this step. When the rest-of-season build runs it rewrites the artifact
+    # over every surface, including this one, and says so in its own metadata.
     headshots = build_player_headshot_records(
-        crosswalk=crosswalk_from_registry(annotation_registry),
-        published=published_players,
+        crosswalk=crosswalk_from_registry(
+            annotation_registry,
+            player_master=loaded.sources.player_master,
+        ),
+        population=portrait_population(records),
         build_id=resolved_build_id,
         gate=gate,
     )

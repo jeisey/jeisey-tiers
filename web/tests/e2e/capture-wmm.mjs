@@ -107,7 +107,7 @@ async function measure(page) {
     const clipped = [];
     if (root && bounds) {
       for (const node of root.querySelectorAll(
-        ".wmm-slot, .wmm-run-actions > *, .wmm-headline, .wmm-chart, .wmm-totals, .wmm-change, .wmm-yolo-card, .wmm-funnel, .wmm-legend, .notice",
+        ".wmm-slot, .wmm-run-actions > *, .wmm-data > *, .wmm-data li, .wmm-headline, .wmm-chart, .wmm-totals, .wmm-change, .wmm-yolo-card, .wmm-funnel, .wmm-legend, .notice",
       )) {
         const rect = node.getBoundingClientRect();
         if (rect.width === 0) continue;
@@ -171,7 +171,53 @@ async function shot(page, screen, tag, wantFull) {
   await page.screenshot({ path: `${outDir}/${screen}-${tag}.png`, fullPage });
 }
 
-for (const [width, height] of SCREENS) {
+/**
+ * `readiness` (2026-11-06): the weekly data outage on Friday — Win My Matchup's data-gap block and
+ * the Lineup tab's grouped gaps on `in-season-lines-outage` — and a Start/Sit card whose lines the
+ * build retained, at every screen. Run as
+ * `node web/tests/e2e/capture-wmm.mjs docs/visual-qa/2026-11-06-wmm-readiness readiness`.
+ */
+async function captureReadiness() {
+  const outage = "/scenario/in-season-lines-outage/";
+  const friday = new Date("2026-11-06T15:00:00Z");
+  for (const [width, height] of SCREENS) {
+    const tag = `${String(width)}x${String(height)}`;
+    const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
+    await context.addInitScript(
+      ([leaguesKey, leagues, matchupsKey, matchups]) => {
+        if (window.sessionStorage.getItem("seeded") === null) {
+          window.localStorage.setItem(leaguesKey, leagues);
+          window.localStorage.setItem(matchupsKey, matchups);
+          window.sessionStorage.setItem("seeded", "1");
+        }
+      },
+      [`jeisey-tiers:my-leagues@${outage}`, leaguesDocument(), `jeisey-tiers:win-my-matchup@${outage}`, matchupDocument()],
+    );
+    const page = await context.newPage();
+    await page.clock.setFixedTime(friday);
+    page.on("console", (message) => {
+      if (message.type() === "error") errors.push(`${tag}: ${message.text()}`);
+    });
+    await stubPortraits(page);
+    await page.goto(`${BASE}${outage}?view=myleagues&panel=wmm`, { waitUntil: "networkidle" });
+    await page.waitForSelector(".wmm-data", { timeout: 15_000 });
+    await shot(page, "01-outage", tag, true);
+    await page.locator(".wmm-data").scrollIntoViewIfNeeded();
+    await shot(page, "02-outage-in-view", tag, false);
+    await page.getByRole("tab", { name: "Lineup" }).click();
+    await page.waitForSelector(".lg-gaps[data-kind=unscored]");
+    await shot(page, "03-outage-lineup", tag, true);
+    await page.goto(`${BASE}${PREFIX}?view=startsit&scoring=ppr&teams=12&duel=00-0000016.00-0000011`, { waitUntil: "networkidle" });
+    await page.waitForSelector(".deck-lines");
+    await page.locator(".deck-lines").scrollIntoViewIfNeeded();
+    await shot(page, "04-startsit-retained", tag, false);
+    await context.close();
+  }
+}
+
+if (process.argv[3] === "readiness") {
+  await captureReadiness();
+} else for (const [width, height] of SCREENS) {
   const tag = `${String(width)}x${String(height)}`;
   const { context, page } = await openPage(width, height, FRESH);
 

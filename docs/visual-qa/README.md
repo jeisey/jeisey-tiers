@@ -167,3 +167,19 @@ E2E_BASE_URL=http://localhost:<port> node web/tests/e2e/capture-skilltree.mjs do
   --prefix /jeisey-tiers/ --screens real --players "QB,RB,WR,TE,sparse player"
 ```
 
+
+## 2026-11-06 — Skill Tree comparison and Win My Matchup readiness (ADR-117)
+
+`2026-11-06-skill-tree-compare/`: the comparison (a WR's *Targets* opened, one player pinned, then
+the table) at 320×640, 390×844, 390×560, 768×1024, 1280×900, 1280×600 and 1440×1000, and in `tree/`
+the 25 tree screens with the ten-tick banded meter. `2026-11-06-wmm-readiness/`: the 2026-11-06
+outage on Win My Matchup (full page and in view), the Lineup tab and the Start/Sit retained-line
+label at 320–1440 and two short heights. Every capture reports 0 problems. Two defects were found
+from the screens and fixed: the comparison table's percentile column was cut off at 320px (the
+sample now sits under the name), and a count metric's axis note read "targets (targets)".
+
+```bash
+node web/tests/e2e/capture-skilltree.mjs docs/visual-qa/2026-11-06-skill-tree-compare --compare
+node web/tests/e2e/capture-skilltree.mjs docs/visual-qa/2026-11-06-skill-tree-compare/tree
+node web/tests/e2e/capture-wmm.mjs docs/visual-qa/2026-11-06-wmm-readiness readiness
+```

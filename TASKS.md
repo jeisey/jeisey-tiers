@@ -2757,3 +2757,54 @@ diff: only `manifest.json`, `ros_build_metadata.json` and the new insights files
       (CI runs them); PNG export verified in Chromium only (Safari's canvas/font path untested).
 - [ ] **Deferred by decision:** historical-rank comparisons, xFP/expected points (ADR-086/091),
       route/TPRR/first-read claims, threshold-exceedance probabilities, retained old editions.
+
+## Skill Tree comparisons, portraits for every card, weekly lines that survive an upstream blank — 2026-11-06 (ADR-117)
+
+Owner review of `main` at `ce9fe82`, three reports, each reproduced on retained `daily-refresh`
+artifacts (runs `40690404597`, Oct 28; `42217730020`, Nov 6) before any change. PRD CR-037.
+
+- [x] **Percentile audit.** Pierce's 96 yds / 37 car = 2.59 reconciled with nflverse weekly stats
+      (weeks 5–7, PHI); Oct 28 rank 60/60 at 0.0, Nov 6 65/66 at 1.5 because Josh Jacobs (2.34)
+      crossed the 25-carry minimum. Convention correct and kept; the validator now re-derives
+      ranks with its own `rederive_ranks` instead of the builder's function. Both real cohorts are
+      regression fixtures (`test_skilltree_percentiles.py`, 15).
+- [x] **Cohort slices.** `skill_cohort/<POS>.<metric>` (0.4–3.3 kB gz) named in four
+      `skill_cohort_index/<POS>` files; validated for membership, uniqueness, cohort size, ranks,
+      build and cutoff, names. `player_skill_metric` 1.1 adds `display_name` (the dictionary's last
+      source; not in bucket slices).
+- [x] **Meter.** Ten ticks (`p <= 0 ? 0 : min(10, ceil(p/10))` at published precision), five
+      percentile bands on the HUD's bronze ramp, ranked zero distinct from every non-ranked state,
+      neutral/archive/unranked untinted; legend and accessible names updated.
+- [x] **Comparison.** Lazy chunk; dot plot on the raw axis (ties, negatives, all-equal), focal
+      diamond, direction in words; pin up to three same-position players with signed differences;
+      unranked pins outside the ranking; table alternative; refuses mismatched build/season/
+      cutoff/position/metric, a wrong cohort size or a focal disagreement; archive never compared;
+      state resets on player/metric change; late responses dropped; old builds say unavailable.
+- [x] **Portraits.** Cousins traced end to end (the row never existed: tier-board population).
+      `portrait_population_v1` over every card surface, written by `build-ros` in season;
+      player-master gap fill by exact GSIS id, shared ids refused; validator checks the union and
+      the metadata. Nov 6: 575 → 720 of 729 (9 TEs with no ESPN id); image probe kept separate
+      (143/145 new addresses serve an image; 2 provider 404s).
+- [x] **Weekly lines.** Root cause traced in `nflverse/nfldata` (`63cbbc1` blanked, `13d8e46`
+      restored, ten minutes apart). `capture-schedule-lines`, `pregame_line_reuse_v1` (same game,
+      both lines, pregame, ≤ 48 h), `weekly_projection` 1.2 (`unmodelled`, `line_source`,
+      `lines_observed_at_utc`), `weekly_game_context` 1.1, `weekly.lines` metadata, two build
+      warnings and a refresh-summary section. Replay of the Nov 6 build: 1,437 → 0 lines pending.
+- [x] **Win My Matchup.** Typed causes; data gaps grouped and explained once with freshness and
+      Reload, never counted as decisions, still blocking; finals counted once; Thursday starters
+      never moved; fingerprint and proposals invalidate on data, kickoff, final and scenario
+      changes; retained-line labels; false all-kicked-off notice fixed.
+- [x] **Checks.** ruff, format, mypy (220 files); pytest 2,369 collected, exit 0;
+      `build-fixture-artifacts` + `validate-artifacts --require-serving` 0/0; lint (4 pre-existing
+      warnings), typecheck; Vitest 1,261 passed, 1 skipped; Playwright chromium + mobile + a11y 369
+      passed; Pages-base build; `verify:budget` all met, none raised, new `skillCompareAdds` 9.7 of
+      15 kB; visual QA in `docs/visual-qa/2026-11-06-skill-tree-compare/` and
+      `docs/visual-qa/2026-11-06-wmm-readiness/` (0 problems).
+- [x] **Docs.** ADR-117; PRD CR-037; DATA_CONTRACTS §17.1, §20.1/20.2/20.4, §21.2/21.3, §25.1/25.5;
+      DATA_SOURCES §26; source registry; UX_SPEC §6A.17, §6A.18; OPERATIONS §16.8, §17.3;
+      ARCHITECTURE §14; SECURITY_LICENSE (portraits); evidence under `docs/source-probes/2026-11-06/`.
+- [ ] **Not verified in production yet:** the first `daily-refresh` after merge writes the first
+      `schedule_lines` capture and the first in-season portrait set; check the summary's
+      *Start/Sit lines* table and `ros_build_metadata.player_headshots`.
+- [ ] **Open, not part of this gate:** preseason arbitrage-only portraits (3 players); nine TEs with
+      no ESPN id on any nflverse bridge; WMM cold-visit headroom is now 2.7 kB.

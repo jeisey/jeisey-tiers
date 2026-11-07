@@ -892,6 +892,36 @@ what a reader opens in a spreadsheet.
 and the coverage the build achieved, so the Data view can state what opening a card costs
 without hardcoding it. Absent-or-null is valid, as for `market` and `player_status`.
 
+### 17.1 One population over every card surface — 2026-11-06 (ADR-117)
+
+The population and direction above are superseded. **`portrait_population_v1`** is the union of
+the card surfaces the build published: `tiers`, `arbitrage`, `ros_tiers`, `inseason_opportunity`,
+`weekly_projections`, `season_actuals` and `insights`. `build-current` writes the set over the tier
+board; in season `build-ros` rewrites it last over every surface, under its own build id. The file
+belongs to the bundle whose build id it carries **and** whose metadata describes it.
+
+Bridges: the roster crosswalk; for a registry player the roster gives no ESPN id, nflverse's
+player master by exact GSIS id, refused if any other roster or master row holds that ESPN id. An
+ESPN id held by two players is refused for both. `player_headshot_record` stays 1.0.
+
+**Metadata** — the same block in `build_metadata.player_headshots` and (new)
+`ros_build_metadata.player_headshots`: `provider`, `host`, `source_ids`, `population`
+(`rule_version` `portrait_population_v1`, `surfaces_read`, `players`), `published_players` (=
+`population.players`), `resolved`, `coverage` (crosswalk coverage — a row exists — never whether
+the image loads), `by_surface` and `by_position` (`players`, `resolved`), `unresolved_reasons`
+(`not_in_identity_registry`, `no_espn_id`, `invalid_espn_id`, `ambiguous_espn_id`) and `bridges`
+(`nflverse_roster`, `nflverse_player_master`). A block without `population` is the old tier-board
+denominator. Additive; both metadata schemas stay 1.0.
+
+**Validator.** `cross_artifact.headshot_player_outside_card_surfaces` (critical; the union is
+recomputed from the files, never read from metadata) replaces `headshot_player_not_in_tiers`;
+`artifact.headshot_provider_id_shared` (critical); `cross_artifact.headshot_metadata_disagrees`
+(critical: the owning block's rows, population and per-surface counts re-derived from the files);
+`headshot_metadata_missing` (warning); `headshot_metadata_agrees`, `headshot_population_scope`
+(surfaces published after the portrait set, e.g. a preseason arbitrage-only player),
+`headshot_metadata_superseded` and `headshot_population_not_rederivable` (informational). Still no
+coverage floor: a missing portrait never fails a build.
+
 
 ---
 
@@ -1116,7 +1146,7 @@ Optional members of the in-season bundle: `weekly_projections.json` and the
 `ros_build_metadata.weekly` block are written together or not at all, and their absence removes
 the Start/Sit tab's content and nothing else.
 
-### 20.1 `weekly_projection` 1.1 — one player's next game, as a distribution
+### 20.1 `weekly_projection` 1.2 — one player's next game, as a distribution
 
 One record per Opportunity Board player × scoring preset, keyed `(build_id, scoring_preset,
 player_id)`. JSON only: a seven-quantile distribution and a ten-part account are not rows a
@@ -1127,8 +1157,8 @@ spreadsheet reader can use, and the lines inside it follow ADR-091's no-CSV rule
 | `through_week`, `target_week` | the snapshot cutoff, and the week projected: always `through_week + 1` |
 | `team` | the current roster club when the roster names exactly one, else the club of his latest appearance — a trade moves the game |
 | `model_version` | `weekly-startsit-v1` |
-| `game_state` | `upcoming`; `kicked_off` (kept for the record, locked on the page); `bye` (no `game`, `quantiles`, `drivers` or `opponent`); `lines_pending` (the game and `opponent`, no `quantiles` or `drivers`: the model was never trained without a posted line) |
-| `game` | `game_id`, `opponent`, `home_away`, `neutral_site`, `kickoff_utc`, `roof` (null while a retractable roof is unannounced; a verified fixed venue roof replaces a contradicting schedule value, as in `team_matchups`), `total_line`, `team_margin` (this team's side, positive = favoured), `team_points` (implied); lines null until posted, never a pick'em |
+| `game_state` | `upcoming`; `kicked_off` (kept for the record, locked on the page); `bye` (no `game`, `quantiles`, `drivers` or `opponent`); `lines_pending` (the game and `opponent`, no `quantiles` or `drivers`: the model was never trained without a posted line); `unmodelled` (1.2, ADR-117: the game has both lines and `opponent` is published, but the model returned no finite quantile — no `quantiles`, `drivers` or `explanation`) |
+| `game` | `game_id`, `opponent`, `home_away`, `neutral_site`, `kickoff_utc`, `roof` (null while a retractable roof is unannounced; a verified fixed venue roof replaces a contradicting schedule value, as in `team_matchups`), `total_line`, `team_margin` (this team's side, positive = favoured), `team_points` (implied); lines null until posted, never a pick'em; (1.2, ADR-117) `line_source` — `schedule` (the nflverse schedule the build read), `retained` (that schedule had none and the build reused the newest retained pregame observation of the same game, `pregame_line_reuse_v1`) or null exactly when `total_line` is — and `lines_observed_at_utc` (the build's schedule retrieval, or the capture's) |
 | `quantiles` | `q05` … `q95`: next-game points **given that he plays**, non-decreasing |
 | `drivers` | `baseline`, the seven families `form` `role` `availability` `offense` `game` `opponent` `prior`, `calibration`, `rearrangement`: points that sum to `q50` (rearrangement absorbs rounding) |
 | `opponent` | the defence's allowed points to his position through the cutoff: `allowed_ppg` (shrunk over 4 games), `league_ppg`, `index`, `rank` of `defenses`, `games` |
@@ -1140,6 +1170,12 @@ Validator: `weekly.quantiles_monotonic`, `weekly.driver_account_closes` (within 
 blocks agree with `game_state`; `explanation` iff `quantiles`) and
 `cross_artifact.weekly_projection_unpublished` (every projected player is on the Opportunity
 Board, at its cutoff) — all critical. 1.1 is additive: a 1.0 reader ignores `explanation`.
+1.2 (ADR-117) adds `unmodelled` and the two provenance fields; `weekly.record_shape` also requires
+`line_source` to be null exactly when the total is, an observation time exactly when there is a
+source, and a `retained` observation strictly before kickoff, and
+`cross_artifact.weekly_context_mismatch` requires the context to print each game's lines and
+provenance exactly as the projection read them. A 1.1 reader treats `unmodelled` like
+`lines_pending` (no distribution) and ignores the new fields.
 
 ### 20.2 `ros_build_metadata.weekly` — what the page computes with
 
@@ -1148,7 +1184,12 @@ measurement rather than a constant in page code:
 
 - `model_version`, `candidate_version`, `configuration_hash`, `training_seasons`, `fitted_at_utc`;
 - `through_week`, `target_week`, and the counts `records`, `upcoming`, `kicked_off`, `bye`,
-  `lines_pending`;
+  `lines_pending` and (ADR-117) `unmodelled`;
+- `lines` (ADR-117) — where the target week's lines came from: `rule_version`
+  (`pregame_line_reuse_v1`), `max_age_hours` (48), `schedule_retrieved_at_utc`, `target_games`,
+  `from_schedule`, `from_retained`, `unlined`, `unlined_game_ids`, `retained` (`game_id`,
+  `observed_at_utc` of each reused observation) and `captures_read` (the retained
+  `schedule_lines` keys inside the window); null in builds before ADR-117;
 - `quantile_levels` and `distribution_rule` (`quantile_distribution_v1`: tail factors 1 and 2,
   a 200-point grid) — the rule the evaluation scored and the page reproduces, held together by
   a shared golden vector (`tests/fixtures/weekly/distribution_golden.json`);
@@ -1180,7 +1221,7 @@ critical). The build fills a missing name from this season's weekly rows, then t
 the player master, and falls back to the player id, which the validator reports as a warning
 (`artifact.id_as_display_name`).
 
-### 20.4 `weekly_game_context` 1.0 — the game-day facts beside a projection (ADR-099)
+### 20.4 `weekly_game_context` 1.1 — the game-day facts beside a projection (ADR-099)
 
 `weekly_context.json`: one record per team with a game in `target_week`, keyed `(build_id,
 team)`. JSON only. Written with the weekly layer and withheld with it; its own failure
@@ -1195,7 +1236,7 @@ team)`. JSON only. Written with the weekly layer and withheld with it; its own f
 | `weather` | `status` (`ok`, `roof_unknown`, `indoors`, `unavailable`, `stale`, `out_of_range`, `implausible`, `no_venue`), `provider` (`nws`/`open_meteo`), `wind_mph`, `gust_mph`, `temp_f`, `precip_probability`, `precip_in`, `short_forecast`, `valid_from_utc`, `valid_to_utc`, `provider_updated_utc`, `retrieved_at_utc`. Numbers only when `ok` (open air) or `roof_unknown` (outside conditions at a retractable or unverified venue); otherwise null |
 | `lineup` | `report_available`, `report_final` (the team's report carries at least one game status), `listed`: each lagged starter (OL, QB, CB, S, DL) or notable skill player (≥ 10% of targets or 20% of carries over the last three games) with a game designation — `player_id`, `name`, `position`, `role` (`OL2`, …), `group`, `starter_rank`, `snap_share`, `target_share`, `carry_share`, `designation`, `practice_status`, `primary_injury` |
 | `typical` | the game half of every player's typical week on this team: `games`, `total_line`, `team_margin`, `team_points` (shrunk team means of posted lines over completed games), `home_share`, `indoors_share` |
-| `this_week` | the game inputs v1 reads this week: `total_line`, `team_margin`, `team_points`, `is_home`, `rest_advantage`, `indoors` |
+| `this_week` | the game inputs v1 reads this week: `total_line`, `team_margin`, `team_points`, `is_home`, `rest_advantage`, `indoors`, and (1.1, ADR-117) `line_source` and `lines_observed_at_utc` exactly as the projection's `game` block carries them |
 
 Validator `weekly_context_checks` (critical): both sides of every game present and agreeing on
 the game; `weather` carries numbers only in `ok`/`roof_unknown`, an `ok` reading has wind,
@@ -1258,6 +1299,14 @@ A key is `players`, `<family>/<partition>` or `card/<league>.<scoring>/<bucket>`
 served at `data/serve/<key>.<hash>.json`. Since the name carries the hash, the bytes at a URL
 never change.
 
+**Indexed families (ADR-117).** A family with many small, rarely read files is not named in the
+manifest. Its files are named, by hash, in one small index per partition prefix —
+`skill_cohort_index/<POS>` → `{family: "skill_cohort_index", indexes: "skill_cohort", partition,
+files: {"<POS>.<metric_id>": hash}}` — which the manifest names; each file is served at
+`data/serve/<indexes>/<key>.<hash>.json` and verified against the index's hash. The validator
+re-derives every index and every indexed file like any other, and the page's cache pruner keeps
+the files a cached index of the current deploy names.
+
 ### 21.3 Families
 
 | family | source | partition | fields |
@@ -1273,7 +1322,9 @@ never change.
 | `season_actuals` (ADR-105) | same | scoring | `season`, `through_week`, `scoring_preset`, `player_id`, `position`, `games_played`, `points`, `points_per_game`, `season_position_rank` (no names: every player a page shows already has one from his board row) |
 | `skill_tree` (ADR-107) | `player_skill_tree` | bucket (the card's FNV-1a, `skill_tree/NN`) | all (§25) |
 | `skill_tree_definitions` (ADR-107) | same | position (`skill_tree_definitions/QB`…) | all (§25) |
-| `players` | every artifact with names | whole | `player_id` → `display_name` |
+| `skill_cohort` (ADR-117, indexed) | `player_skill_tree`, readings with a value (`ranked`, `below_minimum`, `small_cohort`) and no `source_season` | position × metric (`skill_cohort/RB.yards_per_carry`…) | `build_id`, `season`, `through_week`, `player_id`, `position`, `metric_id`, `state`, `value`, `numerator`, `denominator`, `rank`, `percentile`, `cohort_size`, `games` (§25.5) |
+| `skill_cohort_index` (ADR-117) | the `skill_cohort` files | position | the files' hashes |
+| `players` | every artifact with names (the boards first; `player_skill_tree` last, ADR-117, so every Skill Tree cohort member has a name) | whole | `player_id` → `display_name` |
 | `card` | tiers, arbitrage, market trend series (block); projections, weekly projections (scoring); player status, headshots, usage, behaviour series (whole); ROS, Opportunity (block) | block × bucket | every field of every row of those artifacts whose player falls in the bucket |
 
 `projections` and `market_trend_series` are served only inside card shards: nothing but a card
@@ -1368,7 +1419,8 @@ reading), unsigned on anything but Sleeper evidence.
 
 After the draft anchor the status population adds verified off-roster players (unsigned, and
 signings only Sleeper reports). Identity for them comes from the previous season's roster as
-identity only (`identity_spine`); portraits remain the tier board's players.
+identity only (`identity_spine`). Portraits follow their own population (ADR-117, §17.1): every
+card surface, not the status population.
 
 ### 22.2 `inseason_opportunity_record` 1.2 — model coverage
 
@@ -1521,7 +1573,7 @@ reads these artifacts (an import firewall test enforces it in Python and TypeScr
 `ffdraft.signals.skilltree` (`skill_tree_v1`) during `build-ros`, after every board, from the
 frames the build already loaded; scoring- and league-independent, so published once.
 
-### 25.1 `player_skill_metric` 1.0 — `player_skill_tree.json`
+### 25.1 `player_skill_metric` 1.1 — `player_skill_tree.json`
 
 One record per player per metric of his position's tree, plus one `appearances` record per
 population player; a player with no appearance has only that record. Sorted by `position`,
@@ -1531,6 +1583,7 @@ population player; a player with no appearance has only that record. Sorted by `
 |---|---|
 | `season`, `through_week` | the board's season and cutoff: REG weeks `1..through_week` only |
 | `player_id`, `position` | canonical `gsis:` id; the board's position (as `season_actuals_v1` assigns it), which picks the tree and the cohort |
+| `display_name` (1.1, ADR-117) | his name by `season_actuals`' rule (the boards', then the identity registry's, then his latest box-score or snap row's); the served dictionary takes it last, and the bucket slices leave it out. `player_skill_tree.actuals_disagree` holds it equal to `season_actuals.display_name` |
 | `metric_id` | a metric in `skill_tree_definitions` for that position, or `appearances` |
 | `state` | `ranked` · `below_minimum` · `small_cohort` · `no_opportunity` · `not_covered` · `unavailable` · `no_appearances` (presence record only) |
 | `value` | the published reading, rounded to the definition's `decimals`; null exactly for `no_opportunity`, `not_covered`, `unavailable` |
@@ -1592,6 +1645,24 @@ every other (§21), hash-verified and cached by the page. Neither is in a card s
 view's `requiredKeys`: opening a card fetches none of them. Showing the tree fetches one
 definitions file and one bucket shard; the page re-renders nothing else when they arrive (the
 store's Skill Tree families do not notify its subscribers).
+
+**Comparison cohorts (ADR-117).** `skill_cohort/<POS>.<metric_id>` is one metric's whole positional
+cohort — every reading of that position and metric with a value, ranked or not — named in the
+position's `skill_cohort_index/<POS>` (§21.2). Opening a KPI comparison fetches that index and the
+one slice; nothing else, never on tree open. Archive readings are not served: a combine time ranks
+among historical testers, whose rows the build does not publish. Members are named through the
+player dictionary (`player_skill_tree`'s own `display_name` its lowest-precedence source). The
+serving validator requires
+each slice to be exactly the tree's cohort readings for its position and metric, players unique,
+one build and cutoff (the tree's), each ranked row's `cohort_size` the ranked count, ranks and
+percentiles re-derived by the validator's own `rederive_ranks` (not the builder's function), and a
+dictionary name for every member.
+
+**Percentile audit (ADR-117).** The convention above is unchanged and implemented correctly; the
+rank re-derivation in `player_skill_tree.rank_rederivation` now uses `rederive_ranks` (pairwise
+counts over published decimals, exact rationals, agreement within half a published unit), so the
+builder's `percentile_ranks` no longer checks itself. Regression fixtures: the published RB yards-
+per-carry cohorts of 2026-10-28 (Pierce 60th of 60, 0.0) and 2026-11-06 (65th of 66, 1.5).
 
 ## 26. Win My Matchup's entered opponents — `jeisey-tiers.win-my-matchup` v1 (ADR-110)
 

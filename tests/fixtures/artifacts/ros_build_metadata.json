@@ -120,6 +120,21 @@
     "kicked_off": 0,
     "bye": 6,
     "lines_pending": 6,
+    "unmodelled": 0,
+    "lines": {
+      "rule_version": "pregame_line_reuse_v1",
+      "max_age_hours": 48,
+      "schedule_retrieved_at_utc": "2026-11-03T12:00:00Z",
+      "target_games": 7,
+      "from_schedule": 6,
+      "from_retained": 0,
+      "unlined": 1,
+      "unlined_game_ids": [
+        "2026_09_LAC_KC"
+      ],
+      "retained": [],
+      "captures_read": []
+    },
     "quantile_levels": [
       0.05,
       0.1,
@@ -532,6 +547,87 @@
       "no_combine_forty": "No linked NFL Scouting Combine 40-yard dash on file for him."
     },
     "statement": "Descriptive context only: observed regular-season statistics through the board's cutoff, each ranked only against qualified players at the same position. No model, ranking, pick or trade reads it, and nothing is combined into a score."
+  },
+  "player_headshots": {
+    "provider": "espn",
+    "host": "a.espncdn.com",
+    "source_ids": [
+      "nflreadpy"
+    ],
+    "population": {
+      "rule_version": "portrait_population_v1",
+      "surfaces_read": [
+        "tiers",
+        "arbitrage",
+        "ros_tiers",
+        "inseason_opportunity",
+        "weekly_projections",
+        "season_actuals",
+        "insights"
+      ],
+      "players": 35
+    },
+    "published_players": 35,
+    "resolved": 17,
+    "coverage": 0.4857,
+    "by_surface": {
+      "tiers": {
+        "players": 16,
+        "resolved": 15
+      },
+      "arbitrage": {
+        "players": 15,
+        "resolved": 13
+      },
+      "ros_tiers": {
+        "players": 16,
+        "resolved": 15
+      },
+      "inseason_opportunity": {
+        "players": 19,
+        "resolved": 17
+      },
+      "weekly_projections": {
+        "players": 17,
+        "resolved": 15
+      },
+      "season_actuals": {
+        "players": 35,
+        "resolved": 17
+      },
+      "insights": {
+        "players": 8,
+        "resolved": 8
+      }
+    },
+    "by_position": {
+      "QB": {
+        "players": 3,
+        "resolved": 3
+      },
+      "RB": {
+        "players": 6,
+        "resolved": 5
+      },
+      "TE": {
+        "players": 3,
+        "resolved": 3
+      },
+      "WR": {
+        "players": 23,
+        "resolved": 6
+      }
+    },
+    "unresolved_reasons": {
+      "not_in_identity_registry": 17,
+      "no_espn_id": 1,
+      "invalid_espn_id": 0,
+      "ambiguous_espn_id": 0
+    },
+    "bridges": {
+      "nflverse_roster": 17,
+      "nflverse_player_master": 0
+    }
   },
   "espn_ownership": {
     "rule_version": "espn_ownership_v1",

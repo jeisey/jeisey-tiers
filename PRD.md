@@ -277,6 +277,16 @@ These hold for every feature, current or future.
     open; game-day refreshes rebuild them without new completed games.
   * **Never** a model input, a value, a rank, a tier, a Pick of the Week or decision-tool input,
     and independent of league size. ESPN percentages describe ESPN leagues.
+- **CR-037 Trustworthy comparisons, portraits and weekly inputs** (ADR-117, 2026-11-06):
+  * **Skill Tree.** A ten-tick meter (0 percentile lights none) tinted by five percentile bands,
+    the exact percentile and place in words; a ranked KPI opens a comparison against the exact
+    positional cohort its rank was computed over (dot plot, up to three pinned same-position
+    players, a table alternative), fetched only when asked. Descriptive only; it feeds nothing.
+  * **Portraits** for every player a card can be opened for, by verified id bridges only.
+  * **Weekly inputs.** A game's posted lines survive a transient upstream blank (a retained pregame
+    observation of the same game, at most 48 hours old, with provenance); a slate with no lines is
+    reported in the refresh summary. Win My Matchup separates data gaps from the reader's decisions
+    and explains an outage once, with the build's freshness, instead of asking for decisions.
 
 ## A4. Current non-goals
 

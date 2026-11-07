@@ -47,7 +47,7 @@ import {
   type WeekBoardRow,
   type WeekBoardSort,
 } from "../data/duel";
-import { EM_DASH, formatEastern, formatSigned, formatValue } from "../data/format";
+import { EM_DASH, formatEastern, formatSigned, formatValue, retainedLinesNote } from "../data/format";
 import type { SearchEntry } from "../data/playerSearch";
 import type { InSeasonBundle } from "../data/ros";
 import {
@@ -151,6 +151,12 @@ function marginLabel(margin: number): string {
 function winPair(verdict: NonNullable<DuelReading["verdict"]>): string {
   return `${percent(verdict.pick.winProbability, 1)} vs ${percent(verdict.runnerUp.winProbability, 1)} chance to win the week`;
 }
+
+/** A published game with no distribution, in a word; absent for a bye. */
+const PENDING_WORD: Partial<Record<WeeklyProjectionRecord["game_state"], string>> = {
+  lines_pending: "Line pending",
+  unmodelled: "No projection",
+};
 
 function gameLine(record: WeeklyProjectionRecord): string {
   const game = record.game;
@@ -511,7 +517,7 @@ function AddPlayerDialog({
           unavailableReason: duel.includes(record.player_id)
             ? "Already in the comparison"
             : q === null
-              ? `${record.game_state === "lines_pending" ? "Line pending" : "Bye"}: nothing to compare`
+              ? `${PENDING_WORD[record.game_state] ?? "Bye"}: nothing to compare`
               : undefined,
         };
       }),
@@ -604,7 +610,9 @@ function DeckCard({
           {state === "bye"
             ? `Bye in week ${String(record.target_week)} — he cannot fill the slot.`
             : state === "pending"
-              ? "No sportsbook line is posted for his game yet. The model needs one, so he is projected once it is — left out of the verdict until then."
+              ? record.game_state === "unmodelled"
+                ? "The model returned no projection for him in this build, though his game has lines — left out of the verdict."
+                : "This build has no sportsbook line for his game. The model needs one, so he is not projected — left out of the verdict until a build has it."
               : state === "out"
               ? contender.exclusion
               : "His game has kicked off; this projection is the record, not a choice."}
@@ -659,6 +667,7 @@ function DeckCard({
             {record.game.team_points !== null && ` · team total ${formatValue(record.game.team_points)}`}
           </span>
         )}
+        {q !== null && retainedLinesNote(record.game) !== null && <span className="deck-lines" style={{ flexBasis: "100%" }}>{retainedLinesNote(record.game)}</span>}
         <AvailabilityBadge availability={contender.availability} extra={injury?.sentence} />
       </footer>
     </article>
@@ -1223,7 +1232,7 @@ function WeekBoard({
                   <td className="wb-why"><WeekBoardWhy why={q === null ? null : whyFor(record)} /></td>
                   <td className="wb-range">
                     {q === null ? (
-                      <span className="wb-bye">{record.game_state === "lines_pending" ? "line pending" : "bye"}</span>
+                      <span className="wb-bye">{(PENDING_WORD[record.game_state] ?? "Bye").toLowerCase()}</span>
                     ) : (
                       <span className="wb-bar" aria-label={`P10 ${formatValue(q.q10)}, P25 ${formatValue(q.q25)}, median ${formatValue(q.q50)}, P75 ${formatValue(q.q75)}, P90 ${formatValue(q.q90)}`} role="img">
                         <span className="wb-bar-whisker" style={{ left: `${String(at(q.q10))}%`, width: `${String(at(q.q90) - at(q.q10))}%` }} />

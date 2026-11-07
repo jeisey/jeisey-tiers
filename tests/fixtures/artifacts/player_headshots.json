@@ -4,7 +4,7 @@
   "record_schema": "player_headshot_record",
   "build_id": "fixture-20260818T120000Z",
   "generated_at_utc": "2026-08-18T12:00:00Z",
-  "record_count": 15,
+  "record_count": 17,
   "records": [
     {
       "schema_version": "1.0",
@@ -125,6 +125,22 @@
       "provider": "espn",
       "provider_player_id": "4000016",
       "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000016.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000020",
+      "provider": "espn",
+      "provider_player_id": "4000020",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000020.png"
+    },
+    {
+      "schema_version": "1.0",
+      "build_id": "fixture-20260818T120000Z",
+      "player_id": "gsis:00-0000021",
+      "provider": "espn",
+      "provider_player_id": "4000021",
+      "image_url": "https://a.espncdn.com/i/headshots/nfl/players/full/4000021.png"
     }
   ]
 }

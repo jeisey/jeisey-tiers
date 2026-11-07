@@ -32,6 +32,8 @@
  * | showing the Skill Tree (ADR-107) on an open card adds | ≤ 25 kB |
  * | then hiding and showing it, or reopening that player's tree | 0 B |
  * | then another player's tree, at another position | ≤ 10 kB |
+ * | opening a ranked KPI's cohort comparison (ADR-117) adds | ≤ 15 kB |
+ * | then hiding and reopening that comparison | 0 B |
  * | showing the ESPN trend (ADR-112) on an open card adds | ≤ 15 kB |
  * | then hiding and showing it, or reopening the card and showing it again | 0 B |
  * | Win My Matchup (ADR-110), opened from a league's lineup, adds | ≤ 30 kB |
@@ -114,6 +116,13 @@ export const BUDGETS = {
   skillTreeAdds: 25_000,
   skillTreeRepeat: 0,
   skillTreeSwitch: 10_000,
+  // ADR-117: a ranked KPI's comparison — its lazy chunk and stylesheet, the position's cohort
+  // index and the one metric's cohort slice — and reopening it, which must re-use all four.
+  // Measured 9.7 kB on the size model (8.4 kB code and style, a 0.5 kB index, a 0.7 kB QB
+  // slice); the largest real slice (a WR metric, Nov 6 build) is 3.3 kB, so the worst case is
+  // about 12.3 kB.
+  skillCompareAdds: 15_000,
+  skillCompareRepeat: 0,
   ownershipHistoryAdds: 15_000,
   ownershipHistoryRepeat: 0,
   wmmOpenAdds: 30_000,
@@ -392,6 +401,35 @@ try {
     await showTree();
     results.skillTreeReturn = sum(treeLog.since(mark));
     if (results.skillTreeReturn > 0) failures.push(`returning to the first player's tree fetched ${String(results.skillTreeReturn)} B`);
+
+    // ADR-117: a ranked node's comparison. Showing the tree and opening a node's detail fetch no
+    // cohort file; pressing Compare fetches the comparison's code, the position's index and one
+    // slice; hiding and reopening it fetches nothing.
+    const cohortFetched = (entries) => entries.some((entry) => entry.path.includes("/skill_cohort"));
+    if (cohortFetched(first) || cohortFetched(second)) failures.push("showing a tree fetched a cohort file");
+    const tree = treePage.getByRole("dialog").getByRole("group", { name: /skill tree/ });
+    mark = treeLog.mark();
+    await tree.locator('.st-node[data-state="ranked"]:not([data-direction="neutral"])').first().click();
+    const detail = treePage.getByRole("dialog").getByRole("region", { name: /: details$/ });
+    await detail.waitFor();
+    await settle(treePage);
+    if (cohortFetched(treeLog.since(mark))) failures.push("opening a node's detail fetched a cohort file");
+    const compareButton = detail.getByRole("button", { name: /^Compare with all \d+ ranked/ });
+    mark = treeLog.mark();
+    await compareButton.click();
+    await treePage.getByRole("dialog").getByRole("region", { name: /compared across/ }).waitFor();
+    await treePage.getByRole("dialog").locator(".stc-plot").waitFor();
+    await settle(treePage);
+    const compared = treeLog.since(mark);
+    check("skillCompareAdds", sum(compared), BUDGETS.skillCompareAdds);
+    results.skillCompareAddsData = sum(compared, isData);
+    results.skillCompareAddsFiles = compared.map((entry) => `${entry.path} ${String(entry.bytes)}`);
+    mark = treeLog.mark();
+    await detail.getByRole("button", { name: "Hide comparison" }).click();
+    await compareButton.click();
+    await treePage.getByRole("dialog").locator(".stc-plot").waitFor();
+    await settle(treePage);
+    check("skillCompareRepeat", sum(treeLog.since(mark)), BUDGETS.skillCompareRepeat);
     await climber.close();
   } catch (error) {
     failures.push(`the Skill Tree scenarios could not run: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`);

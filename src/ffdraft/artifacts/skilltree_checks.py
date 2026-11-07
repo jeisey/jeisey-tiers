@@ -6,7 +6,10 @@ Every reading carries its sample, so most of the artifact is checkable from its 
   rank exists only for ``ranked``);
 * every rank and percentile is re-derived from the published values of its cohort, with the
   definition's direction and precision — a rank that is not the competition rank of the
-  published values over the published cohort cannot pass;
+  published values over the published cohort cannot pass. The re-derivation is this module's
+  own (:func:`rederive_ranks`: pairwise counts over exact decimals, ADR-117), not the builder's
+  ``percentile_ranks`` (bisection over scaled integers), so a defect in the builder's
+  convention cannot validate itself;
 * a rate or share must equal its published numerator over its denominator;
 * every reading needs a definition, and every appearing player carries his position's whole
   tree.
@@ -19,17 +22,57 @@ the same targets, carries and attempts as the usage layer's week-by-week series.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from decimal import Decimal
+from fractions import Fraction
 from typing import Any
 
 from ffdraft.contracts import QualityCheck
-from ffdraft.signals.skilltree import MIN_COHORT, percentile_ranks
+from ffdraft.signals.skilltree import MIN_COHORT
 
 __all__ = [
+    "rederive_ranks",
     "skilltree_cross_checks",
     "skilltree_definition_checks",
     "skilltree_metadata_checks",
     "skilltree_record_checks",
 ]
+
+
+def rederive_ranks(
+    values: Mapping[str, float],
+    *,
+    direction: str,
+    min_cohort: int = MIN_COHORT,
+) -> dict[str, tuple[int, Fraction]]:
+    """``player -> (competition rank, exact percentile)`` over published values (ADR-107).
+
+    Written independently of the builder on purpose: every pair is compared directly on the
+    value *as published* (its shortest decimal text, so two values that print alike are equal
+    and nothing is re-rounded), ``lower`` reverses the order, and the percentile is the exact
+    rational ``100 × (strictly behind + (ties − 1) / 2) ÷ (n − 1)``. The caller compares that
+    with the one-decimal published percentile. A cohort below ``min_cohort`` (or of one)
+    ranks no one.
+    """
+    if len(values) < max(min_cohort, 2):
+        return {}
+    sign = -1 if direction == "lower" else 1
+    exact = {player: sign * Decimal(repr(float(value))) for player, value in values.items()}
+    n = len(exact)
+    out: dict[str, tuple[int, Fraction]] = {}
+    for player, mine in exact.items():
+        ahead = sum(1 for other in exact.values() if other > mine)
+        behind = sum(1 for other in exact.values() if other < mine)
+        ties = n - ahead - behind
+        out[player] = (ahead + 1, Fraction(100) * (behind + Fraction(ties - 1, 2)) / (n - 1))
+    return out
+
+
+def percentile_agrees(published: Any, exact: Fraction) -> bool:
+    """A one-decimal published percentile is the exact one rounded: within half a unit."""
+    if not isinstance(published, int | float) or isinstance(published, bool):
+        return False
+    return abs(Fraction(repr(float(published))) - exact) <= Fraction(1, 20)
+
 
 _STAGE = "artifacts.player_skill_tree"
 _EMPTY_STATES = frozenset({"no_opportunity", "not_covered", "unavailable"})
@@ -267,11 +310,7 @@ def skilltree_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Q
     for (position, metric_id), members in cohorts.items():
         definition = defs[(position, metric_id)]
         values = {player: float(row["value"]) for player, row in members.items()}
-        derived = percentile_ranks(
-            values,
-            direction=str(definition["direction"]),
-            decimals=int(definition["decimals"]),
-        )
+        derived = rederive_ranks(values, direction=str(definition["direction"]))
         for player, row in members.items():
             if row.get("cohort_size") != len(members):
                 size = row.get("cohort_size")
@@ -282,10 +321,10 @@ def skilltree_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Q
             mine = derived.get(player)
             got = (row.get("rank"), row.get("percentile"))
             if (mine is None and got != (None, None)) or (
-                mine is not None
-                and (mine[0] != got[0] or abs(mine[1] - float(got[1] or 0)) > 0.051)
+                mine is not None and (mine[0] != got[0] or not percentile_agrees(got[1], mine[1]))
             ):
-                rank_problems.append(f"{position}/{metric_id}/{player}: {got} vs {mine}")
+                shown = None if mine is None else (mine[0], float(mine[1]))
+                rank_problems.append(f"{position}/{metric_id}/{player}: {got} vs {shown}")
     if arithmetic:
         checks.append(
             _fail(
@@ -305,8 +344,13 @@ def skilltree_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Q
             ),
         )
 
-    # Agreement with the season actuals (games, position) and board coverage.
+    # Agreement with the season actuals (games, position, name) and board coverage.
     disagreements: list[str] = []
+    tree_names = {
+        str(record["player_id"]): str(record["display_name"])
+        for record in records
+        if record.get("display_name")
+    }
     actuals = envelopes.get("season_actuals")
     if actuals is not None:
         for row in actuals.get("records", ()):
@@ -321,6 +365,12 @@ def skilltree_cross_checks(envelopes: Mapping[str, Mapping[str, Any]]) -> list[Q
             if str(row.get("position")) != positions[player]:
                 disagreements.append(
                     f"{player}: position {positions[player]} vs actuals {row.get('position')}",
+                )
+            # ADR-117: one rule names a player in both artifacts (1.1 readings carry a name).
+            name = tree_names.get(player)
+            if name is not None and row.get("display_name") and name != row.get("display_name"):
+                disagreements.append(
+                    f"{player}: name {name!r} vs actuals {row.get('display_name')!r}",
                 )
     usage = envelopes.get("player_usage")
     usage_mismatch: list[str] = []

@@ -1272,3 +1272,38 @@ build, sources every other in-season artifact already reads, under roles recorde
 Not read: Sleeper adds and drops (no story needs a crowd signal; a low ESPN share does not require
 the crowd to have started adding), ffopportunity expected points (ADR-086), participation/routes
 (unavailable for 2026), Next Gen Stats.
+
+## 26. Retained schedule lines — 2026-11-06 (ADR-117)
+
+No new source. The weekly start/sit model reads nflverse's posted total and spread for the one
+game it projects (§18, ADR-096), and a game without them is `lines_pending`. On 2026-11-06 that
+rule cost a whole slate: `nflverse/nfldata`'s automated update at 11:45:17Z (`63cbbc1`) emptied
+the odds columns (moneylines, `spread_line`, spread odds, `total_line`, over/under odds) of all
+14 unplayed week-9 games while the completed Thursday game kept its lines, and the update at
+11:55:20Z (`13d8e46`) restored them. The refresh at 12:32Z read the `nflverse-data` schedules
+release built from the blank state (through the build's day-keyed cache) and published 1,437
+`lines_pending` records. The three builds before it (Nov 4, Nov 5 12:31Z and 22:53Z) lined 30 of
+30 teams. Traced in the `nfldata` history (`data/games.csv`, every commit from 2026-11-05T20:35Z
+to 18:15Z on Nov 6, week-9 unplayed games lined per commit: 15/15 … 14/14, **0/14** at 11:45:17Z,
+14/14 from 11:55:20Z); the two states are committed as
+`tests/fixtures/weekly/schedule_lines_2026w09.json`.
+
+**What is retained.** `ffdraft capture-schedule-lines` (daily-refresh capture job, before every
+in-season build, never a gate) downloads the schedule fresh — not through the build's cache — and
+retains under `gameday/schedule_lines/<season>/<key>/` one row per REG game kicking off within 15
+days: `game_id`, `season`, `week`, `home_team`, `away_team`, `kickoff_utc`,
+`kickoff_time_published`, `spread_line`, `total_line` (null when nflverse posted none, so the store
+records when the source had no line), with the capture time as the snapshot key and per-week
+counts in the manifest. No moneyline or odds price is retained, as none is published (§18.2). The
+store is private (ADR-049); the capture is re-hashed by `validate-market-history`.
+
+**How it is used.** `pregame_line_reuse_v1` (ADR-117 §3): only for the serving build's target
+week, and only for a game whose schedule row lacks a line — the newest retained observation of the
+same game with both lines, observed before kickoff, at or before the build, at most 48 h old. Every
+published game says `line_source` (`schedule` · `retained` · none) and when the lines were
+observed. Training and evaluation rows never pass through it; a retained observation is pregame by
+construction, never a closing line.
+
+**Rights.** Unchanged: nflverse CC-BY 4.0, attributed; spread and total only; the residual
+question about the upstream book stays recorded as `schedule_lines_context_only`.
+

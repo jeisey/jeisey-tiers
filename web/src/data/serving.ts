@@ -217,6 +217,32 @@ export function decodeTable<T>(
   return records;
 }
 
+/**
+ * A slice index (ADR-117): the files of an indexed family for one partition prefix, by hash.
+ * The manifest names the index; the index names the files.
+ */
+export interface SliceIndex {
+  readonly family: string;
+  readonly indexes: string;
+  readonly partition: string;
+  readonly files: Readonly<Record<string, string>>;
+}
+
+/** An index file's words, or null when they are not an index. */
+export function parseIndex(payload: unknown): SliceIndex | null {
+  if (typeof payload !== "object" || payload === null) return null;
+  const body = payload as Record<string, unknown>;
+  if (typeof body.family !== "string" || !body.family.endsWith("_index")) return null;
+  if (typeof body.indexes !== "string" || typeof body.partition !== "string") return null;
+  if (typeof body.files !== "object" || body.files === null) return null;
+  const files: Record<string, string> = {};
+  for (const [key, digest] of Object.entries(body.files as Record<string, unknown>)) {
+    if (typeof digest !== "string" || !/^[0-9a-f]{16}$/.test(digest)) return null;
+    files[key] = digest;
+  }
+  return { family: body.family, indexes: body.indexes, partition: body.partition, files };
+}
+
 // ------------------------------------------------------------------------------- fetching
 
 async function openCache(): Promise<Cache | null> {
@@ -308,9 +334,18 @@ export async function pruneCache(manifest: Manifest, base?: string): Promise<voi
   const cache = await openCache();
   if (cache === null) return;
   try {
-    const keep = new Set(
-      Object.entries(manifest.files).map(([key, digest]) => new URL(servedUrl(key, digest, base), location.href).href),
-    );
+    const href = (key: string, digest: string): string => new URL(servedUrl(key, digest, base), location.href).href;
+    const keep = new Set(Object.entries(manifest.files).map(([key, digest]) => href(key, digest)));
+    // ADR-117: an index file names its family's files, which the manifest does not. Keep the
+    // ones a cached index of this deploy names; anything else is another deploy's.
+    for (const [key, digest] of Object.entries(manifest.files)) {
+      if (!key.split("/", 1)[0]?.endsWith("_index")) continue;
+      const hit = await cache.match(href(key, digest));
+      if (hit === undefined) continue;
+      const index = parseIndex(await hit.json());
+      if (index === null) continue;
+      for (const [entry, entryDigest] of Object.entries(index.files)) keep.add(href(`${index.indexes}/${entry}`, entryDigest));
+    }
     for (const request of await cache.keys()) {
       if (!keep.has(request.url)) await cache.delete(request);
     }

@@ -1211,17 +1211,21 @@ function fixtureSkillValue(definition: SkillTreeDefinitionRecord, seed: number):
 
 /**
  * Readings for every in-season fixture player, deterministic and in every state the card
- * draws: ranked (most), below the minimum (every fifth player's rates), no opportunity (the
- * zero-point tight end's rates), not covered (Next Gen Stats for every third player, no combine
- * time for every fourth), and the presence-only record of a player with no games. Values are
- * shaped like football numbers and mean nothing; the production builder is tested in Python.
+ * draws: ranked (most), below the minimum (every fifth receiver's and tight end's rates), no
+ * opportunity (the zero-point tight end's rates), not covered (Next Gen Stats for every third
+ * player, no combine time for every fourth), a cohort too small to rank (where fewer than five
+ * of a position qualify), and the presence-only record of a player with no games. The twelve
+ * off-board tight-end peers (published names, season actuals) are in the population, as every
+ * appearing player is in a real build. Values are shaped like football numbers and mean
+ * nothing; ranks and percentiles are re-derived over each cohort exactly as the builder does
+ * (ADR-117: a served cohort must reproduce every published rank), so a comparison's checks
+ * pass on this fixture for the same reason they pass on a real build.
  */
 export function skillTreeRecords(): PlayerSkillMetricRecord[] {
   const definitions = skillTreeDefinitionRecords();
   const players = new Map<string, { position: Position; games: number }>();
-  const peers = new Set(FIXTURE_TE_PEERS.map((peer) => peer.id));
   for (const record of seasonActualsRecords()) {
-    if (record.scoring_preset !== "PPR" || peers.has(record.player_id)) continue;
+    if (record.scoring_preset !== "PPR") continue;
     players.set(record.player_id, { position: record.position, games: record.games_played });
   }
   const records: PlayerSkillMetricRecord[] = [];
@@ -1283,13 +1287,64 @@ export function skillTreeRecords(): PlayerSkillMetricRecord[] {
           reading = { ...ranked, state: "not_covered", value: null, numerator: null, denominator: null, rank: null, percentile: null, cohort_size: null, reason: "not_in_ngs_summary" };
         } else if (playerId === FIXTURE_SKILL_TREE_ZERO_ID && definition.kind !== "volume") {
           reading = { ...ranked, state: "no_opportunity", value: null, numerator: 0, denominator: 0, rank: null, percentile: null, cohort_size: null };
-        } else if (code % 5 === 0 && definition.kind === "rate" && definition.minimum !== null) {
+        } else if (
+          code % 5 === 0 &&
+          (player.position === "WR" || player.position === "TE") &&
+          definition.kind === "rate" &&
+          definition.minimum !== null
+        ) {
           reading = { ...ranked, state: "below_minimum", denominator: Math.max(1, definition.minimum - 3), rank: null, percentile: null, cohort_size: null };
         }
         records.push({ ...base, metric_id: definition.metric_id, ...reading });
       });
   }
-  return records;
+  return rankFixtureCohorts(records, definitions);
+}
+
+/**
+ * Rank every position × metric cohort of the fixture as `skill_tree_v1` does (DATA_CONTRACTS
+ * §25.1): a competition rank in the metric's direction (highest first for higher and neutral,
+ * lowest first for lower), percentile 100 × (behind + (ties − 1) / 2) ÷ (n − 1) on the
+ * published values, and no rank at all in a cohort under five (`small_cohort`, value kept).
+ * The archive keeps its historical testers' rank: that cohort is never served.
+ */
+function rankFixtureCohorts(
+  records: PlayerSkillMetricRecord[],
+  definitions: readonly SkillTreeDefinitionRecord[],
+): PlayerSkillMetricRecord[] {
+  const byKey = new Map(definitions.map((definition) => [`${definition.position}.${definition.metric_id}`, definition]));
+  const cohorts = new Map<string, number[]>();
+  records.forEach((record, index) => {
+    const definition = byKey.get(`${record.position}.${record.metric_id}`);
+    if (definition === undefined || definition.role === "archive" || record.state !== "ranked") return;
+    const key = `${record.position}.${record.metric_id}`;
+    cohorts.set(key, [...(cohorts.get(key) ?? []), index]);
+  });
+  const out = [...records];
+  for (const [key, members] of cohorts) {
+    const lower = byKey.get(key)?.direction === "lower";
+    const n = members.length;
+    const adjusted = members.map((index) => (lower ? -1 : 1) * (out[index]?.value ?? 0));
+    members.forEach((index, position) => {
+      const record = out[index];
+      if (record === undefined) return;
+      if (n < 5) {
+        out[index] = { ...record, state: "small_cohort", rank: null, percentile: null, cohort_size: n };
+        return;
+      }
+      const mine = adjusted[position] ?? 0;
+      const behind = adjusted.filter((value) => value < mine).length;
+      const ahead = adjusted.filter((value) => value > mine).length;
+      const ties = n - behind - ahead;
+      out[index] = {
+        ...record,
+        rank: ahead + 1,
+        percentile: Math.round((1000 * (behind + (ties - 1) / 2)) / (n - 1)) / 10,
+        cohort_size: n,
+      };
+    });
+  }
+  return out;
 }
 
 export function skillTreeEnvelope(): ArtifactEnvelope<PlayerSkillMetricRecord> {
@@ -2101,8 +2156,24 @@ const WEEKLY_OPPONENT_RANK: Readonly<Record<string, number>> = {
   WAS: 15,
 };
 
+/**
+ * The weekly layer's shapes. `normal`: every lined game from the schedule except LAC @ KC, whose
+ * lines the build retained from an earlier pregame reading (weekly contract 1.2), and WAS @ ARI
+ * with none. `friday`: a healthy build read on Friday after a Thursday game (LAR @ BAL, kicked off
+ * with its lines and pregame distribution); every other game from the schedule. `outage`: the
+ * 2026-11-06 failure — the same Friday build from a schedule whose every unplayed game had lost
+ * its lines, with nothing retained: every upcoming game is `lines_pending`.
+ */
+export type WeeklyFixtureMode = "normal" | "friday" | "outage";
+
+/** When the fixture build read the schedule's lines, and when LAC @ KC's retained lines were seen. */
+const WEEKLY_SCHEDULE_READ = "2026-11-03T12:00:00Z";
+const WEEKLY_RETAINED_AT = "2026-11-02T22:53:00Z";
+/** The outage's Thursday kickoff (Thu 8:15 PM ET). */
+export const WEEKLY_THURSDAY_KICKOFF = "2026-11-06T01:15:00Z";
+
 /** The week-9 game each team plays, from the same list `teamMatchupRecords` draws. */
-function weeklyGame(team: string): WeeklyProjectionRecord["game"] {
+function weeklyGame(team: string, mode: WeeklyFixtureMode = "normal"): WeeklyProjectionRecord["game"] {
   const games: Readonly<Record<string, { home: string; away: string; kickoff: string; spread: number | null; total: number | null; neutral?: boolean }>> = {
     ATL: { home: "DET", away: "ATL", kickoff: "2026-11-08T18:00:00Z", spread: 3.5, total: 51.5 },
     DET: { home: "DET", away: "ATL", kickoff: "2026-11-08T18:00:00Z", spread: 3.5, total: 51.5 },
@@ -2115,11 +2186,23 @@ function weeklyGame(team: string): WeeklyProjectionRecord["game"] {
     ARI: { home: "ARI", away: "WAS", kickoff: "2026-11-08T21:05:00Z", spread: null, total: null },
     WAS: { home: "ARI", away: "WAS", kickoff: "2026-11-08T21:05:00Z", spread: null, total: null },
   };
-  const game = games[team];
-  if (game === undefined) return null;
+  const listed = games[team];
+  if (listed === undefined) return null;
+  const thursday = listed.home === "BAL";
+  // On Friday LAR @ BAL is Thursday's game; in the outage only it kept its lines.
+  const game =
+    mode === "normal"
+      ? listed
+      : thursday
+        ? { ...listed, kickoff: WEEKLY_THURSDAY_KICKOFF }
+        : mode === "outage"
+          ? { ...listed, spread: null, total: null }
+          : listed;
   const home = game.home === team;
   const margin = game.spread === null ? null : home ? game.spread : -game.spread + 0;
   const points = margin === null || game.total === null ? null : round((game.total + margin) / 2, 2);
+  const lined = game.total !== null && margin !== null;
+  const retained = lined && mode === "normal" && game.home === "KC";
   return {
     game_id: `2026_${String(WEEKLY_TARGET_WEEK).padStart(2, "0")}_${game.away}_${game.home}`,
     opponent: home ? game.away : game.home,
@@ -2130,18 +2213,21 @@ function weeklyGame(team: string): WeeklyProjectionRecord["game"] {
     total_line: game.total,
     team_margin: margin,
     team_points: points,
+    line_source: lined ? (retained ? "retained" : "schedule") : null,
+    lines_observed_at_utc: lined ? (retained ? WEEKLY_RETAINED_AT : WEEKLY_SCHEDULE_READ) : null,
   };
 }
 
-export function weeklyProjectionRecords(): WeeklyProjectionRecord[] {
+export function weeklyProjectionRecords(mode: WeeklyFixtureMode = "normal"): WeeklyProjectionRecord[] {
   const records: WeeklyProjectionRecord[] = [];
   for (const scoring of SCORING) {
     for (const seed of SEEDS) {
       const plan = WEEKLY_PLAN[seed.id];
       if (plan === undefined) continue;
-      const game = weeklyGame(seed.team);
+      const game = weeklyGame(seed.team, mode);
       const bye = game === null;
       const pending = game !== null && (game.total_line === null || game.team_margin === null);
+      const kicked = game?.kickoff_utc === WEEKLY_THURSDAY_KICKOFF;
       const factor = WEEKLY_PRESET_FACTOR[scoring];
       const median = round(plan.median * (seed.position === "QB" ? 1 : factor), 2);
       const shape = WEEKLY_SHAPES[plan.shape] ?? [];
@@ -2175,7 +2261,7 @@ export function weeklyProjectionRecords(): WeeklyProjectionRecord[] {
       const opponent = game === null ? null : game.opponent;
       const rank = opponent === null ? null : (WEEKLY_OPPONENT_RANK[opponent] ?? 16);
       records.push({
-        schema_version: "1.1",
+        schema_version: "1.2",
         build_id: FIXTURE_BUILD_ID,
         season: 2026,
         through_week: FIXTURE_THROUGH_WEEK,
@@ -2187,7 +2273,7 @@ export function weeklyProjectionRecords(): WeeklyProjectionRecord[] {
         scoring_preset: scoring,
         model_version: "weekly-startsit-v1",
         // A game with no posted line is stated, not projected (ADR-096): the WAS-ARI game.
-        game_state: bye ? "bye" : pending ? "lines_pending" : "upcoming",
+        game_state: bye ? "bye" : pending ? "lines_pending" : kicked ? "kicked_off" : "upcoming",
         game,
         quantiles: bye || pending ? null : quantiles,
         drivers:
@@ -2293,11 +2379,11 @@ function contextListed(team: string): WeeklyGameContextRecord["lineup"]["listed"
   }
 }
 
-export function weeklyContextRecords(): WeeklyGameContextRecord[] {
+export function weeklyContextRecords(mode: WeeklyFixtureMode = "normal"): WeeklyGameContextRecord[] {
   const teams = ["ATL", "DET", "CIN", "BUF", "LAR", "BAL", "KC", "LAC", "ARI", "WAS"];
   const records: WeeklyGameContextRecord[] = [];
   for (const team of teams) {
-    const game = weeklyGame(team);
+    const game = weeklyGame(team, mode);
     if (game === null) continue;
     const host = game.home_away === "home" ? team : game.opponent;
     const venue = CONTEXT_VENUES[host] ?? null;
@@ -2309,7 +2395,7 @@ export function weeklyContextRecords(): WeeklyGameContextRecord[] {
     const provider = venue === null ? null : venue.country === "US" ? "nws" : "open_meteo";
     const listed = contextListed(team);
     records.push({
-      schema_version: "1.0",
+      schema_version: "1.1",
       build_id: FIXTURE_BUILD_ID,
       season: 2026,
       through_week: FIXTURE_THROUGH_WEEK,
@@ -2353,18 +2439,53 @@ export function weeklyContextRecords(): WeeklyGameContextRecord[] {
         is_home: game.neutral_site ? 0 : game.home_away === "home" ? 1 : 0,
         rest_advantage: team === "CIN" ? -3 : team === "BUF" ? 3 : 0,
         indoors: game.roof === "dome" ? 1 : 0,
+        line_source: game.line_source ?? null,
+        lines_observed_at_utc: game.lines_observed_at_utc ?? null,
       },
     });
   }
   return records;
 }
 
-export function weeklyContextEnvelope(): ArtifactEnvelope<WeeklyGameContextRecord> {
-  return envelope("weekly_context", "weekly_game_context", weeklyContextRecords());
+export function weeklyContextEnvelope(mode: WeeklyFixtureMode = "normal"): ArtifactEnvelope<WeeklyGameContextRecord> {
+  return envelope("weekly_context", "weekly_game_context", weeklyContextRecords(mode));
 }
 
-export function weeklyProjectionEnvelope(): ArtifactEnvelope<WeeklyProjectionRecord> {
-  return envelope("weekly_projections", "weekly_projection", weeklyProjectionRecords());
+export function weeklyProjectionEnvelope(mode: WeeklyFixtureMode = "normal"): ArtifactEnvelope<WeeklyProjectionRecord> {
+  return envelope("weekly_projections", "weekly_projection", weeklyProjectionRecords(mode));
+}
+
+/**
+ * `ros_build_metadata.weekly` for a mode: the counts its records carry and its line provenance
+ * (`pregame_line_reuse_v1`, weekly contract 1.2).
+ */
+export function weeklyMetadata(mode: WeeklyFixtureMode = "normal"): RosWeeklyMetadata {
+  const records = weeklyProjectionRecords(mode);
+  const count = (state: WeeklyProjectionRecord["game_state"]): number => records.filter((record) => record.game_state === state).length;
+  const games = new Map<string, WeeklyProjectionRecord["game"]>();
+  for (const record of records) if (record.game !== null) games.set(record.game.game_id, record.game);
+  const lined = [...games.values()].filter((game) => game?.line_source != null);
+  const retained = lined.filter((game) => game?.line_source === "retained");
+  return {
+    ...FIXTURE_WEEKLY,
+    records: records.length,
+    upcoming: count("upcoming"),
+    kicked_off: count("kicked_off"),
+    bye: count("bye"),
+    lines_pending: count("lines_pending"),
+    unmodelled: count("unmodelled"),
+    lines: {
+      rule_version: "pregame_line_reuse_v1",
+      max_age_hours: 48,
+      target_games: games.size,
+      from_schedule: lined.length - retained.length,
+      from_retained: retained.length,
+      unlined: games.size - lined.length,
+      unlined_game_ids: [...games.keys()].filter((id) => games.get(id)?.line_source == null).sort(),
+      retained: retained.map((game) => ({ game_id: game?.game_id ?? "", observed_at_utc: game?.lines_observed_at_utc ?? "" })),
+      schedule_retrieved_at_utc: WEEKLY_SCHEDULE_READ,
+    },
+  };
 }
 
 /** The metadata block, with the measurements production published for 2017-2025. */
@@ -2381,6 +2502,19 @@ export const FIXTURE_WEEKLY: RosWeeklyMetadata = {
   kicked_off: 0,
   bye: 6,
   lines_pending: 9,
+  unmodelled: 0,
+  // Weekly contract 1.2's provenance, as `weeklyMetadata("normal")` derives it from the records.
+  lines: {
+    rule_version: "pregame_line_reuse_v1",
+    max_age_hours: 48,
+    target_games: 5,
+    from_schedule: 3,
+    from_retained: 1,
+    unlined: 1,
+    unlined_game_ids: ["2026_09_WAS_ARI"],
+    retained: [{ game_id: "2026_09_LAC_KC", observed_at_utc: "2026-11-02T22:53:00Z" }],
+    schedule_retrieved_at_utc: "2026-11-03T12:00:00Z",
+  },
   quantile_levels: [0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95],
   distribution_rule: {
     version: "quantile_distribution_v1",
@@ -2863,8 +2997,11 @@ export function inSeasonFixtureFiles(
      * could not be built (ESPN readings unavailable) and every other family published.
      */
     readonly insights?: InsightsFixtureMode;
+    /** The weekly layer's shape (`WeeklyFixtureMode`): `friday` after a Thursday game, `outage` the 2026-11-06 build. */
+    readonly weekly?: WeeklyFixtureMode;
   } = {},
 ): Record<string, unknown> {
+  const weeklyMode = options.weekly ?? "normal";
   const espn = options.espn ?? "present";
   const espnMeta = espnOwnershipMetadata(espn);
   const series = options.behaviorSeries ?? "mature";
@@ -2889,7 +3026,7 @@ export function inSeasonFixtureFiles(
     }),
     "ros_build_metadata.json": rosBuildMetadata(
       {
-        ...(signals === "present" ? {} : { weekly: null }),
+        ...(signals === "present" ? (weeklyMode === "normal" ? {} : { weekly: weeklyMetadata(weeklyMode) }) : { weekly: null }),
         ...(skillTree === "present" ? {} : { skill_tree: null }),
         ...(espnMeta === null ? {} : { espn_ownership: espnMeta }),
         ...(recent === "absent"
@@ -2948,9 +3085,9 @@ export function inSeasonFixtureFiles(
           "team_matchups.json": teamMatchupEnvelope(),
           // The weekly layer (ADR-096) is withheld with the signal layer in this scenario, so
           // the Start/Sit tab's "nothing published" state has a build that draws it.
-          "weekly_projections.json": weeklyProjectionEnvelope(),
+          "weekly_projections.json": weeklyProjectionEnvelope(weeklyMode),
           // ADR-099: the game-day context is written and withheld with the weekly layer.
-          "weekly_context.json": weeklyContextEnvelope(),
+          "weekly_context.json": weeklyContextEnvelope(weeklyMode),
         }
       : {}),
   };
