@@ -4,7 +4,57 @@ This file is durable cross-session state for coding agents. Keep it concise and 
 
 ## Current phase
 
-**Insights: deterministic weekly stories, one shareable card per finding — 2026-10-28 (ADR-116,
+**Skill Tree comparisons, portraits for every card, weekly lines that survive an upstream blank —
+2026-11-06 (ADR-117, PRD CR-037).** On `claude/dreamy-curie-6z2zv4` from `main` at `ce9fe82`.
+Three owner reports, each reproduced on retained artifacts (runs `40690404597`, `42217730020`).
+
+* **Weekly lines (root cause).** `nflverse/nfldata` `63cbbc1` (2026-11-06T11:45:17Z) blanked the
+  odds of all 14 unplayed week-9 games; `13d8e46` restored them ten minutes later; the 12:32Z
+  refresh read the blank release and published 1,437 `lines_pending`. Fix: `capture-schedule-lines`
+  (capture job, fresh download) + `pregame_line_reuse_v1` (same game, both lines, pregame, ≤ 48 h),
+  provenance on every game (`weekly_projection` 1.2, `weekly_game_context` 1.1,
+  `ros_build_metadata.weekly.lines`), `unmodelled` published instead of dropped, two build
+  warnings and a *Start/Sit lines* summary section. Replay (live nflverse, blank re-applied, one
+  capture): 0 `lines_pending`, all 15 games projected in every preset.
+* **WMM.** Data gaps (typed causes) are explained once with freshness and Reload, never counted as
+  decisions, still block Simulate; finals once; locks; fingerprint/proposals invalidate correctly.
+* **Skill Tree.** Pierce reconciled (96/37 = 2.59; Oct 28 60/60 → 0.0; Nov 6 65/66 → 1.5 after
+  Jacobs qualified). Convention kept; validator re-derives ranks independently. Ten-tick banded
+  meter; lazy comparison over `skill_cohort/<POS>.<metric>` slices named by four per-position
+  indexes; `player_skill_metric` 1.1 `display_name` names members no board publishes.
+* **Portraits.** `portrait_population_v1` over every card surface (rewritten by `build-ros` in
+  season); player-master gap fill by GSIS id; validator checks the union. Nov 6: 575 → 720 of 729;
+  merged-code replay on Nov 7 data: 719 of 728, Cousins covered, all 553 weekly players covered.
+* **Payload** (size model, all met, none raised): first visit +985 B; card +134 B; tree 18.2/25 kB;
+  WMM cold 447.3/450 kB (headroom 2.7 kB); new comparison 9.7/15 kB, repeat 0 B.
+* **Facts for the next session.**
+  * Agents ran in worktrees; the three branches (`worktree-agent-*`) are merged here. Remove the
+    `.claude/worktrees/` directories before any repo-wide lint (ESLint scans them and runs out of
+    a 2 GB heap).
+  * The size model ranks cloned Skill Tree cohorts (`_rank_skill_cohorts`); without it the
+    comparison correctly refuses to draw and `verify:budget` times out.
+  * Replay tooling: `docs/source-probes/2026-11-06/weekly-lines/replay_nov6.py` (needs network).
+  * Browser fixtures: `WeeklyFixtureMode` (`normal`, `friday`, `outage`) and the e2e scenario
+    `in-season-lines-outage`.
+* **Next gate:** owner review; after merge, the first in-season `daily-refresh` writes the first
+  `schedule_lines` capture and in-season portrait set — check the summary's lines table and
+  `ros_build_metadata.player_headshots`.
+
+Validation of this pass (local, Chromium 1243 via `PLAYWRIGHT_CHROMIUM_EXECUTABLE`):
+
+```
+uv run ruff check . ; ruff format --check . ; mypy   # clean; 220 source files
+uv run pytest                                        # 2,369 collected, exit 0
+build-fixture-artifacts + validate-artifacts         # pass 0/0; goldens regenerated
+npm run lint ; npm run typecheck                     # 0 errors (4 pre-existing warnings); clean
+npm run test -- --run                                # 1,261 passed, 1 skipped
+playwright chromium + mobile + a11y                  # 369 passed
+npm run e2e:size-model && verify:budget              # all met (numbers above)
+VITE_BASE_PATH=/jeisey-tiers/ npm run build          # ok
+visual QA captures (tree, compare, WMM readiness)    # 0 problems
+```
+
+Previous pass: **Insights: deterministic weekly stories, one shareable card per finding — 2026-10-28 (ADR-116,
 PRD CR-036).** On `claude/kind-pasteur-c8py15` from `main` at `6f7e617`. An in-season tab that
 answers "is my disappointing starter still getting the ball; who has a real route to a big week at
 low roster share; whose role just opened; is that streak backed by usage; what does the season look

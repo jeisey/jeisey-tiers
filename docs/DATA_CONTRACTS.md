@@ -892,6 +892,36 @@ what a reader opens in a spreadsheet.
 and the coverage the build achieved, so the Data view can state what opening a card costs
 without hardcoding it. Absent-or-null is valid, as for `market` and `player_status`.
 
+### 17.1 One population over every card surface — 2026-11-06 (ADR-117)
+
+The population and direction above are superseded. **`portrait_population_v1`** is the union of
+the card surfaces the build published: `tiers`, `arbitrage`, `ros_tiers`, `inseason_opportunity`,
+`weekly_projections`, `season_actuals` and `insights`. `build-current` writes the set over the tier
+board; in season `build-ros` rewrites it last over every surface, under its own build id. The file
+belongs to the bundle whose build id it carries **and** whose metadata describes it.
+
+Bridges: the roster crosswalk; for a registry player the roster gives no ESPN id, nflverse's
+player master by exact GSIS id, refused if any other roster or master row holds that ESPN id. An
+ESPN id held by two players is refused for both. `player_headshot_record` stays 1.0.
+
+**Metadata** — the same block in `build_metadata.player_headshots` and (new)
+`ros_build_metadata.player_headshots`: `provider`, `host`, `source_ids`, `population`
+(`rule_version` `portrait_population_v1`, `surfaces_read`, `players`), `published_players` (=
+`population.players`), `resolved`, `coverage` (crosswalk coverage — a row exists — never whether
+the image loads), `by_surface` and `by_position` (`players`, `resolved`), `unresolved_reasons`
+(`not_in_identity_registry`, `no_espn_id`, `invalid_espn_id`, `ambiguous_espn_id`) and `bridges`
+(`nflverse_roster`, `nflverse_player_master`). A block without `population` is the old tier-board
+denominator. Additive; both metadata schemas stay 1.0.
+
+**Validator.** `cross_artifact.headshot_player_outside_card_surfaces` (critical; the union is
+recomputed from the files, never read from metadata) replaces `headshot_player_not_in_tiers`;
+`artifact.headshot_provider_id_shared` (critical); `cross_artifact.headshot_metadata_disagrees`
+(critical: the owning block's rows, population and per-surface counts re-derived from the files);
+`headshot_metadata_missing` (warning); `headshot_metadata_agrees`, `headshot_population_scope`
+(surfaces published after the portrait set, e.g. a preseason arbitrage-only player),
+`headshot_metadata_superseded` and `headshot_population_not_rederivable` (informational). Still no
+coverage floor: a missing portrait never fails a build.
+
 
 ---
 
@@ -1294,7 +1324,7 @@ the files a cached index of the current deploy names.
 | `skill_tree_definitions` (ADR-107) | same | position (`skill_tree_definitions/QB`…) | all (§25) |
 | `skill_cohort` (ADR-117, indexed) | `player_skill_tree`, readings with a value (`ranked`, `below_minimum`, `small_cohort`) and no `source_season` | position × metric (`skill_cohort/RB.yards_per_carry`…) | `build_id`, `season`, `through_week`, `player_id`, `position`, `metric_id`, `state`, `value`, `numerator`, `denominator`, `rank`, `percentile`, `cohort_size`, `games` (§25.5) |
 | `skill_cohort_index` (ADR-117) | the `skill_cohort` files | position | the files' hashes |
-| `players` | every artifact with names (the boards first; `season_actuals` last, ADR-117, so every appearing player has a registry name) | whole | `player_id` → `display_name` |
+| `players` | every artifact with names (the boards first; `player_skill_tree` last, ADR-117, so every Skill Tree cohort member has a name) | whole | `player_id` → `display_name` |
 | `card` | tiers, arbitrage, market trend series (block); projections, weekly projections (scoring); player status, headshots, usage, behaviour series (whole); ROS, Opportunity (block) | block × bucket | every field of every row of those artifacts whose player falls in the bucket |
 
 `projections` and `market_trend_series` are served only inside card shards: nothing but a card
@@ -1389,7 +1419,8 @@ reading), unsigned on anything but Sleeper evidence.
 
 After the draft anchor the status population adds verified off-roster players (unsigned, and
 signings only Sleeper reports). Identity for them comes from the previous season's roster as
-identity only (`identity_spine`); portraits remain the tier board's players.
+identity only (`identity_spine`). Portraits follow their own population (ADR-117, §17.1): every
+card surface, not the status population.
 
 ### 22.2 `inseason_opportunity_record` 1.2 — model coverage
 
@@ -1542,7 +1573,7 @@ reads these artifacts (an import firewall test enforces it in Python and TypeScr
 `ffdraft.signals.skilltree` (`skill_tree_v1`) during `build-ros`, after every board, from the
 frames the build already loaded; scoring- and league-independent, so published once.
 
-### 25.1 `player_skill_metric` 1.0 — `player_skill_tree.json`
+### 25.1 `player_skill_metric` 1.1 — `player_skill_tree.json`
 
 One record per player per metric of his position's tree, plus one `appearances` record per
 population player; a player with no appearance has only that record. Sorted by `position`,
@@ -1552,6 +1583,7 @@ population player; a player with no appearance has only that record. Sorted by `
 |---|---|
 | `season`, `through_week` | the board's season and cutoff: REG weeks `1..through_week` only |
 | `player_id`, `position` | canonical `gsis:` id; the board's position (as `season_actuals_v1` assigns it), which picks the tree and the cohort |
+| `display_name` (1.1, ADR-117) | his name by `season_actuals`' rule (the boards', then the identity registry's, then his latest box-score or snap row's); the served dictionary takes it last, and the bucket slices leave it out. `player_skill_tree.actuals_disagree` holds it equal to `season_actuals.display_name` |
 | `metric_id` | a metric in `skill_tree_definitions` for that position, or `appearances` |
 | `state` | `ranked` · `below_minimum` · `small_cohort` · `no_opportunity` · `not_covered` · `unavailable` · `no_appearances` (presence record only) |
 | `value` | the published reading, rounded to the definition's `decimals`; null exactly for `no_opportunity`, `not_covered`, `unavailable` |
@@ -1619,7 +1651,8 @@ cohort — every reading of that position and metric with a value, ranked or not
 position's `skill_cohort_index/<POS>` (§21.2). Opening a KPI comparison fetches that index and the
 one slice; nothing else, never on tree open. Archive readings are not served: a combine time ranks
 among historical testers, whose rows the build does not publish. Members are named through the
-player dictionary (`season_actuals` its lowest-precedence source). The serving validator requires
+player dictionary (`player_skill_tree`'s own `display_name` its lowest-precedence source). The
+serving validator requires
 each slice to be exactly the tree's cohort readings for its position and metric, players unique,
 one build and cutoff (the tree's), each ranked row's `cohort_size` the ranked count, ranks and
 percentiles re-derived by the validator's own `rederive_ranks` (not the builder's function), and a

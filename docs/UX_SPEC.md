@@ -1063,9 +1063,10 @@ category and reading order, and there is **no overall rating or branch score**.
   the skill tree…"; on a failure: the reason, and every other part of the card unaffected.
 * **Header.** The position in a framed hexagon (the core), the window ("2026 regular season,
   weeks 1–8 · 8 games played") and one legend: meter = percentile among qualified players at his
-  position, each segment 20 points; context metrics mark a position, not a grade; the kind tags;
-  "No overall rating: each node is one statistic." Withheld sources are listed under it with
-  the build's own sentence.
+  position, **ten ticks, one per 10 points, rounded up (0 lights none, 0.1–10 one, 90.1–100 all
+  ten)**; the tint key (< 20 · 20–39.9 · 40–59.9 · 60–79.9 · 80–100); context metrics mark a
+  position, not a grade; the archive is untinted; the kind tags; "No overall rating: each node is
+  one statistic." Withheld sources are listed under it with the build's own sentence (ADR-117).
 * **Branches.** Four per position (QB *Passing volume*, *Accuracy & depth*, *Efficiency & ball
   security*, *Legs & scoring*; RB *Ground workload*, *Rushing efficiency*, *Receiving*, *Scoring
   role*; WR *Target earning*, *Depth & big plays*, *Catch & contribution*, *Scoring role*; TE
@@ -1075,17 +1076,46 @@ category and reading order, and there is **no overall rating or branch score**.
 * **A node.** Bronze octagonal frame with an original football glyph; the short label (whole
   words, wrapping at spaces); the value in mono numerals with its unit; the standing in words
   ("80th pct · 9th of 40", "Unranked · 12 of 15 targets", "No targets yet", "Not in Next Gen
-  Stats"); a five-segment meter (segment *k* lit from percentile 20(k − 1); lower-is-better
-  metrics are already direction-adjusted) with the kind tag (VOL, SHARE, RATE, CTX) at the end of
-  its row. A context metric draws a marker on a neutral track and says "above 72%", never
-  "better". Unranked, no-opportunity, not-covered and unavailable readings draw a dashed frame, a
-  muted glyph, an empty track and the state in words — never a lock, never a low meter.
+  Stats"); a **ten-tick meter** (ADR-117): a ranked higher/lower reading lights none at
+  percentile 0 and otherwise `ceil(p / 10)` of ten, with `p` at its published one place;
+  lower-is-better metrics are already direction-adjusted and never inverted again. Lit ticks, the
+  frame ring and the glyph take one of five percentile bands (< 20, 20–< 40, 40–< 60, 60–< 80,
+  80–100; lower bounds inclusive) on a bronze ramp from dim copper to pale gold; no text takes a
+  band colour. The standing prints the exact published percentile and place ("55.6 pct · 5th of
+  10"), with the kind tag (VOL, SHARE, RATE, CTX) at the end of the meter's row. A context metric
+  draws a marker on a neutral track and says "above 72%", never "better"; the archive's ticks are
+  untinted; an unranked reading with a value is neutral steel. No-opportunity, not-covered and
+  unavailable readings draw a dashed frame, a muted glyph, an empty track and the state in words —
+  never a lock, never a low meter. A **ranked zero** is a solid empty track in the lowest band
+  with "0 pct · 66th of 66", never the dashed "no reading" frame; the accessible name adds "Meter:
+  k of 10 ticks, band …".
 * **Detail.** Tap, click, Enter or Space opens one node's detail (again, or *Close*, closes it
   and returns focus to the node): label and kind, value with its sample, standing and the
   build's reason sentence, then *What it is*, *How to read it*, *Ranked against*, *Window*,
   *Formula*, *Source* (with fields) and *Limitations*, and the node's detail metrics with their
   own values, samples and standings. Below the tree on a wide pane; **directly under the node**
   on a phone. The selected branch's connectors light from the trunk to the node — a reading path.
+* **Comparison** (ADR-117), in a ranked node's detail: *Compare with all N ranked WRs*
+  (`aria-expanded`; *Hide comparison*). Pressing it — and nothing earlier — loads the comparison's
+  code, the position's cohort index and the one metric's cohort slice. It shows the scope ("N
+  ranked WRs · window · minimum X unit" and the cohort rule), the focal line ("◆ Name: value ·
+  sample · standing") and a dot plot on the metric's raw axis: equal values stack, negative values
+  get a zero line, an all-equal cohort a padded domain, the focal player is a labelled diamond with
+  a guide line, pins are numbered rings, and the axis says which way is better in words ("higher is
+  better →", "← lower is better", "no better direction"). Tapping or hovering a dot gives its
+  reading and *Pin*. *Pin up to 3 WRs to compare* searches the same position's cohort; each pin
+  shows value, sample, standing and a signed, unit-labelled difference ("+0.42 yds/carry vs
+  Pierce (ahead of Pierce; higher is better)"), with *Remove* and *Clear pins*; a fourth is refused;
+  pinning never changes the ranking. An unranked player may be pinned: "Unranked" with his sample,
+  drawn in a separate lane outside the ranking. *Show all N as a table* (rank, player · sample,
+  value, pct; his row marked) is the keyboard and screen-reader alternative. It draws nothing — "No
+  comparison drawn" and the reason — when a row's build, season, cutoff, position or metric differs
+  from his reading, when the ranked count differs from `cohort_size`, or when his cohort row
+  disagrees with his tree reading. The archive is never compared ("Its rank is among the N historical
+  combine testers at his combine position, whose rows this build does not publish; today's WRs are
+  not that cohort and are never put in its place."). An older build says the comparison is
+  unavailable. Pins, search and open state reset on a player or metric change; a late response is
+  dropped. Loading and error states are words.
 * **Archive.** The combine 40 sits apart on a plaque labelled "Archive · historical context,
   not current speed", with its test year and its percentile among same-position testers.
 * **Keyboard.** One tab stop for the tree (roving); ↑↓ within a branch (continuing into the next),
@@ -1126,7 +1156,11 @@ fetches its code only. Nothing simulates until the reader presses *Simulate*.
    * *Bye · 0*;
    * *Counted as 0* or *Left empty · 0*, only after the reader's confirmation, with *Undo*;
    * a locked game: *Game kicked off: simulated from his pregame projection*, or *Final 17.40*;
-   * a blocking row that names its fix: *Set*, *Count as 0*, *Replace*, *Resolve*.
+   * a blocking row that names its fix: *Set*, *Count as 0*, *Replace*, *Resolve*;
+   * (ADR-117) a starter the build published no usable projection for shows *No projection* and
+     its cause ("No sportsbook line in this build", "No prediction from the model", …) instead of
+     a decision; lines the build retained read "Lines as of … ET (retained; the schedule had none
+     at this build)".
 
    Opponent slots use the player picker. It offers only players that slot accepts, and never
    one on the reader's roster; picking a player already elsewhere on their side moves him.
@@ -1134,9 +1168,27 @@ fetches its code only. Nothing simulates until the reader presses *Simulate*.
 4. **Finals**, when any starter has kicked off. "This is not live scoring." The reader may type
    a completed starter's final fantasy points, used only by the *With final scores* scenario.
 5. **The run box.** The *Scenario* control (Pregame projection · With final scores), shown when
-   a starter has kicked off. Then the **readiness line** ("Ready: 7 starters a side. 2 count as
-   a known 0. 1 'if active'.", or what blocks), then *Simulate*: disabled until ready, *Cancel*
-   while running. "Runs only when you press it. The same inputs give the same answer."
+   a starter has kicked off. Then the **readiness line**. When ready: "Ready: 7 starters a side.
+   2 count as a known 0. 1 'if active'. 1 kicked off with no final entered (pregame
+   projection)." When not, in two parts (ADR-117):
+   * **Decisions** — the reader's only: "Simulate needs N decisions:" and each slot with its fix
+     (an empty slot, an absent player to count as 0, a kicked-off game with no distribution
+     whose final is entered once it is over, a player on both teams, a position mismatch,
+     overflow).
+   * **Data gaps** — starters the build published no usable projection for, never counted as
+     decisions: "N starters have no projection in this build" (plus ": nothing here is yours to
+     decide, and Simulate stays off until a build publishes them." when there are no decisions),
+     grouped by cause — no sportsbook line, no prediction from the model, no weekly record, a
+     record for another week or another build, kickoff not published, not in this build — each
+     named once with its starters and explained once; then the build's time and age, cutoff and
+     target week, the line provenance from `weekly.lines` ("1 of 15 games from the schedule it
+     read …, 14 retained from an earlier pregame reading (at most 48 hours old), 0 with none") or
+     "It published no record of where its lines came from.", and *Reload*, which promises nothing
+     about the next build. A data gap is never offered a zero, a final or any other stand-in, and
+     still blocks Simulate.
+
+   Then *Simulate*: disabled until ready, *Cancel* while running. "Runs only when you press it.
+   The same inputs give the same answer."
 6. **The result**, once simulated, in three frames:
    * **Headline.** The win percentage, then "your modelled lineup wins, of 8,192 simulated
      games", opponent wins, tie, the simulation's noise, and the scenario. The calibration
@@ -1184,7 +1236,10 @@ fetches its code only. Nothing simulates until the reader presses *Simulate*.
 
 * **Stale results.** Any input change hides the old result and says the lineups changed. A run
   for inputs that have since changed is cancelled, and its late answer is dropped. A league or
-  week switch shows no other league's or week's numbers.
+  week switch shows no other league's or week's numbers. (ADR-117) The engine fingerprint covers
+  each modelled record's build, game, team and quantiles and the lock flag, so a data refresh, a
+  kickoff, a final edit or a scenario switch invalidates a result; lineup changes and previews are
+  also stale once any rostered player's week kind changes (a kickoff locks him).
 * **Locks.** A locked starter is never moved by a proposal or a pickup.
 * **Reduced motion.** No transitions.
 * **Colour.** Every state is a word, and no state is shown by colour alone.
