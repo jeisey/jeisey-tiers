@@ -11,6 +11,14 @@
  *
  * `--players` takes one name per tree in QB, RB, WR, TE order, then a sparse player.
  * `--screens real` captures the shorter real-build set (1440, 390 and 320 only).
+ *
+ * `--compare` captures the metric comparison instead (ADR-117), into its own directory: the
+ * WR's node `--metric` (default "Targets") opened, its comparison opened, one player pinned
+ * from the search, then the table opened — at 320×640, 390×844, 390×560, 768×1024, 1280×900,
+ * 1280×600 and 1440×1000. Each screen measures document overflow, any comparison box outside
+ * the tree, and any pin or table cell cut off.
+ *
+ *   node web/tests/e2e/capture-skilltree.mjs docs/visual-qa/2026-11-06-skill-tree-compare --compare
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -49,8 +57,21 @@ const SCREENS = [
   [320, 800, QB, "qb", 1],
 ];
 
-const screens =
-  option("--screens", "full") === "real"
+const compareMode = args.includes("--compare");
+const METRIC = option("--metric", "Targets");
+const COMPARE_SCREENS = [
+  [320, 640],
+  [390, 844],
+  [390, 560],
+  [768, 1024],
+  [1280, 900],
+  [1280, 600],
+  [1440, 1000],
+];
+
+const screens = compareMode
+  ? []
+  : option("--screens", "full") === "real"
     ? SCREENS.filter(([width, height]) => [1440, 390, 320].includes(width) && height !== 600)
     : SCREENS;
 
@@ -134,8 +155,87 @@ for (const [width, height, player, slug, node] of screens) {
   await context.close();
 }
 
+async function measureCompare(page) {
+  return page.evaluate(() => {
+    const doc = document.documentElement;
+    const tree = document.querySelector("dialog[open] .st");
+    const compare = document.querySelector("dialog[open] .stc");
+    if (!tree || !compare) return { missing: true };
+    const bounds = tree.getBoundingClientRect();
+    const outside = [];
+    for (const node of compare.querySelectorAll(".stc-plot, .stc-pin, .stc-search, .stc-table-wrap, .stc-match, p, button")) {
+      const rect = node.getBoundingClientRect();
+      if (rect.width === 0) continue;
+      if (rect.left < bounds.left - 1 || rect.right > bounds.right + 1) outside.push(node.getAttribute("class") ?? node.tagName);
+    }
+    const clipped = [];
+    for (const node of compare.querySelectorAll(".stc-pin-name, .stc-pin-value, .stc-pin-diff, .stc-button")) {
+      if (node.scrollWidth > node.clientWidth + 1) clipped.push(node.textContent);
+    }
+    const plot = compare.querySelector(".stc-plot");
+    const labels = [...compare.querySelectorAll(".stc-plot text")].filter((text) => {
+      const rect = text.getBoundingClientRect();
+      const box = plot.getBoundingClientRect();
+      return rect.left < box.left - 1 || rect.right > box.right + 1;
+    });
+    return {
+      overflow: doc.scrollWidth - doc.clientWidth,
+      columns: Number(tree.getAttribute("data-columns")),
+      outside: outside.slice(0, 10),
+      clipped: clipped.slice(0, 10),
+      plotLabelsOutside: labels.map((text) => text.textContent),
+      inline: compare.closest(".st-link") !== null,
+      dots: compare.querySelectorAll(".stc-dot").length,
+    };
+  });
+}
+
+for (const [width, height] of compareMode ? COMPARE_SCREENS : []) {
+  const tag = `${String(width)}x${String(height)}`;
+  const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
+  const page = await context.newPage();
+  await stubPortraits(page);
+  const errors = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  await page.goto(`${BASE}${prefix}?view=ros&scoring=ppr&teams=12&search=${encodeURIComponent(WR)}`, {
+    waitUntil: "networkidle",
+  });
+  await page.getByRole("button", { name: WR, exact: true }).and(page.locator(":visible")).first().click();
+  const dialog = page.getByRole("dialog");
+  await dialog.waitFor();
+  if (width < 768) await dialog.getByRole("tab", { name: "Skill tree" }).click();
+  else await dialog.getByRole("button", { name: "Show skill tree" }).click();
+  const group = dialog.getByRole("group", { name: /skill tree/ });
+  await group.waitFor();
+  await group.getByRole("button", { name: new RegExp(`^${METRIC}:`) }).click();
+  const detail = dialog.getByRole("region", { name: /: details$/ });
+  await detail.getByRole("button", { name: /^Compare with all/ }).click();
+  const panel = detail.getByRole("region", { name: /compared across/ });
+  await panel.getByRole("img").waitFor();
+  await panel.getByRole("searchbox").fill("a");
+  await panel.locator(".stc-matches button").first().click();
+  await page.waitForTimeout(150);
+
+  // 1. The comparison with one pin, its top in view.
+  await panel.evaluate((element) => element.scrollIntoView({ block: "start" }));
+  await page.waitForTimeout(150);
+  report.push({ screen: "compare-pinned", size: tag, player: WR, errors: [...errors], ...(await measureCompare(page)) });
+  await page.screenshot({ path: `${outDir}/compare-pinned-${tag}.png` });
+
+  // 2. The table open, scrolled into view.
+  await panel.getByRole("button", { name: /^Show all/ }).click();
+  const table = panel.getByRole("region", { name: /as a table/ });
+  await table.evaluate((element) => element.scrollIntoView({ block: "center" }));
+  await page.waitForTimeout(150);
+  report.push({ screen: "compare-table", size: tag, player: WR, errors: [...errors], ...(await measureCompare(page)) });
+  await page.screenshot({ path: `${outDir}/compare-table-${tag}.png` });
+  await context.close();
+}
+
 // The card from a build that published no tree: nothing in its place (fixture scenario only).
-if (option("--screens", "full") !== "real") {
+if (!compareMode && option("--screens", "full") !== "real") {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
   const page = await context.newPage();
   await stubPortraits(page);
@@ -158,6 +258,7 @@ const bad = report.filter(
     (entry.outside?.length ?? 0) > 0 ||
     (entry.clipped?.length ?? 0) > 0 ||
     (entry.clippedTabs?.length ?? 0) > 0 ||
+    (entry.plotLabelsOutside?.length ?? 0) > 0 ||
     entry.treeInsideDialog === false ||
     (entry.errors?.length ?? 0) > 0 ||
     (entry.screen === "no-tree-card" && entry.skillTreeSection !== 0),

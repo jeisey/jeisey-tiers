@@ -1211,17 +1211,21 @@ function fixtureSkillValue(definition: SkillTreeDefinitionRecord, seed: number):
 
 /**
  * Readings for every in-season fixture player, deterministic and in every state the card
- * draws: ranked (most), below the minimum (every fifth player's rates), no opportunity (the
- * zero-point tight end's rates), not covered (Next Gen Stats for every third player, no combine
- * time for every fourth), and the presence-only record of a player with no games. Values are
- * shaped like football numbers and mean nothing; the production builder is tested in Python.
+ * draws: ranked (most), below the minimum (every fifth receiver's and tight end's rates), no
+ * opportunity (the zero-point tight end's rates), not covered (Next Gen Stats for every third
+ * player, no combine time for every fourth), a cohort too small to rank (where fewer than five
+ * of a position qualify), and the presence-only record of a player with no games. The twelve
+ * off-board tight-end peers (published names, season actuals) are in the population, as every
+ * appearing player is in a real build. Values are shaped like football numbers and mean
+ * nothing; ranks and percentiles are re-derived over each cohort exactly as the builder does
+ * (ADR-117: a served cohort must reproduce every published rank), so a comparison's checks
+ * pass on this fixture for the same reason they pass on a real build.
  */
 export function skillTreeRecords(): PlayerSkillMetricRecord[] {
   const definitions = skillTreeDefinitionRecords();
   const players = new Map<string, { position: Position; games: number }>();
-  const peers = new Set(FIXTURE_TE_PEERS.map((peer) => peer.id));
   for (const record of seasonActualsRecords()) {
-    if (record.scoring_preset !== "PPR" || peers.has(record.player_id)) continue;
+    if (record.scoring_preset !== "PPR") continue;
     players.set(record.player_id, { position: record.position, games: record.games_played });
   }
   const records: PlayerSkillMetricRecord[] = [];
@@ -1283,13 +1287,64 @@ export function skillTreeRecords(): PlayerSkillMetricRecord[] {
           reading = { ...ranked, state: "not_covered", value: null, numerator: null, denominator: null, rank: null, percentile: null, cohort_size: null, reason: "not_in_ngs_summary" };
         } else if (playerId === FIXTURE_SKILL_TREE_ZERO_ID && definition.kind !== "volume") {
           reading = { ...ranked, state: "no_opportunity", value: null, numerator: 0, denominator: 0, rank: null, percentile: null, cohort_size: null };
-        } else if (code % 5 === 0 && definition.kind === "rate" && definition.minimum !== null) {
+        } else if (
+          code % 5 === 0 &&
+          (player.position === "WR" || player.position === "TE") &&
+          definition.kind === "rate" &&
+          definition.minimum !== null
+        ) {
           reading = { ...ranked, state: "below_minimum", denominator: Math.max(1, definition.minimum - 3), rank: null, percentile: null, cohort_size: null };
         }
         records.push({ ...base, metric_id: definition.metric_id, ...reading });
       });
   }
-  return records;
+  return rankFixtureCohorts(records, definitions);
+}
+
+/**
+ * Rank every position × metric cohort of the fixture as `skill_tree_v1` does (DATA_CONTRACTS
+ * §25.1): a competition rank in the metric's direction (highest first for higher and neutral,
+ * lowest first for lower), percentile 100 × (behind + (ties − 1) / 2) ÷ (n − 1) on the
+ * published values, and no rank at all in a cohort under five (`small_cohort`, value kept).
+ * The archive keeps its historical testers' rank: that cohort is never served.
+ */
+function rankFixtureCohorts(
+  records: PlayerSkillMetricRecord[],
+  definitions: readonly SkillTreeDefinitionRecord[],
+): PlayerSkillMetricRecord[] {
+  const byKey = new Map(definitions.map((definition) => [`${definition.position}.${definition.metric_id}`, definition]));
+  const cohorts = new Map<string, number[]>();
+  records.forEach((record, index) => {
+    const definition = byKey.get(`${record.position}.${record.metric_id}`);
+    if (definition === undefined || definition.role === "archive" || record.state !== "ranked") return;
+    const key = `${record.position}.${record.metric_id}`;
+    cohorts.set(key, [...(cohorts.get(key) ?? []), index]);
+  });
+  const out = [...records];
+  for (const [key, members] of cohorts) {
+    const lower = byKey.get(key)?.direction === "lower";
+    const n = members.length;
+    const adjusted = members.map((index) => (lower ? -1 : 1) * (out[index]?.value ?? 0));
+    members.forEach((index, position) => {
+      const record = out[index];
+      if (record === undefined) return;
+      if (n < 5) {
+        out[index] = { ...record, state: "small_cohort", rank: null, percentile: null, cohort_size: n };
+        return;
+      }
+      const mine = adjusted[position] ?? 0;
+      const behind = adjusted.filter((value) => value < mine).length;
+      const ahead = adjusted.filter((value) => value > mine).length;
+      const ties = n - behind - ahead;
+      out[index] = {
+        ...record,
+        rank: ahead + 1,
+        percentile: Math.round((1000 * (behind + (ties - 1) / 2)) / (n - 1)) / 10,
+        cohort_size: n,
+      };
+    });
+  }
+  return out;
 }
 
 export function skillTreeEnvelope(): ArtifactEnvelope<PlayerSkillMetricRecord> {

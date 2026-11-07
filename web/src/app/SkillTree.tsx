@@ -13,23 +13,50 @@
  * (desktop and tablet card), two in between, one on a phone — the branches reflow vertically
  * rather than scaling the desktop tree down. Every node is a button: tap, click, Enter or Space
  * opens its detail inline; the arrow keys move between nodes; hover is never required.
+ *
+ * **The meter is a coarse aid.** Ten ticks, one per ten percentile points, rounded up
+ * (`meterTicks`), tinted by one of five percentile bands (`percentileBand`) — only for a ranked
+ * higher/lower reading of this season. The exact percentile and place are always in words.
+ *
+ * **Comparison (ADR-117)** is a lazy chunk of its own, loaded from inside this one: a ranked
+ * node's detail offers it, and only pressing that button loads its code and the one cohort
+ * slice it draws.
  */
 
-import { memo, startTransition, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  memo,
+  startTransition,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import "../styles/skilltree.css";
 
 import { useElementWidth } from "../components/useElementWidth";
 import type { Position } from "../data/contracts";
 import {
+  BAND_KEY,
+  METER_TICKS,
   buildSkillTreeView,
   nodeName,
   nodeOrder,
+  type PercentileBand,
   type SkillReading,
   type SkillTreeView,
 } from "../data/skilltree";
 import type { SkillTreeSource } from "../data/store";
 import { BranchGlyph, CoreEmblem, MetricGlyph } from "./skillTreeGlyphs";
+
+const SkillCompare = lazy(() => import("./SkillCompare"));
+
+const TICKS: readonly number[] = Array.from({ length: METER_TICKS }, (_, index) => index + 1);
+const BANDS: readonly PercentileBand[] = [1, 2, 3, 4, 5];
 
 type Load =
   | { readonly status: "loading"; readonly key: string }
@@ -84,11 +111,17 @@ export function columnsFor(width: number): 1 | 2 | 4 {
   return 1;
 }
 
+/**
+ * The meter, drawn from the reading's one meter field. `fill`: ten ticks, the first `ticks` lit
+ * in the band's tint — zero lit is a solid, empty track (a ranked reading at the very bottom),
+ * never the dashed track of a reading with no rank. `context`: a marker on a neutral track.
+ * `empty`: a dashed track, nothing lit; the state is in words beside it.
+ */
 function Meter({ node }: { readonly node: SkillReading }): React.JSX.Element {
-  if (node.marker !== null) {
+  if (node.meter === "marker" && node.marker !== null) {
     return (
       <span className="st-meter" data-variant="context" aria-hidden="true">
-        {[0, 1, 2, 3, 4].map((index) => (
+        {TICKS.map((index) => (
           <span key={index} className="st-seg" />
         ))}
         <span className="st-mark" style={{ left: `${String(Math.min(100, Math.max(0, node.marker)))}%` }} />
@@ -98,11 +131,12 @@ function Meter({ node }: { readonly node: SkillReading }): React.JSX.Element {
   return (
     <span
       className="st-meter"
-      data-variant={node.state === "ranked" ? "fill" : "empty"}
+      data-variant={node.meter === "ticks" ? "fill" : "empty"}
+      data-ticks={node.meter === "ticks" ? node.ticks : undefined}
       aria-hidden="true"
     >
-      {[1, 2, 3, 4, 5].map((index) => (
-        <span key={index} className="st-seg" data-on={index <= node.segments ? "true" : undefined} />
+      {TICKS.map((index) => (
+        <span key={index} className="st-seg" data-on={index <= node.ticks ? "true" : undefined} />
       ))}
     </span>
   );
@@ -139,7 +173,8 @@ const NodeButton = memo(function NodeButton({
       data-kind={definition.kind}
       data-direction={definition.direction}
       data-empty={node.empty ? "true" : undefined}
-      data-top={node.segments === 5 ? "true" : undefined}
+      data-band={node.band ?? undefined}
+      data-meter={node.meter}
       data-metric={node.id}
       aria-expanded={selected}
       aria-controls={selected ? detailId : undefined}
@@ -170,7 +205,12 @@ const NodeButton = memo(function NodeButton({
 
 function DetailLine({ node }: { readonly node: SkillReading }): React.JSX.Element {
   return (
-    <li className="st-detail-more-item" data-state={node.state}>
+    <li
+      className="st-detail-more-item"
+      data-state={node.state}
+      data-band={node.band ?? undefined}
+      data-meter={node.meter}
+    >
       <span className="st-detail-more-label">{node.definition.label}</span>
       <span className="st-detail-more-value">
         {node.valueText}
@@ -178,9 +218,77 @@ function DetailLine({ node }: { readonly node: SkillReading }): React.JSX.Elemen
       </span>
       <span className="st-detail-more-sample">
         {[node.sampleText, node.standingText].filter((text) => text !== "").join(" · ")}
+        {node.meterText !== "" && <span className="visually-hidden"> Meter: {node.meterText}.</span>}
       </span>
+      {node.meter !== "none" && <Meter node={node} />}
       <span className="st-detail-more-definition">{node.definition.definition}</span>
     </li>
+  );
+}
+
+/** What the detail needs to offer a comparison (ADR-117). */
+interface CompareSlot {
+  readonly source: SkillTreeSource;
+  readonly position: Position;
+  /** The tree's player key: a comparison's state never outlives it. */
+  readonly playerKey: string;
+  readonly name: string;
+  readonly open: boolean;
+  readonly onToggle: () => void;
+}
+
+/**
+ * The detail's comparison offer. A ranked reading of this season: a button that loads the
+ * comparison's code and its one cohort slice. The archive: why there is none. An older build
+ * that serves no cohorts: that it is not available. Anything unranked: nothing.
+ */
+function CompareOffer({ node, slot }: { readonly node: SkillReading; readonly slot: CompareSlot }): React.JSX.Element | null {
+  const panelId = useId();
+  const noun = NOUNS[slot.position] ?? "players";
+  if (node.definition.role === "archive") {
+    const testers = node.state === "ranked" && node.cohortSize !== null ? `${String(node.cohortSize)} ` : "";
+    return (
+      <p className="st-compare-note" data-kind="archive">
+        <strong>No comparison is drawn for the archive.</strong> Its rank is among the {testers}historical
+        combine testers at his combine position, whose rows this build does not publish; today&rsquo;s{" "}
+        {noun} are not that cohort and are never put in its place.
+      </p>
+    );
+  }
+  if (node.state !== "ranked" || node.definition.role === "presence") return null;
+  if (!slot.source.hasCohorts(slot.position)) {
+    return (
+      <p className="st-compare-note" data-kind="unavailable">
+        Comparison with the whole cohort is not available for this build: it publishes no cohort files.
+      </p>
+    );
+  }
+  const count = node.cohortSize === null ? "" : ` ${String(node.cohortSize)}`;
+  return (
+    <div className="st-compare-offer">
+      <button
+        type="button"
+        className="st-compare-toggle"
+        aria-expanded={slot.open}
+        aria-controls={slot.open ? panelId : undefined}
+        onClick={slot.onToggle}
+      >
+        {slot.open ? "Hide comparison" : `Compare with all${count} ranked ${noun}`}
+      </button>
+      {slot.open && (
+        <div id={panelId}>
+          <Suspense fallback={<p className="st-compare-status">Loading the comparison…</p>}>
+            <SkillCompare
+              key={`${slot.playerKey}|${node.id}`}
+              source={slot.source}
+              focal={node}
+              position={slot.position}
+              name={slot.name}
+            />
+          </Suspense>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -189,17 +297,27 @@ function Detail({
   id,
   reasons,
   onClose,
+  compare,
 }: {
   readonly node: SkillReading;
   readonly id: string;
   readonly reasons: Readonly<Record<string, string>>;
   readonly onClose: () => void;
+  readonly compare: CompareSlot;
 }): React.JSX.Element {
   const { definition } = node;
   const reasonSentence =
     node.reason !== null && !node.reason.startsWith("tested_as:") ? reasons[node.reason] : undefined;
   return (
-    <div className="st-detail" id={id} role="region" aria-label={`${definition.label}: details`}>
+    <div
+      className="st-detail"
+      id={id}
+      role="region"
+      aria-label={`${definition.label}: details`}
+      data-band={node.band ?? undefined}
+      data-meter={node.meter}
+      data-empty={node.empty ? "true" : undefined}
+    >
       <div className="st-detail-head">
         <span className="st-frame" aria-hidden="true">
           <MetricGlyph metric={node.id} />
@@ -223,7 +341,14 @@ function Detail({
       <p className="st-detail-standing" data-state={node.state}>
         {node.standingText}
         {reasonSentence !== undefined && <span className="st-detail-reason"> — {reasonSentence}</span>}
+        {node.meterText !== "" && <span className="visually-hidden"> Meter: {node.meterText}.</span>}
       </p>
+      {node.meter !== "none" && (
+        <div className="st-detail-meter">
+          <Meter node={node} />
+        </div>
+      )}
+      <CompareOffer node={node} slot={compare} />
       <dl className="st-detail-facts">
         <div>
           <dt>What it is</dt>
@@ -292,11 +417,18 @@ export default function SkillTree({
   const [load, setLoad] = useState<Load>(initial);
   const [selected, setSelected] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
+  /**
+   * The comparison that is open, as `player|metric` (ADR-117), or null. Keyed so that it can
+   * never survive a change of player or metric: another node, the same node closed, or another
+   * player each leave it closed, and its pins and search start empty when it opens again.
+   */
+  const [compareKey, setCompareKey] = useState<string | null>(null);
   const buttons = useRef(new Map<string, HTMLButtonElement>());
   const orderRef = useRef<readonly string[]>([]);
   // Stable for the memoised nodes: a tap re-renders only the nodes it changes.
   const select = useCallback((id: string): void => {
     setSelected((current) => (current === id ? null : id));
+    setCompareKey(null);
     // The archive plaque is its own tab stop, never the tree's roving one.
     if (orderRef.current.includes(id)) setFocusId(id);
   }, []);
@@ -311,6 +443,7 @@ export default function SkillTree({
     setLastKey(key);
     setSelected(null);
     setFocusId(null);
+    setCompareKey(null);
     setLoad(initial());
   }
 
@@ -439,12 +572,29 @@ export default function SkillTree({
   const close = (): void => {
     const id = selected;
     setSelected(null);
+    setCompareKey(null);
     if (id !== null) buttons.current.get(id)?.focus();
   };
 
+  const openKey = selected === null ? null : `${key}|${selected}`;
   const detail =
     selectedNode === null ? null : (
-      <Detail node={selectedNode} id={detailId} reasons={reasons} onClose={close} />
+      <Detail
+        node={selectedNode}
+        id={detailId}
+        reasons={reasons}
+        onClose={close}
+        compare={{
+          source,
+          position,
+          playerKey: key,
+          name,
+          open: openKey !== null && compareKey === openKey,
+          onToggle: () => {
+            setCompareKey((current) => (current === openKey ? null : openKey));
+          },
+        }}
+      />
     );
   const noun = NOUNS[position] ?? "players";
 
@@ -457,16 +607,26 @@ export default function SkillTree({
             {view.window} · <strong>{view.games}</strong> game{view.games === 1 ? "" : "s"} played
           </p>
           <p className="st-legend">
-            <span className="st-legend-meter" aria-hidden="true">
-              <span data-on="true" />
-              <span data-on="true" />
-              <span data-on="true" />
-              <span />
-              <span />
+            {/* A sample: 6 of 10 lit is a percentile from 50.1 to 60, band 40 to under 60. */}
+            <span className="st-legend-meter" data-band="3" aria-hidden="true">
+              {TICKS.map((index) => (
+                <span key={index} data-on={index <= 6 ? "true" : undefined} />
+              ))}
             </span>
-            Meter = percentile among qualified {noun} (each segment is 20 points). Context metrics mark a
-            position, not a grade. Tags: VOL volume · SHARE opportunity · RATE efficiency · CTX context. No
-            overall rating: each node is one statistic.
+            Meter = percentile among qualified {noun}: ten ticks, one per 10 points, rounded up (0 lights
+            none, 0.1–10 lights one, 90.1–100 all ten); the exact percentile and place are in words. Tint =
+            percentile band:{" "}
+            <span className="st-band-key">
+              {BANDS.map((band) => (
+                <span key={band} className="st-band-key-item" data-band={band}>
+                  <span className="st-band-swatch" aria-hidden="true" />
+                  {BAND_KEY[band]}
+                </span>
+              ))}
+            </span>
+            . Context metrics mark a position on a neutral track, not a grade; the archive is untinted. Tags:
+            VOL volume · SHARE opportunity · RATE efficiency · CTX context. No overall rating: each node is one
+            statistic.
           </p>
         </div>
       </div>
