@@ -39,6 +39,7 @@ from ffdraft.artifacts import ARTIFACT_SPECS, validate_artifact_directory
 from ffdraft.artifacts.serving import package_serving
 from ffdraft.artifacts.validate import (
     _IN_SEASON_ARTIFACTS,
+    _PORTRAIT_ARTIFACT,
     ROS_BUILD_METADATA_FILENAME,
 )
 
@@ -128,7 +129,7 @@ def test_two_bundles_with_two_build_ids_validate_cleanly(two_bundles: Path) -> N
     assert gate.passed, [check.to_dict() for check in gate.critical_failures]
 
 
-@pytest.mark.parametrize("artifact", sorted(ros_published_artifacts()))
+@pytest.mark.parametrize("artifact", sorted(ros_published_artifacts() - {_PORTRAIT_ARTIFACT}))
 def test_every_in_season_artifact_is_checked_against_the_ros_metadata(
     artifact: str,
     two_bundles: Path,
@@ -181,9 +182,62 @@ def test_every_artifact_the_ros_build_writes_is_in_the_in_season_set() -> None:
     restating them means a future in-season artifact fails *here*, on a unit test, instead of
     in production three minutes into a refresh.
     """
-    missing = ros_published_artifacts() - _IN_SEASON_ARTIFACTS
+    # The portrait file is the one artifact both bundles write (ADR-087, portrait_population_v1);
+    # its bundle follows its build id and the metadata that describes it, tested below.
+    missing = ros_published_artifacts() - _IN_SEASON_ARTIFACTS - {_PORTRAIT_ARTIFACT}
     assert not missing, (
         f"{sorted(missing)} is written by the ROS build and missing from "
         "_IN_SEASON_ARTIFACTS, so validate-artifacts will compare it against the DRAFT "
         "bundle's build id and fail a correct production build"
     )
+
+
+def test_the_portrait_file_the_ros_build_wrote_is_checked_against_the_ros_metadata(
+    two_bundles: Path,
+) -> None:
+    """ADR-087 / portrait_population_v1: in season the ROS build rewrites the portrait file.
+
+    It then carries the ROS build id and `ros_build_metadata.player_headshots` describes it, so
+    it validates against the in-season bundle — and the draft bundle no longer claims it.
+    """
+    assert _PORTRAIT_ARTIFACT in ros_published_artifacts()
+    gate = validate_artifact_directory(two_bundles)
+    codes = {check.check_id for check in gate.critical_failures}
+    assert "build_metadata.build_id_mismatch" not in codes
+    assert "ros_build_metadata.build_id_mismatch" not in codes
+    assert "cross_artifact.headshot_metadata_agrees" in {check.check_id for check in gate.checks}
+
+
+def test_a_portrait_file_stamped_with_neither_build_id_fails(two_bundles: Path) -> None:
+    _restamp(two_bundles / ARTIFACT_SPECS[_PORTRAIT_ARTIFACT].json_filename, "neither-build")
+    gate = validate_artifact_directory(two_bundles)
+    codes = {check.check_id for check in gate.critical_failures}
+    assert "build_metadata.build_id_mismatch" in codes
+
+
+def test_a_ros_stamped_portrait_file_the_ros_metadata_does_not_describe_fails(
+    two_bundles: Path,
+) -> None:
+    """A ROS-stamped file with no ROS block belongs to nobody: the draft check refuses it."""
+    path = two_bundles / ROS_BUILD_METADATA_FILENAME
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["player_headshots"] = None
+    path.write_text(json.dumps(payload, indent=1), encoding="utf-8")
+    gate = validate_artifact_directory(two_bundles)
+    codes = {check.check_id for check in gate.critical_failures}
+    assert "build_metadata.build_id_mismatch" in codes
+
+
+def test_a_draft_written_portrait_file_stays_the_draft_bundles(two_bundles: Path) -> None:
+    """Preseason, or a ROS build that left the draft set in place: the draft id is right."""
+    draft = json.loads((two_bundles / "build_metadata.json").read_text())["build_id"]
+    _restamp(two_bundles / ARTIFACT_SPECS[_PORTRAIT_ARTIFACT].json_filename, draft)
+    path = two_bundles / ROS_BUILD_METADATA_FILENAME
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["player_headshots"] = None
+    path.write_text(json.dumps(payload, indent=1), encoding="utf-8")
+    package_serving(two_bundles)
+    gate = validate_artifact_directory(two_bundles)
+    codes = {check.check_id for check in gate.critical_failures}
+    assert "build_metadata.build_id_mismatch" not in codes
+    assert "ros_build_metadata.build_id_mismatch" not in codes

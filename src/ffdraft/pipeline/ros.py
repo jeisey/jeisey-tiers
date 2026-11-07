@@ -47,11 +47,18 @@ from ffdraft.anchors import build_season_anchors
 from ffdraft.artifacts import ARTIFACT_SCHEMA_VERSION, write_artifact
 from ffdraft.artifacts.csv_flatten import actuals_index
 from ffdraft.artifacts.serialize import write_json_artifact
+from ffdraft.artifacts.spec import ARTIFACT_SPECS
 from ffdraft.config import AppConfig, LeaguePreset, ScoringPreset, load_app_config
 from ffdraft.contracts import QualityCheck
 from ffdraft.contracts.enums import Severity
 from ffdraft.features.build import build_feature_table
 from ffdraft.features.sources import load_historical_sources
+from ffdraft.headshots import (
+    HeadshotResult,
+    build_player_headshot_records,
+    crosswalk_from_registry,
+    portrait_population,
+)
 from ffdraft.market.surface import SURFACE_RULE_VERSION, TIER_DEPTH_RULE
 from ffdraft.pipeline.current import current_cutoff
 from ffdraft.quality import QualityGate
@@ -582,6 +589,23 @@ def run_ros_build(
     if insight_records:
         records["insights"] = insight_records
 
+    # Portraits over every card surface (ADR-087, `portrait_population_v1`). After every
+    # surface above, because the population is all of them plus the draft boards this bundle
+    # is published beside; it reads no value and nothing reads it. The draft build wrote a
+    # portrait set over its own board; this one replaces it, so a card opened from the ROS
+    # board, the Opportunity Board, Start/Sit, My Leagues or Insights for a player the draft
+    # board never named gets the picture the crosswalk has (the 2026-11-06 Cousins trace).
+    portraits = _portraits(
+        records=records,
+        out_dir=out_dir,
+        registry=identity,
+        player_master=loaded.sources.player_master,
+        build_id=resolved_build_id,
+        gate=gate,
+    )
+    if portraits is not None:
+        records["player_headshots"] = portraits.records
+
     metadata = _ros_metadata(
         settings,
         loaded=loaded,
@@ -608,6 +632,7 @@ def run_ros_build(
         skill_tree=tree_summary,
         espn_ownership=ownership.metadata,
         insights=insight_summary,
+        player_headshots=None if portraits is None else portraits.summary(),
     )
 
     written: list[Path] = []
@@ -987,6 +1012,75 @@ def _identity_and_employment(
     )
     gate.add(employment.check(stage="ros_build"))
     return registry, employment
+
+
+#: The draft bundle's card surfaces, read from the directory this bundle is published into.
+_DRAFT_PORTRAIT_SURFACES = ("tiers", "arbitrage")
+
+
+def _portraits(
+    *,
+    records: Mapping[str, Sequence[Mapping[str, Any]]],
+    out_dir: Path,
+    registry: Any,
+    player_master: pl.DataFrame | None,
+    build_id: str,
+    gate: QualityGate,
+) -> HeadshotResult | None:
+    """The portrait artifact over every card surface the published site will hold (ADR-087).
+
+    The draft boards are read from ``out_dir`` - the directory this bundle is published into
+    and where the draft build wrote them - because the population is defined by the site a
+    reader opens, and the validator recomputes it from exactly those files. Only ``player_id``
+    and ``position`` are read from them.
+
+    Returns None, leaving the draft build's set in place, when this build has no identity
+    registry: a portrait set built from nothing would replace a good one with an empty one.
+    """
+    if registry is None or not len(registry):
+        gate.add(
+            QualityCheck.ok(
+                "ros.portraits_left_to_draft_build",
+                stage="ros_build",
+                message=(
+                    "no identity registry, so no portrait set is written; the draft build's "
+                    "stays in place and its metadata describes it (ADR-087)"
+                ),
+                observed="0 registry players",
+            ),
+        )
+        return None
+    surfaces: dict[str, Sequence[Mapping[str, Any]]] = {}
+    for artifact in _DRAFT_PORTRAIT_SURFACES:
+        path = out_dir / ARTIFACT_SPECS[artifact].json_filename
+        if not path.is_file():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            surfaces[artifact] = [
+                {"player_id": row.get("player_id"), "position": row.get("position")}
+                for row in payload.get("records", ())
+            ]
+        except (OSError, ValueError, AttributeError) as exc:
+            gate.add(
+                QualityCheck.fail(
+                    "ros.portrait_draft_surface_unreadable",
+                    stage="ros_build",
+                    message=(
+                        f"{path.name} could not be read, so its players are not in this "
+                        "build's portrait population; every board is unaffected"
+                    ),
+                    observed=str(exc),
+                    expected="a readable draft artifact",
+                    severity=Severity.WARNING,
+                ),
+            )
+    return build_player_headshot_records(
+        crosswalk=crosswalk_from_registry(registry, player_master=player_master),
+        population=portrait_population({**surfaces, **records}),
+        build_id=build_id,
+        gate=gate,
+    )
 
 
 def _catalog(registry: Any) -> dict[str, dict[str, Any]]:
@@ -2853,6 +2947,7 @@ def _ros_metadata(
     espn_ownership: Mapping[str, Any] | None = None,
     recent_form: Mapping[str, Any] | None = None,
     insights: Mapping[str, Any] | None = None,
+    player_headshots: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     from ffdraft.pipeline.current import _source_metadata
 
@@ -2921,6 +3016,9 @@ def _ros_metadata(
         "insights": None if insights is None else dict(insights),
         "skill_tree": None if skill_tree is None else dict(skill_tree),
         "espn_ownership": None if espn_ownership is None else dict(espn_ownership),
+        # ADR-087 / `portrait_population_v1`: the portrait set this build wrote, over every card
+        # surface. Null when it left the draft build's set in place.
+        "player_headshots": None if player_headshots is None else dict(player_headshots),
         "disclosures": {
             "uses_injury_information": False,
             "long_absence_definition": LONG_ABSENCE_DEFINITION,

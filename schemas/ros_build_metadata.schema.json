@@ -11,6 +11,15 @@
         "status": {"enum": ["published", "unavailable"]},
         "reason": {"type": ["string", "null"]}
       }
+    },
+    "portrait_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["players", "resolved"],
+      "properties": {
+        "players": {"type": "integer", "minimum": 0},
+        "resolved": {"type": "integer", "minimum": 0}
+      }
     }
   },
   "type": "object",
@@ -347,6 +356,62 @@
         "diagnostics": {"type": "object"},
         "reasons": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
         "statement": {"type": "string", "minLength": 1}
+      }
+    },
+    "player_headshots": {
+      "type": ["object", "null"],
+      "description": "The portrait set THIS build wrote (ADR-087, portrait_population_v1): player_headshots.json rewritten over every card surface the published directory holds - the draft boards read beside this bundle plus the in-season ones. When present it describes the published artifact, which then carries this bundle's build id, and build_metadata.player_headshots describes the superseded draft-time set. Null (or absent, before 2026-11-06) when this build left the draft build's set in place. Decoration only: nothing here moves any value. `coverage` is a crosswalk coverage, NOT a count of images that load: the pipeline never contacts the provider.",
+      "additionalProperties": false,
+      "required": [
+        "provider", "host", "source_ids", "population", "published_players", "resolved",
+        "coverage", "by_surface", "by_position", "unresolved_reasons", "bridges"
+      ],
+      "properties": {
+        "provider": {"enum": ["espn"]},
+        "host": {"const": "a.espncdn.com"},
+        "source_ids": {"type": "array", "items": {"type": "string"}},
+        "population": {
+          "type": "object",
+          "description": "The coverage denominator: the distinct players of every card surface in `surfaces_read`.",
+          "additionalProperties": false,
+          "required": ["rule_version", "surfaces_read", "players"],
+          "properties": {
+            "rule_version": {"const": "portrait_population_v1"},
+            "surfaces_read": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {"enum": ["tiers", "arbitrage", "ros_tiers", "inseason_opportunity", "weekly_projections", "season_actuals", "insights"]}
+            },
+            "players": {"type": "integer", "minimum": 0}
+          }
+        },
+        "published_players": {"type": "integer", "minimum": 0, "description": "Equal to population.players."},
+        "resolved": {"type": "integer", "minimum": 0, "description": "Players with a portrait row: the artifact's record count."},
+        "coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "by_surface": {"type": "object", "additionalProperties": {"$ref": "#/$defs/portrait_counts"}},
+        "by_position": {"type": "object", "additionalProperties": {"$ref": "#/$defs/portrait_counts"}},
+        "unresolved_reasons": {
+          "type": "object",
+          "description": "Population players with no portrait row, by reason, kept separate.",
+          "additionalProperties": false,
+          "required": ["not_in_identity_registry", "no_espn_id", "invalid_espn_id", "ambiguous_espn_id"],
+          "properties": {
+            "not_in_identity_registry": {"type": "integer", "minimum": 0},
+            "no_espn_id": {"type": "integer", "minimum": 0},
+            "invalid_espn_id": {"type": "integer", "minimum": 0},
+            "ambiguous_espn_id": {"type": "integer", "minimum": 0}
+          }
+        },
+        "bridges": {
+          "type": "object",
+          "description": "Published rows by the nflverse bridge that supplied the id.",
+          "additionalProperties": false,
+          "required": ["nflverse_roster", "nflverse_player_master"],
+          "properties": {
+            "nflverse_roster": {"type": "integer", "minimum": 0},
+            "nflverse_player_master": {"type": "integer", "minimum": 0}
+          }
+        }
       }
     },
     "espn_ownership": {

@@ -34,9 +34,50 @@
     "source_ids": [
       "nflreadpy"
     ],
+    "population": {
+      "rule_version": "portrait_population_v1",
+      "surfaces_read": [
+        "tiers"
+      ],
+      "players": 16
+    },
     "published_players": 16,
     "resolved": 15,
-    "coverage": 0.9375
+    "coverage": 0.9375,
+    "by_surface": {
+      "tiers": {
+        "players": 16,
+        "resolved": 15
+      }
+    },
+    "by_position": {
+      "QB": {
+        "players": 3,
+        "resolved": 3
+      },
+      "RB": {
+        "players": 4,
+        "resolved": 4
+      },
+      "TE": {
+        "players": 3,
+        "resolved": 3
+      },
+      "WR": {
+        "players": 6,
+        "resolved": 5
+      }
+    },
+    "unresolved_reasons": {
+      "not_in_identity_registry": 0,
+      "no_espn_id": 1,
+      "invalid_espn_id": 0,
+      "ambiguous_espn_id": 0
+    },
+    "bridges": {
+      "nflverse_roster": 15,
+      "nflverse_player_master": 0
+    }
   },
   "player_status": {
     "employment": {
