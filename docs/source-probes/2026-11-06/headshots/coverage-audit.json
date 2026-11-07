@@ -1,0 +1,2392 @@
+{
+ "generated_at_utc": "2026-11-06T23:40:46.850579Z",
+ "build_audited": {
+  "draft_build_id": "2026-intrinsic-cb-hurdle-v1-20261106T122840Z",
+  "ros_build_id": "2026w08-intrinsic-ros-v1-20261106T123207Z",
+  "artifacts": "deployed artifacts of daily-refresh run 42217730020 (2026-11-06 12:32Z build record)"
+ },
+ "sources_for_after": {
+  "rosters": "nflreadpy load_rosters 2025, 2026 (fetched for this audit; see retrieved_at)",
+  "player_master": "nflreadpy load_players (normalized by NflversePlayerMasterAdapter)",
+  "retrieved_at": "rosters 2026-11-06T18:52:50Z; player master 2026-11-06T19:00:00Z (file mtimes of the one fetch)",
+  "caveat": "the rosters and player master were fetched once at 18:52-19:00Z, after the 12:28Z build; every one of the 575 deployed rows kept the same id under the re-derived crosswalk"
+ },
+ "population_rule": "portrait_population_v1",
+ "before": {
+  "definition": "as deployed: portraits for the tier board's players only",
+  "published_rows": 575,
+  "build_metadata_figure": {
+   "provider": "espn",
+   "host": "a.espncdn.com",
+   "source_ids": [
+    "nflreadpy"
+   ],
+   "published_players": 614,
+   "resolved": 575,
+   "coverage": 0.9365
+  },
+  "union": {
+   "players": 729,
+   "with_portrait_row": 575,
+   "missing": {
+    "no_espn_id": 39,
+    "out_of_scope_publication": 115
+   }
+  },
+  "by_surface": {
+   "tiers": {
+    "players": 614,
+    "with_portrait_row": 575,
+    "missing": {
+     "no_espn_id": 39
+    }
+   },
+   "arbitrage": {
+    "players": 240,
+    "with_portrait_row": 237,
+    "missing": {
+     "out_of_scope_publication": 3
+    }
+   },
+   "ros_tiers": {
+    "players": 586,
+    "with_portrait_row": 506,
+    "missing": {
+     "no_espn_id": 26,
+     "out_of_scope_publication": 54
+    }
+   },
+   "inseason_opportunity": {
+    "players": 595,
+    "with_portrait_row": 507,
+    "missing": {
+     "no_espn_id": 26,
+     "out_of_scope_publication": 62
+    }
+   },
+   "weekly_projections": {
+    "players": 550,
+    "with_portrait_row": 473,
+    "missing": {
+     "no_espn_id": 16,
+     "out_of_scope_publication": 61
+    }
+   },
+   "season_actuals": {
+    "players": 666,
+    "with_portrait_row": 525,
+    "missing": {
+     "no_espn_id": 26,
+     "out_of_scope_publication": 115
+    }
+   },
+   "insights": {
+    "players": 65,
+    "with_portrait_row": 64,
+    "missing": {
+     "out_of_scope_publication": 1
+    }
+   }
+  },
+  "by_position": {
+   "QB": {
+    "players": 67,
+    "with_portrait_row": 30,
+    "missing": {
+     "out_of_scope_publication": 37
+    }
+   },
+   "RB": {
+    "players": 172,
+    "with_portrait_row": 139,
+    "missing": {
+     "out_of_scope_publication": 33
+    }
+   },
+   "TE": {
+    "players": 236,
+    "with_portrait_row": 197,
+    "missing": {
+     "no_espn_id": 39
+    }
+   },
+   "WR": {
+    "players": 254,
+    "with_portrait_row": 209,
+    "missing": {
+     "out_of_scope_publication": 45
+    }
+   }
+  },
+  "out_of_scope_with_a_usable_registry_id": 115,
+  "served": {
+   "card_shard_rows_checked": 5175,
+   "serving_omissions": [],
+   "serving_omission_count": 0,
+   "card_shards": 576,
+   "card_shard_raw_bytes_total": 36815201,
+   "card_shard_gzip_bytes_total": 6049462,
+   "card_shard_gzip_bytes_max": 15378,
+   "headshot_slice_raw_bytes": 53772,
+   "headshot_slice_gzip_bytes": 6549
+  }
+ },
+ "after": {
+  "definition": "portrait_population_v1 over every card surface; roster crosswalk + player-master gap fill",
+  "published_rows": 720,
+  "summary": {
+   "provider": "espn",
+   "host": "a.espncdn.com",
+   "source_ids": [
+    "nflreadpy"
+   ],
+   "population": {
+    "rule_version": "portrait_population_v1",
+    "surfaces_read": [
+     "tiers",
+     "arbitrage",
+     "ros_tiers",
+     "inseason_opportunity",
+     "weekly_projections",
+     "season_actuals",
+     "insights"
+    ],
+    "players": 729
+   },
+   "published_players": 729,
+   "resolved": 720,
+   "coverage": 0.9877,
+   "by_surface": {
+    "tiers": {
+     "players": 614,
+     "resolved": 605
+    },
+    "arbitrage": {
+     "players": 240,
+     "resolved": 240
+    },
+    "ros_tiers": {
+     "players": 586,
+     "resolved": 584
+    },
+    "inseason_opportunity": {
+     "players": 595,
+     "resolved": 593
+    },
+    "weekly_projections": {
+     "players": 550,
+     "resolved": 550
+    },
+    "season_actuals": {
+     "players": 666,
+     "resolved": 664
+    },
+    "insights": {
+     "players": 65,
+     "resolved": 65
+    }
+   },
+   "by_position": {
+    "QB": {
+     "players": 67,
+     "resolved": 67
+    },
+    "RB": {
+     "players": 172,
+     "resolved": 172
+    },
+    "TE": {
+     "players": 236,
+     "resolved": 227
+    },
+    "WR": {
+     "players": 254,
+     "resolved": 254
+    }
+   },
+   "unresolved_reasons": {
+    "not_in_identity_registry": 0,
+    "no_espn_id": 9,
+    "invalid_espn_id": 0,
+    "ambiguous_espn_id": 0
+   },
+   "bridges": {
+    "nflverse_roster": 690,
+    "nflverse_player_master": 30
+   }
+  },
+  "union": {
+   "players": 729,
+   "with_portrait_row": 720,
+   "missing": {
+    "no_espn_id": 9
+   }
+  },
+  "by_surface": {
+   "tiers": {
+    "players": 614,
+    "with_portrait_row": 605,
+    "missing": {
+     "no_espn_id": 9
+    }
+   },
+   "arbitrage": {
+    "players": 240,
+    "with_portrait_row": 240,
+    "missing": {}
+   },
+   "ros_tiers": {
+    "players": 586,
+    "with_portrait_row": 584,
+    "missing": {
+     "no_espn_id": 2
+    }
+   },
+   "inseason_opportunity": {
+    "players": 595,
+    "with_portrait_row": 593,
+    "missing": {
+     "no_espn_id": 2
+    }
+   },
+   "weekly_projections": {
+    "players": 550,
+    "with_portrait_row": 550,
+    "missing": {}
+   },
+   "season_actuals": {
+    "players": 666,
+    "with_portrait_row": 664,
+    "missing": {
+     "no_espn_id": 2
+    }
+   },
+   "insights": {
+    "players": 65,
+    "with_portrait_row": 65,
+    "missing": {}
+   }
+  },
+  "by_position": {
+   "QB": {
+    "players": 67,
+    "with_portrait_row": 67,
+    "missing": {}
+   },
+   "RB": {
+    "players": 172,
+    "with_portrait_row": 172,
+    "missing": {}
+   },
+   "TE": {
+    "players": 236,
+    "with_portrait_row": 227,
+    "missing": {
+     "no_espn_id": 9
+    }
+   },
+   "WR": {
+    "players": 254,
+    "with_portrait_row": 254,
+    "missing": {}
+   }
+  },
+  "roster_bridge_only": {
+   "provider": "espn",
+   "host": "a.espncdn.com",
+   "source_ids": [
+    "nflreadpy"
+   ],
+   "population": {
+    "rule_version": "portrait_population_v1",
+    "surfaces_read": [
+     "tiers",
+     "arbitrage",
+     "ros_tiers",
+     "inseason_opportunity",
+     "weekly_projections",
+     "season_actuals",
+     "insights"
+    ],
+    "players": 729
+   },
+   "published_players": 729,
+   "resolved": 690,
+   "coverage": 0.9465,
+   "by_surface": {
+    "tiers": {
+     "players": 614,
+     "resolved": 575
+    },
+    "arbitrage": {
+     "players": 240,
+     "resolved": 240
+    },
+    "ros_tiers": {
+     "players": 586,
+     "resolved": 560
+    },
+    "inseason_opportunity": {
+     "players": 595,
+     "resolved": 569
+    },
+    "weekly_projections": {
+     "players": 550,
+     "resolved": 534
+    },
+    "season_actuals": {
+     "players": 666,
+     "resolved": 640
+    },
+    "insights": {
+     "players": 65,
+     "resolved": 65
+    }
+   },
+   "by_position": {
+    "QB": {
+     "players": 67,
+     "resolved": 67
+    },
+    "RB": {
+     "players": 172,
+     "resolved": 172
+    },
+    "TE": {
+     "players": 236,
+     "resolved": 197
+    },
+    "WR": {
+     "players": 254,
+     "resolved": 254
+    }
+   },
+   "unresolved_reasons": {
+    "not_in_identity_registry": 0,
+    "no_espn_id": 39,
+    "invalid_espn_id": 0,
+    "ambiguous_espn_id": 0
+   },
+   "bridges": {
+    "nflverse_roster": 690,
+    "nflverse_player_master": 0
+   }
+  },
+  "rows_whose_id_changed_vs_deployed": [],
+  "deployed_rows_dropped": [],
+  "served": {
+   "card_shard_rows_checked": 6480,
+   "serving_omissions": [],
+   "serving_omission_count": 0,
+   "card_shards": 576,
+   "card_shard_raw_bytes_total": 36936512,
+   "card_shard_gzip_bytes_total": 6062049,
+   "card_shard_gzip_bytes_max": 15388,
+   "headshot_slice_raw_bytes": 67233,
+   "headshot_slice_gzip_bytes": 8138
+  },
+  "validator_on_repackaged_site": {
+   "passed": true,
+   "critical": [],
+   "portrait_checks": [
+    {
+     "check_id": "artifact.headshot_addresses_agree",
+     "status": "pass",
+     "severity": "info",
+     "observed": "720 row(s), host a.espncdn.com"
+    },
+    {
+     "check_id": "cross_artifact.headshot_coverage",
+     "status": "pass",
+     "severity": "info",
+     "observed": "720/729 player(s) (tiers 605/614, arbitrage 240/240, ros_tiers 584/586, inseason_opportunity 593/595, weekly_projections 550/550, season_actuals 664/666, insights 65/65)"
+    },
+    {
+     "check_id": "cross_artifact.headshot_metadata_agrees",
+     "status": "pass",
+     "severity": "info",
+     "observed": "720 row(s); population 729 over tiers, arbitrage, ros_tiers, inseason_opportunity, weekly_projections, season_actuals, insights"
+    },
+    {
+     "check_id": "cross_artifact.headshot_metadata_superseded",
+     "status": "pass",
+     "severity": "info",
+     "observed": "575/614 in the superseded set"
+    }
+   ]
+  }
+ },
+ "newly_covered": [
+  {
+   "player_id": "gsis:00-0035602",
+   "name": "Alex Bachman",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "3919510",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040298",
+   "name": "Andrew Armstrong",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "5093923",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0034959",
+   "name": "Andrew Beck",
+   "position": "RB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "3125107",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0027973",
+   "name": "Andy Dalton",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "14012",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039164",
+   "name": "Anthony Richardson",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4429084",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040394",
+   "name": "Anthony Tyus III",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4709392",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0041117",
+   "name": "Athan Kaliakmanis",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4432722",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0036862",
+   "name": "Ben Skowronek",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4035656",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038489",
+   "name": "Ben VanSumeren",
+   "position": "RB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4372070",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038488",
+   "name": "Brady Russell",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4243176",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037382",
+   "name": "Brandon Johnson",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4035198",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0036775",
+   "name": "Brandon Smith",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4240577",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0034419",
+   "name": "Braxton Berrios",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "3123075",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037132",
+   "name": "Britain Covey",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "3926231",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039603",
+   "name": "British Brooks",
+   "position": "RB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4373273",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040292",
+   "name": "Bryce Pierre",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": "5082648",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040504",
+   "name": "Bryson Nesbit",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4602969",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0041326",
+   "name": "CJ Donaldson",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "5081999",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040392",
+   "name": "Caden Prieskorn",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": "4687509",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038930",
+   "name": "Carlos Washington",
+   "position": "RB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4248425",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039325",
+   "name": "Carson Steele",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "season_actuals"
+   ],
+   "espn_id": "4714365",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040853",
+   "name": "Carson Towt",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4702120",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0032950",
+   "name": "Carson Wentz",
+   "position": "QB",
+   "surfaces": [
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "2573079",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0028986",
+   "name": "Case Keenum",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "15168",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038576",
+   "name": "Charlie Jones",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4257188",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0036463",
+   "name": "Chris Blair",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4369886",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039703",
+   "name": "Cody Schrader",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4391845",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040352",
+   "name": "Coleman Owen",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4578436",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0033662",
+   "name": "Cooper Rush",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "2972515",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0035567",
+   "name": "Craig Reynolds",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4421446",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0041436",
+   "name": "DJ Herman",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4685116",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040938",
+   "name": "DJ Rogers",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4710711",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040431",
+   "name": "Dalen Cambre",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4570296",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037258",
+   "name": "Dameon Pierce",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4360238",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037093",
+   "name": "Dareke Young",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4401805",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040024",
+   "name": "Darius Cooper",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4715355",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0033589",
+   "name": "David Moore",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4212909",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0031763",
+   "name": "DeAndre Carter",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "2580216",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0041415",
+   "name": "Dean Connors",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "5082269",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0036425",
+   "name": "DeeJay Dallas",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4240631",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0033537",
+   "name": "Deshaun Watson",
+   "position": "QB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "3122840",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037487",
+   "name": "Deven Thompkins",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4374187",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040785",
+   "name": "Dohnte Meyers",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4384852",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0035704",
+   "name": "Drew Lock",
+   "position": "QB",
+   "surfaces": [
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "3924327",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039407",
+   "name": "Dylan Laube",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4366963",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0036567",
+   "name": "Elijah Mitchell",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4241555",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039471",
+   "name": "Frank Gore Jr.",
+   "position": "RB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4429805",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0035289",
+   "name": "Gardner Minshew II",
+   "position": "QB",
+   "surfaces": [
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4038524",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0041170",
+   "name": "Hayden Large",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "5150662",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037156",
+   "name": "Irvin Charles",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "3929636",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040948",
+   "name": "J. Michael Sturdivant",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4635009",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039923",
+   "name": "J.J. McCarthy",
+   "position": "QB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4433970",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040528",
+   "name": "JJ Galbreath",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": "4695800",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040265",
+   "name": "Ja'Seem Reed",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4876995",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0041194",
+   "name": "Jack Strand",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "5344782",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039365",
+   "name": "Jacob Cowing",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4575665",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038640",
+   "name": "Jalen Brooks",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4692835",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038740",
+   "name": "Jalen Cropper",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4426990",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040646",
+   "name": "Jalen Royals",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "5082630",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0041251",
+   "name": "Jalon Daniels",
+   "position": "QB",
+   "surfaces": [
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4596472",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040405",
+   "name": "Jamaal Pritchett",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4892576",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0031503",
+   "name": "Jameis Winston",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "2969939",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0041366",
+   "name": "Jameson Geers",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4588298",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038728",
+   "name": "Jared Wayne",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4430681",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040959",
+   "name": "Jaydn Ott",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4685489",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039710",
+   "name": "Jeshaun Jones",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4360637",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040981",
+   "name": "Joe Fagnano",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4429582",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0026158",
+   "name": "Joe Flacco",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "11252",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039398",
+   "name": "Joe Milton III",
+   "position": "QB",
+   "surfaces": [
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4360698",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039023",
+   "name": "Joel Wilson",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4362570",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038913",
+   "name": "Johnny Lumpkin",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "season_actuals"
+   ],
+   "espn_id": "4363098",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040429",
+   "name": "Josh Williams",
+   "position": "RB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4568024",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0033949",
+   "name": "Joshua Dobbs",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "3044720",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037594",
+   "name": "Julius Chestnut",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4367567",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0036945",
+   "name": "Justin Fields",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4362887",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0034386",
+   "name": "Justin Watson",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "3118892",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037380",
+   "name": "Kaden Davis",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "5065495",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040205",
+   "name": "Kalel Mullings",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4429121",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040534",
+   "name": "Ke'Shawn Williams",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4570738",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0036842",
+   "name": "Kene Nwangwu",
+   "position": "RB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4035537",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038102",
+   "name": "Kenny Pickett",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4240703",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039599",
+   "name": "Kevin Foelsch",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "season_actuals"
+   ],
+   "espn_id": "5212228",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0034854",
+   "name": "KhaDarel Hodge",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "3047876",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0036906",
+   "name": "Khalil Herbert",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4035886",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0029604",
+   "name": "Kirk Cousins",
+   "position": "QB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "14880",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0041292",
+   "name": "Kolbe Katsis",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "5225419",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0034577",
+   "name": "Kyle Allen",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "3115293",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0035228",
+   "name": "Kyler Murray",
+   "position": "QB",
+   "surfaces": [
+    "arbitrage",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "3917315",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040568",
+   "name": "Lan Larison",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4698253",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0032951",
+   "name": "Laquon Treadwell",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "3051889",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038409",
+   "name": "Lew Nichols III",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4428119",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0036972",
+   "name": "Mac Jones",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4241464",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0041267",
+   "name": "Malik McClain",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4682509",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0034867",
+   "name": "Malik Turner",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "3115928",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038128",
+   "name": "Malik Willis",
+   "position": "QB",
+   "surfaces": [
+    "arbitrage",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4242512",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039811",
+   "name": "MarShawn Lloyd",
+   "position": "RB",
+   "surfaces": [
+    "arbitrage",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4429023",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0032268",
+   "name": "Marcus Mariota",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "2576980",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0034272",
+   "name": "Marquez Valdes-Scantling",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "3051738",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040060",
+   "name": "Marshall Lang",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4566195",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0034771",
+   "name": "Mason Rudolph",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "3116407",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040253",
+   "name": "Maximilian Mang",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": "4608691",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039275",
+   "name": "Messiah Swinson",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4362770",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0031595",
+   "name": "Michael Burton",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "2515270",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037022",
+   "name": "Michael Jacobson",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "season_actuals"
+   ],
+   "espn_id": "3911895",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039917",
+   "name": "Michael Penix Jr.",
+   "position": "QB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4360423",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040621",
+   "name": "Montorie Foster Jr",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4600597",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039782",
+   "name": "Neal Johnson",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "season_actuals"
+   ],
+   "espn_id": "4429927",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0033319",
+   "name": "Nick Mullens",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "3059989",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038519",
+   "name": "Nikko Remigio",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4372716",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0031235",
+   "name": "Odell Beckham Jr.",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "16733",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040331",
+   "name": "Patrick Herbert",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4429811",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039231",
+   "name": "Patrick Murtagh",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "season_actuals"
+   ],
+   "espn_id": "5209791",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0033376",
+   "name": "Patrick Ricard",
+   "position": "RB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "2975417",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038098",
+   "name": "Pierre Strong",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4249836",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039843",
+   "name": "Qadir Ismail",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4379769",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0041180",
+   "name": "Quentin Moore",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4875350",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040234",
+   "name": "Quinn Ewers",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4889929",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040046",
+   "name": "Rivaldo Fairweather",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": "4605858",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037557",
+   "name": "Ronnie Rivers",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4243003",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038824",
+   "name": "Ryan Miller",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4369466",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038614",
+   "name": "Scott Matlock",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4373684",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0035769",
+   "name": "Scotty Washington",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "season_actuals"
+   ],
+   "espn_id": "3919557",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037455",
+   "name": "Seth Green",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "season_actuals"
+   ],
+   "espn_id": "4034772",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039550",
+   "name": "Shawn Bowman",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4366910",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040668",
+   "name": "Shedeur Sanders",
+   "position": "QB",
+   "surfaces": [
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4432762",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0036646",
+   "name": "Simi Fehoko",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4360739",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039376",
+   "name": "Spencer Rattler",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4426339",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039107",
+   "name": "Stetson Bennett",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4259553",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038400",
+   "name": "Tanner McKee",
+   "position": "QB",
+   "surfaces": [
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals",
+    "insights"
+   ],
+   "espn_id": "4685201",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038828",
+   "name": "Tanner Taula",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "season_actuals"
+   ],
+   "espn_id": "4248052",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037524",
+   "name": "Tay Martin",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4245144",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040697",
+   "name": "Thomas Gordon",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": "4569615",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038145",
+   "name": "Thomas Odukoya",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4363554",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0039936",
+   "name": "Thomas Yassmin",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4361027",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0035544",
+   "name": "Tom Kennedy",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "3126997",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038476",
+   "name": "Tommy DeVito",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4240391",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0035594",
+   "name": "Travis Homer",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4037457",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040094",
+   "name": "Tre Watson",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4685784",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0034487",
+   "name": "Trent Sherfield",
+   "position": "WR",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "3122168",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0035993",
+   "name": "Tyler Huntley",
+   "position": "QB",
+   "surfaces": [
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4035671",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0028118",
+   "name": "Tyrod Taylor",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "14163",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0038416",
+   "name": "Tyson Bagent",
+   "position": "QB",
+   "surfaces": [
+    "season_actuals"
+   ],
+   "espn_id": "4434153",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0037745",
+   "name": "Velus Jones Jr.",
+   "position": "RB",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4035693",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040522",
+   "name": "Xavier Restrepo",
+   "position": "WR",
+   "surfaces": [
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4431353",
+   "bridge": "nflverse_roster",
+   "reason": null
+  },
+  {
+   "player_id": "gsis:00-0040387",
+   "name": "Zach Horton",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "weekly_projections",
+    "season_actuals"
+   ],
+   "espn_id": "4877824",
+   "bridge": "nflverse_player_master",
+   "reason": null
+  }
+ ],
+ "still_unresolved": [
+  {
+   "player_id": "gsis:00-0039941",
+   "name": "Geor'Quarius Spivey",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": null,
+   "bridge": null,
+   "reason": "no_espn_id"
+  },
+  {
+   "player_id": "gsis:00-0039159",
+   "name": "Gunnar Oakes",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "season_actuals"
+   ],
+   "espn_id": null,
+   "bridge": null,
+   "reason": "no_espn_id"
+  },
+  {
+   "player_id": "gsis:00-0040457",
+   "name": "Jermaine Terry",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": null,
+   "bridge": null,
+   "reason": "no_espn_id"
+  },
+  {
+   "player_id": "gsis:00-0040327",
+   "name": "John Copenhaver",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": null,
+   "bridge": null,
+   "reason": "no_espn_id"
+  },
+  {
+   "player_id": "gsis:00-0040702",
+   "name": "Mitch Van Vooren",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": null,
+   "bridge": null,
+   "reason": "no_espn_id"
+  },
+  {
+   "player_id": "gsis:00-0040381",
+   "name": "Oscar Cardenas",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": null,
+   "bridge": null,
+   "reason": "no_espn_id"
+  },
+  {
+   "player_id": "gsis:00-0039654",
+   "name": "Steven Stilianos",
+   "position": "TE",
+   "surfaces": [
+    "tiers",
+    "ros_tiers",
+    "inseason_opportunity",
+    "season_actuals"
+   ],
+   "espn_id": null,
+   "bridge": null,
+   "reason": "no_espn_id"
+  },
+  {
+   "player_id": "gsis:00-0040469",
+   "name": "Stevo Klotz",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": null,
+   "bridge": null,
+   "reason": "no_espn_id"
+  },
+  {
+   "player_id": "gsis:00-0040050",
+   "name": "Tyler Neville",
+   "position": "TE",
+   "surfaces": [
+    "tiers"
+   ],
+   "espn_id": null,
+   "bridge": null,
+   "reason": "no_espn_id"
+  }
+ ]
+}
