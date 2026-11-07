@@ -13,7 +13,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { guardBoundary } from "./boundary";
-import { IN_SEASON, MATCH, MATCHUP_KEY, KEY, g, matchOpponent, seed, seedMatchups } from "./leagues-seed";
+import { IN_SEASON, MATCH, MATCHUP_KEY, KEY, g, leagueDocument, matchOpponent, seed, seedMatchups } from "./leagues-seed";
 
 const FRESH = new Date("2026-08-22T12:00:00Z");
 
@@ -216,5 +216,52 @@ test.describe("weeks, locks and finals", () => {
     await page.getByRole("button", { name: "Simulate" }).click();
     await expect(headline(page)).toContainText("With 1 final score");
     await expect(page.getByText(/This is not live scoring/)).toBeVisible();
+  });
+});
+
+test.describe("a weekly data outage (2026-11-06)", () => {
+  /** The Friday build whose every upcoming game lost its lines; Thursday's game is in it whole. */
+  const OUTAGE = "/scenario/in-season-lines-outage/";
+
+  test("Simulate stays off, no decision is asked for the data gaps, and the outage is explained once", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-11-06T15:00:00Z"));
+    await page.addInitScript(
+      ([leagues, matchups]) => {
+        if (window.sessionStorage.getItem("seeded") !== null) return;
+        window.localStorage.setItem(leagues[0], leagues[1]);
+        window.localStorage.setItem(matchups[0], matchups[1]);
+        window.sessionStorage.setItem("seeded", "1");
+      },
+      [
+        [`jeisey-tiers:my-leagues@${OUTAGE}`, leagueDocument([MATCH])],
+        [`jeisey-tiers:win-my-matchup@${OUTAGE}`, JSON.stringify(matchOpponent())],
+      ] as const,
+    );
+    await page.goto(`${OUTAGE}?view=myleagues&panel=wmm`);
+    await expect(page.getByRole("heading", { name: "Win My Matchup — week 9" })).toBeVisible();
+    const ready = page.locator(".wmm-ready");
+    await expect(page.getByRole("button", { name: "Simulate" })).toBeDisabled();
+    await expect(ready).toContainText(
+      "3 starters have no projection in this build: nothing here is yours to decide, and Simulate stays off until a build publishes them.",
+    );
+    await expect(ready).not.toContainText("decision");
+    await expect(ready).toContainText("No sportsbook line in this build (3): Your QB (Joe Burrow); Your RB 1 (Bijan Robinson); Their WR 1 (Amon-Ra Bright).");
+    await expect(ready).toContainText("through week 8, projecting week 9.");
+    await expect(ready).toContainText("Its lines: 1 of 5 games from the schedule");
+    await expect(page.locator(".wmm-slot", { hasText: "No projection" })).toHaveCount(3);
+    await expect(page.getByText("No line is posted for his game yet")).toHaveCount(0);
+    // Thursday's starter is unaffected: his pregame projection, with the scenario control.
+    await expect(page.locator(".wmm-slot", { hasText: "Puka Nightingale" })).toContainText("simulated from his pregame projection");
+    await expect(page.getByRole("radio", { name: /With final scores/ })).toBeVisible();
+    // The recovery offered is a newer build, and it reloads without losing the inputs.
+    await ready.getByRole("button", { name: "Reload" }).click();
+    await expect(page.getByRole("heading", { name: "Win My Matchup — week 9" })).toBeVisible();
+    await expect(page.locator(".wmm-ready")).toContainText("3 starters have no projection in this build");
+
+    // The Lineup tab says it once too, and does not claim every game had kicked off.
+    await page.getByRole("tab", { name: "Lineup" }).click();
+    const left = page.getByRole("list", { name: "Players left in place" });
+    await expect(left.locator("li", { hasText: "No sportsbook line in this build:" })).toHaveCount(1);
+    await expect(page.getByText(/had kicked off when this build ran/)).toHaveCount(0);
   });
 });

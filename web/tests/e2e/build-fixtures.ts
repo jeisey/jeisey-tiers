@@ -175,6 +175,16 @@ export async function prepare(): Promise<void> {
       ...fixtures.inSeasonFixtureFiles(true, { espn: "stale" }),
     },
     /*
+     * The 2026-11-06 weekly outage, read on Friday: Thursday's game kicked off with its lines and
+     * distribution, and every upcoming game is `lines_pending` (the schedule's lines were blank
+     * and nothing was retained). Win My Matchup must keep Simulate off without asking the reader
+     * for a decision the data has to make.
+     */
+    "in-season-lines-outage": {
+      ...fixtures.fixtureFiles(),
+      ...fixtures.inSeasonFixtureFiles(true, { weekly: "outage" }),
+    },
+    /*
      * ADR-113: an older deploy with no recent-form artifact or metadata block. The board must
      * render whole, the window and breakout controls disabled with their reason, and a link's
      * breakout filter named rather than applied.

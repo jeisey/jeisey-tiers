@@ -142,6 +142,7 @@ const MOUNTS = [
   { base: "/scenario/in-season-no-recent/", dir: "web/dist-in-season-no-recent" },
   { base: "/scenario/in-season-insights-degraded/", dir: "web/dist-in-season-insights-degraded" },
   { base: "/scenario/in-season-espn-stale/", dir: "web/dist-in-season-espn-stale" },
+  { base: "/scenario/in-season-lines-outage/", dir: "web/dist-in-season-lines-outage" },
   { base: "/scenario/awaiting-first-week/", dir: "web/dist-awaiting-first-week" },
   { base: "/scenario/season-complete/", dir: "web/dist-season-complete" },
   { base: "/", dir: "web/dist" },
