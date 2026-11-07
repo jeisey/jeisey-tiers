@@ -26,10 +26,15 @@ import { App } from "../src/app/App";
 import SkillTree, { columnsFor } from "../src/app/SkillTree";
 import type { SkillTreeDefinitionRecord } from "../src/data/contracts";
 import {
+  BAND_WORDS,
+  METER_TICKS,
   buildSkillTreeView,
   formatSkillValue,
+  meterTicks,
   nodeName,
   nodeOrder,
+  percentileBand,
+  type SkillReading,
 } from "../src/data/skilltree";
 import type { SkillTreeLoad, SkillTreeSource } from "../src/data/store";
 import {
@@ -123,9 +128,11 @@ describe("the firewall (ADR-107)", () => {
       "app/App.tsx",
       "app/PlayerDetail.tsx",
       "app/SkillTree.tsx",
+      "app/SkillCompare.tsx",
       "app/skillTreeGlyphs.tsx",
       "data/contracts.ts",
       "data/skilltree.ts",
+      "data/skillCompare.ts",
       "data/store.ts",
     ]);
     const naming = files
@@ -140,8 +147,22 @@ describe("the firewall (ADR-107)", () => {
     expect(statics.map((file) => file.name)).toEqual([]);
     const detail = files.find((file) => file.name === "app/PlayerDetail.tsx");
     expect(detail?.text).toContain('lazy(() => import("./SkillTree"))');
+    // The view model rides the tree's chunk; the comparison's own chunk and its logic read it.
     const viewModel = files.filter((file) => /from\s+["'][./]*(data\/)?skilltree["']/.test(file.text));
-    expect(viewModel.map((file) => file.name)).toEqual(["app/SkillTree.tsx"]);
+    expect(viewModel.map((file) => file.name).sort()).toEqual([
+      "app/SkillCompare.tsx",
+      "app/SkillTree.tsx",
+      "data/skillCompare.ts",
+    ]);
+  });
+
+  it("loads the comparison's code only through the tree's own lazy import (ADR-117)", () => {
+    const statics = files.filter((file) => /import[^;]*from\s+["'](\.\.?\/)*(app\/)?SkillCompare["']/.test(file.text));
+    expect(statics.map((file) => file.name)).toEqual([]);
+    const tree = files.find((file) => file.name === "app/SkillTree.tsx");
+    expect(tree?.text).toContain('lazy(() => import("./SkillCompare"))');
+    const logic = files.filter((file) => /from\s+["'][./]*(data\/)?skillCompare["']/.test(file.text));
+    expect(logic.map((file) => file.name)).toEqual(["app/SkillCompare.tsx"]);
   });
 });
 
@@ -196,7 +217,9 @@ describe("the view model", () => {
     );
     expect(reading.valueText).not.toBe("—");
     expect(reading.standingText).toMatch(/^Unranked · \d+ of \d+ /);
-    expect(reading.segments).toBe(0);
+    expect(reading.ticks).toBe(0);
+    expect(reading.meter).toBe("none");
+    expect(reading.band).toBeNull();
 
     const uncovered = skillTreeRecords().find((row) => row.reason === "not_in_ngs_summary");
     const covered = required(uncovered, "an NGS reading not covered");
@@ -208,26 +231,154 @@ describe("the view model", () => {
     }
   });
 
-  it("lights meter segments from the published percentile and marks context metrics", () => {
+  it("lights ten ticks by one shared rule: none at 0, then ceil(p / 10)", () => {
+    expect(METER_TICKS).toBe(10);
+    const cases: readonly (readonly [number, number])[] = [
+      [0, 0],
+      [0.1, 1],
+      [5, 1],
+      [10, 1],
+      [10.1, 2],
+      [19.9, 2],
+      [20, 2],
+      [20.1, 3],
+      [50, 5],
+      [55.6, 6],
+      [89.9, 9],
+      [90, 9],
+      [90.1, 10],
+      [99.9, 10],
+      [100, 10],
+    ];
+    for (const [percentile, ticks] of cases) expect(meterTicks(percentile), `p=${String(percentile)}`).toBe(ticks);
+    // Read at the published precision: float residue never lights another tick.
+    expect(meterTicks(20.000000001)).toBe(2);
+    expect(meterTicks(30.000000000004)).toBe(3);
+    // Nothing outside 0-100 or non-finite lights anything it should not.
+    expect(meterTicks(-1)).toBe(0);
+    expect(meterTicks(Number.NaN)).toBe(0);
+    expect(meterTicks(140)).toBe(10);
+  });
+
+  it("bands a percentile at explicit inclusive lower bounds 20, 40, 60, 80", () => {
+    const cases: readonly (readonly [number, number])[] = [
+      [0, 1],
+      [19.9, 1],
+      [20, 2],
+      [39.9, 2],
+      [40, 3],
+      [59.9, 3],
+      [60, 4],
+      [79.9, 4],
+      [80, 5],
+      [100, 5],
+    ];
+    for (const [percentile, band] of cases) expect(percentileBand(percentile), `p=${String(percentile)}`).toBe(band);
+    expect(Object.values(BAND_WORDS)).toEqual(["below 20", "20 to under 40", "40 to under 60", "60 to under 80", "80 to 100"]);
+  });
+
+  /** One WR reading set to `fields`, read back as its node (or detail) in the view. */
+  function readingWith(metric: string, fields: Record<string, unknown>, position = "WR"): SkillReading {
+    const base = loadFor(playerAt(position));
+    const rows = base.rows.map((row) => (row.metric_id === metric ? { ...row, ...fields } : row));
+    const view = buildSkillTreeView({ ...base, rows }, skillTreeMetadata(), position as "WR");
+    const all = [
+      ...view.branches.flatMap((branch) => branch.nodes.flatMap((node) => [node, ...node.details])),
+      ...(view.archive === null ? [] : [view.archive]),
+      ...(view.presence === null ? [] : [view.presence]),
+    ];
+    return required(all.find((candidate) => candidate.id === metric), metric);
+  }
+
+  it("tints a ranked higher/lower reading by band and prints its exact percentile", () => {
+    const ranked = (percentile: number): SkillReading =>
+      readingWith("catch_rate", { state: "ranked", percentile, rank: 5, cohort_size: 10 });
+    const middle = ranked(55.6);
+    expect([middle.meter, middle.ticks, middle.band]).toEqual(["ticks", 6, 3]);
+    expect(middle.standingText).toBe("55.6 pct · 5th of 10");
+    expect(middle.meterText).toBe("6 of 10 ticks, band 40 to under 60");
+    const top = ranked(80);
+    expect([top.ticks, top.band, top.standingText]).toEqual([8, 5, "80th pct · 5th of 10"]);
+    const bottom = ranked(1.5);
+    expect([bottom.ticks, bottom.band, bottom.standingText]).toEqual([1, 1, "1.5 pct · 5th of 10"]);
+
+    // A lower-is-better metric's percentile is already direction-adjusted: 90 is near the best,
+    // nine ticks and the top band, never inverted a second time.
+    const interceptions = readingWith(
+      "interception_rate",
+      { state: "ranked", percentile: 90, rank: 1, cohort_size: 10 },
+      "QB",
+    );
+    expect(interceptions.definition.direction).toBe("lower");
+    expect([interceptions.ticks, interceptions.band]).toEqual([9, 5]);
+  });
+
+  it("marks a context metric on a neutral track, never banded", () => {
+    const adot = readingWith("adot", { state: "ranked", percentile: 72, rank: 3, cohort_size: 10 });
+    expect([adot.meter, adot.marker, adot.band, adot.ticks]).toEqual(["marker", 72, null, 0]);
+    expect(adot.standingText).toBe("above 72% · 3rd of 10");
+    expect(adot.meterText).toBe("a position marker, not a grade");
+  });
+
+  it("keeps presence and the archive in their own meaning", () => {
+    const presence = readingWith("appearances", { state: "ranked", percentile: 50, rank: 4, cohort_size: 9 });
+    expect([presence.meter, presence.band, presence.ticks]).toEqual(["none", null, 0]);
+    expect(presence.standingText).toBe("4th of 9 WRs by games");
+    const archive = readingWith("combine_forty", {
+      state: "ranked",
+      value: 4.41,
+      percentile: 73.2,
+      rank: 190,
+      cohort_size: 710,
+      source_season: 2021,
+      reason: null,
+    });
+    // Ticks by the same rule, but untinted: historical testers are not a current grade.
+    expect([archive.meter, archive.ticks, archive.band]).toEqual(["ticks", 8, null]);
+    expect(archive.meterText).toBe("8 of 10 ticks among historical testers");
+  });
+
+  it("draws no rank for any unranked or missing state", () => {
+    const states: readonly Record<string, unknown>[] = [
+      { state: "below_minimum", rank: null, percentile: null, cohort_size: null, denominator: 4 },
+      { state: "small_cohort", rank: null, percentile: null, cohort_size: 4 },
+      { state: "no_opportunity", value: null, rank: null, percentile: null, cohort_size: null },
+      { state: "not_covered", value: null, rank: null, percentile: null, cohort_size: null, reason: "not_in_ngs_summary" },
+      { state: "unavailable", value: null, rank: null, percentile: null, cohort_size: null, reason: "no_snap_rows" },
+    ];
+    for (const fields of states) {
+      const reading = readingWith("catch_rate", fields);
+      expect([reading.meter, reading.ticks, reading.band, reading.meterText], String(fields.state)).toEqual([
+        "none",
+        0,
+        null,
+        "",
+      ]);
+    }
+    expect(readingWith("catch_rate", states[1] ?? {}).standingText).toBe("Unranked · 4 qualified WRs");
+  });
+
+  it("tells a ranked zero from a missing reading in words, in the meter and in the name", () => {
+    const zero = readingWith("catch_rate", { state: "ranked", percentile: 0, rank: 66, cohort_size: 66 });
+    expect(zero.empty).toBe(false);
+    expect(zero.valueText).not.toBe("—");
+    expect([zero.meter, zero.ticks, zero.band]).toEqual(["ticks", 0, 1]);
+    expect(zero.standingText).toBe("0 pct · 66th of 66");
+    expect(nodeName(zero)).toContain("0 pct · 66th of 66. Meter: 0 of 10 ticks, band below 20.");
+
     const base = loadFor(playerAt("WR"));
-    const tweak = (metric: string, percentile: number): number => {
-      const rows = base.rows.map((row) =>
-        row.metric_id === metric ? { ...row, state: "ranked", percentile, rank: 3, cohort_size: 40 } : row,
-      );
-      const view = buildSkillTreeView({ ...base, rows }, skillTreeMetadata(), "WR");
-      const node = required(
-        view.branches.flatMap((branch) => branch.nodes).find((candidate) => candidate.id === metric),
-        metric,
-      );
-      return metric === "adot" ? (node.marker ?? -1) : node.segments;
-    };
-    expect(tweak("catch_rate", 0)).toBe(1);
-    expect(tweak("catch_rate", 19.9)).toBe(1);
-    expect(tweak("catch_rate", 20)).toBe(2);
-    expect(tweak("catch_rate", 80)).toBe(5);
-    expect(tweak("catch_rate", 100)).toBe(5);
-    // aDOT has no better direction: a marker at the percentile, never a fill.
-    expect(tweak("adot", 72)).toBe(72);
+    const view = buildSkillTreeView(
+      { ...base, rows: base.rows.filter((row) => row.metric_id !== "catch_rate") },
+      skillTreeMetadata(),
+      "WR",
+    );
+    const missing = required(
+      view.branches.flatMap((branch) => branch.nodes).find((node) => node.id === "catch_rate"),
+      "catch_rate",
+    );
+    expect([missing.state, missing.empty, missing.meter, missing.valueText]).toEqual(["missing", true, "none", "—"]);
+    expect(nodeName(missing)).toBe("Catch rate. No reading in this build.");
+    expect(nodeName(missing)).not.toContain("Meter");
   });
 
   it("names every node by label, value and standing", () => {
@@ -266,6 +417,65 @@ describe("the Skill Tree component", () => {
     await userEvent.setup().click(within(region).getByRole("button", { name: /Close/ }));
     expect(screen.queryByRole("region", { name: /Carries: details/ })).toBeNull();
     expect(document.activeElement).toBe(first);
+  });
+
+  it("draws a ranked zero as a solid empty meter in its band, and a missing reading as dashed", async () => {
+    const playerId = playerAt("WR");
+    const source = sourceFor((id) => {
+      const load = loadFor(id);
+      return {
+        ...load,
+        rows: load.rows
+          .filter((row) => row.metric_id !== "yards_per_reception")
+          .map((row) =>
+            row.metric_id === "catch_rate" ? { ...row, state: "ranked", percentile: 0, rank: 66, cohort_size: 66 } : row,
+          ),
+      };
+    });
+    render(<SkillTree source={source} playerId={playerId} position="WR" name="Test Receiver" />);
+    const group = await screen.findByRole("group", { name: /skill tree/ });
+    const zero = within(group).getByRole("button", { name: /^Catch rate: .*0 pct · 66th of 66\. Meter: 0 of 10 ticks/ });
+    expect(zero.dataset.empty).toBeUndefined();
+    expect(zero.dataset.band).toBe("1");
+    expect(zero.dataset.meter).toBe("ticks");
+    const zeroMeter = required(zero.querySelector<HTMLElement>(".st-meter"), "meter");
+    expect(zeroMeter.dataset.variant).toBe("fill");
+    expect(zeroMeter.dataset.ticks).toBe("0");
+    expect(zeroMeter.querySelectorAll(".st-seg")).toHaveLength(10);
+    expect(zeroMeter.querySelectorAll(".st-seg[data-on]")).toHaveLength(0);
+
+    const missing = within(group).getByRole("button", { name: /^Yards per reception\. No reading in this build\.$/ });
+    expect(missing.dataset.empty).toBe("true");
+    expect(missing.dataset.band).toBeUndefined();
+    expect(required(missing.querySelector<HTMLElement>(".st-meter"), "meter").dataset.variant).toBe("empty");
+    expect(within(missing).getByText("—")).toBeDefined();
+
+    // Every ranked higher/lower node lights ceil(p / 10) of ten ticks in its band.
+    for (const node of within(group).getAllByRole("button")) {
+      if (node.dataset.meter !== "ticks" || node === zero) continue;
+      const meter = required(node.querySelector<HTMLElement>(".st-meter"), "meter");
+      expect(meter.querySelectorAll(".st-seg")).toHaveLength(10);
+      expect(meter.querySelectorAll(".st-seg[data-on]")).toHaveLength(Number(meter.dataset.ticks));
+      expect(node.dataset.band).toMatch(/^[1-5]$/);
+    }
+  });
+
+  it("states the tick rule and the bands in the legend", async () => {
+    const source = sourceFor(loadFor);
+    render(<SkillTree source={source} playerId={playerAt("QB")} position="QB" name="Test Passer" />);
+    await screen.findByRole("group", { name: /skill tree/ });
+    const legend = required(document.querySelector<HTMLElement>(".st-legend"), "legend");
+    expect(legend.textContent).toContain("ten ticks, one per 10 points, rounded up");
+    expect(legend.textContent).toContain("0 lights none, 0.1–10 lights one, 90.1–100 all ten");
+    expect(legend.textContent).not.toContain("20 points");
+    expect([...legend.querySelectorAll(".st-band-key-item")].map((item) => item.textContent)).toEqual([
+      "<20",
+      "20–39.9",
+      "40–59.9",
+      "60–79.9",
+      "80–100",
+    ]);
+    expect(legend.querySelectorAll(".st-legend-meter span")).toHaveLength(10);
   });
 
   it("moves between nodes with the arrow keys (a single tab stop)", async () => {
